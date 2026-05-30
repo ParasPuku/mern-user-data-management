@@ -2,7 +2,11 @@ import { env } from '../config/env.js';
 import { Account } from '../models/Account.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { httpError } from '../utils/httpError.js';
-import { verifyToken } from '../utils/token.js';
+import {
+  getTokenExpiresAt,
+  isAuthPayloadExpired,
+  verifyToken
+} from '../utils/token.js';
 
 const readToken = (req) => {
   const cookieToken = req.cookies?.[env.authCookieName];
@@ -34,6 +38,10 @@ export const requireAuth = asyncHandler(async (req, _res, next) => {
     throw httpError(401, 'Session expired. Please sign in again');
   }
 
+  if (isAuthPayloadExpired(payload)) {
+    throw httpError(401, 'Session expired. Please sign in again');
+  }
+
   const account = await Account.findById(payload.sub);
 
   if (!account) {
@@ -41,6 +49,8 @@ export const requireAuth = asyncHandler(async (req, _res, next) => {
   }
 
   req.account = account;
+  req.session = {
+    expiresAt: getTokenExpiresAt(payload)
+  };
   next();
 });
-

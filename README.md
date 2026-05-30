@@ -73,4 +73,4 @@ OTP codes are generated locally and printed in the backend terminal:
 
 Real SMS delivery requires an SMS provider such as MSG91, Fast2SMS, Twilio, Firebase, or AWS SNS.
 
-The local auth session expires after 15 minutes by default. Adjust `JWT_EXPIRES_IN` and `AUTH_COOKIE_MAX_AGE_MS` in `backend/.env` if needed.
+The local auth session expires after 15 minutes by default. The backend returns the session expiry to the frontend, and the frontend automatically clears the UI session when that time is reached. Adjust `JWT_EXPIRES_IN` and `AUTH_COOKIE_MAX_AGE_MS` in `backend/.env` if needed.

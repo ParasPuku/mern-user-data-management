@@ -35,6 +35,10 @@ const initialState: AuthState = {
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Something went wrong';
 
+const isSessionErrorMessage = (message: string) =>
+  message === 'Authentication required' ||
+  message === 'Session expired. Please sign in again';
+
 export const bootstrapAuth = createAsyncThunk<
   Account,
   void,
@@ -55,6 +59,18 @@ export const bootstrapAuth = createAsyncThunk<
     }
   }
 );
+
+export const verifyAuthSession = createAsyncThunk<
+  Account,
+  void,
+  { rejectValue: string }
+>('auth/verifyAuthSession', async (_, { rejectWithValue }) => {
+  try {
+    return await authApi.getMe();
+  } catch (error) {
+    return rejectWithValue(getErrorMessage(error));
+  }
+});
 
 export const signUp = createAsyncThunk<
   Account,
@@ -184,6 +200,13 @@ const authSlice = createSlice({
     },
     clearOtpResult(state) {
       state.otpResult = null;
+    },
+    sessionExpired(state) {
+      state.account = null;
+      state.actionStatus = 'idle';
+      state.error = null;
+      state.otpResult = null;
+      state.status = 'unauthenticated';
     }
   },
   extraReducers: (builder) => {
@@ -198,6 +221,24 @@ const authSlice = createSlice({
       .addCase(bootstrapAuth.rejected, (state) => {
         state.status = 'unauthenticated';
         state.account = null;
+      })
+      .addCase(verifyAuthSession.fulfilled, (state, action) => {
+        if (state.status !== 'authenticated') {
+          return;
+        }
+
+        state.account = action.payload;
+      })
+      .addCase(verifyAuthSession.rejected, (state, action) => {
+        const message = action.payload || 'Something went wrong';
+
+        if (isSessionErrorMessage(message)) {
+          state.status = 'unauthenticated';
+          state.account = null;
+          state.actionStatus = 'idle';
+          state.error = null;
+          state.otpResult = null;
+        }
       })
       .addCase(logout.fulfilled, (state) => {
         state.status = 'unauthenticated';
@@ -281,7 +322,8 @@ const authSlice = createSlice({
   }
 });
 
-export const { clearAuthError, clearOtpResult } = authSlice.actions;
+export const { clearAuthError, clearOtpResult, sessionExpired } =
+  authSlice.actions;
 
 export const selectAccount = (state: RootState) => state.auth.account;
 export const selectAuthStatus = (state: RootState) => state.auth.status;

@@ -12,13 +12,22 @@ import {
 } from '../utils/identifiers.js';
 import {
   clearAuthCookie,
-  createAuthToken,
+  createAuthSession,
   createPasswordResetToken,
   setAuthCookie,
   verifyToken
 } from '../utils/token.js';
 
-const serializeAccount = (account) => account.toJSON();
+const getSessionExpiresInMs = (sessionExpiresAt) =>
+  sessionExpiresAt
+    ? Math.max(new Date(sessionExpiresAt).getTime() - Date.now(), 0)
+    : null;
+
+const serializeAccount = (account, sessionExpiresAt = null) => ({
+  ...account.toJSON(),
+  sessionExpiresAt,
+  sessionExpiresInMs: getSessionExpiresInMs(sessionExpiresAt)
+});
 
 const assertPassword = (password, confirmPassword = password) => {
   if (!password || password.length < 8) {
@@ -31,11 +40,11 @@ const assertPassword = (password, confirmPassword = password) => {
 };
 
 const signInAccount = (res, account, statusCode = 200) => {
-  const token = createAuthToken(account);
-  setAuthCookie(res, token);
+  const session = createAuthSession(account);
+  setAuthCookie(res, session.token);
 
   res.status(statusCode).json({
-    data: serializeAccount(account)
+    data: serializeAccount(account, session.expiresAt)
   });
 };
 
@@ -202,7 +211,7 @@ export const setPassword = asyncHandler(async (req, res) => {
 
 export const getMe = asyncHandler(async (req, res) => {
   res.json({
-    data: serializeAccount(req.account)
+    data: serializeAccount(req.account, req.session?.expiresAt)
   });
 });
 
@@ -226,7 +235,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
   await req.account.save();
 
   res.json({
-    data: serializeAccount(req.account)
+    data: serializeAccount(req.account, req.session?.expiresAt)
   });
 });
 
@@ -239,7 +248,7 @@ export const uploadProfileAvatar = asyncHandler(async (req, res) => {
   await req.account.save();
 
   res.json({
-    data: serializeAccount(req.account)
+    data: serializeAccount(req.account, req.session?.expiresAt)
   });
 });
 

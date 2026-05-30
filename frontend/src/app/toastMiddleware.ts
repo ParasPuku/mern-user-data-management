@@ -1,6 +1,7 @@
 import { createListenerMiddleware, isAnyOf } from '@reduxjs/toolkit';
 
 import {
+  clearUsers,
   createUser,
   deleteUser,
   updateUser
@@ -12,8 +13,10 @@ import {
   setPassword,
   signInWithPassword,
   signUp,
+  sessionExpired,
   updateProfile,
   uploadAvatar,
+  verifyAuthSession,
   verifyLoginOtp,
   verifyPasswordResetOtp
 } from '../features/auth/authSlice';
@@ -44,6 +47,10 @@ const readErrorMessage = (action: unknown) => {
 
   return maybeAction.error?.message || 'Something went wrong';
 };
+
+const isSessionError = (message: string) =>
+  message === 'Authentication required' ||
+  message === 'Session expired. Please sign in again';
 
 export const toastMiddleware = createListenerMiddleware();
 
@@ -83,13 +90,41 @@ toastMiddleware.startListening({
     setPassword.rejected,
     updateProfile.rejected,
     uploadAvatar.rejected,
+    verifyAuthSession.rejected,
     logout.rejected,
     createUser.rejected,
     updateUser.rejected,
     deleteUser.rejected
   ),
   effect: (action, listenerApi) => {
-    listenerApi.dispatch(addToast(readErrorMessage(action), 'error'));
+    const message = readErrorMessage(action);
+    const state = listenerApi.getState() as {
+      auth: {
+        account: unknown;
+        status: string;
+      };
+    };
+    const previousState = listenerApi.getOriginalState() as {
+      auth: {
+        account: unknown;
+        status: string;
+      };
+    };
+    const hadAuthenticatedSession =
+      previousState.auth.status === 'authenticated' ||
+      Boolean(previousState.auth.account) ||
+      state.auth.status === 'authenticated' ||
+      Boolean(state.auth.account);
+
+    if (isSessionError(message) && hadAuthenticatedSession) {
+      listenerApi.dispatch(sessionExpired());
+      listenerApi.dispatch(clearUsers());
+      listenerApi.dispatch(
+        addToast('Session expired. Please sign in again', 'error')
+      );
+      return;
+    }
+
+    listenerApi.dispatch(addToast(message, 'error'));
   }
 });
-

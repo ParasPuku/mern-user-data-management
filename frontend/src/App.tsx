@@ -7,7 +7,8 @@ import { PublicRoute } from './components/PublicRoute';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import {
   bootstrapAuth,
-  selectAuthStatus
+  selectAuthStatus,
+  verifyAuthSession
 } from './features/auth/authSlice';
 import { ForgotPasswordPage } from './features/auth/pages/ForgotPasswordPage';
 import { OtpPage } from './features/auth/pages/OtpPage';
@@ -18,6 +19,8 @@ import { SignInPage } from './features/auth/pages/SignInPage';
 import { SignUpPage } from './features/auth/pages/SignUpPage';
 import { UserManagementPage } from './features/users/UserManagementPage';
 
+const SESSION_CHECK_INTERVAL_MS = 60000;
+
 export const App = () => {
   const dispatch = useAppDispatch();
   const authStatus = useAppSelector(selectAuthStatus);
@@ -26,6 +29,36 @@ export const App = () => {
     if (authStatus === 'idle') {
       dispatch(bootstrapAuth());
     }
+  }, [authStatus, dispatch]);
+
+  useEffect(() => {
+    if (authStatus !== 'authenticated') {
+      return undefined;
+    }
+
+    const validateSessionWithBackend = () => {
+      dispatch(verifyAuthSession());
+    };
+
+    const intervalId = window.setInterval(
+      validateSessionWithBackend,
+      SESSION_CHECK_INTERVAL_MS
+    );
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        validateSessionWithBackend();
+      }
+    };
+
+    window.addEventListener('focus', validateSessionWithBackend);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', validateSessionWithBackend);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [authStatus, dispatch]);
 
   if (authStatus === 'idle' || authStatus === 'loading') {
@@ -103,4 +136,3 @@ export const App = () => {
     </Routes>
   );
 };
-

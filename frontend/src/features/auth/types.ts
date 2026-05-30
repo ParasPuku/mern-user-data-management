@@ -6,6 +6,8 @@ export type Account = {
   fullName: string;
   email: string;
   mobile: string;
+  sessionExpiresAt: string | null;
+  sessionExpiresInMs: number | null;
   avatarUrl: string;
   createdAt: string;
   updatedAt: string;
