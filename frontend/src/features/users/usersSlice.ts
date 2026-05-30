@@ -99,6 +99,13 @@ const usersSlice = createSlice({
     },
     clearUsersError(state) {
       state.error = null;
+    },
+    clearUsers(state) {
+      state.items = [];
+      state.filters = initialFilters;
+      state.listStatus = 'idle';
+      state.mutationStatus = 'idle';
+      state.error = null;
     }
   },
   extraReducers: (builder) => {
@@ -156,7 +163,8 @@ const usersSlice = createSlice({
   }
 });
 
-export const { clearUsersError, resetFilters, setFilters } = usersSlice.actions;
+export const { clearUsers, clearUsersError, resetFilters, setFilters } =
+  usersSlice.actions;
 
 export const selectUsers = (state: RootState) => state.users.items;
 export const selectUserFilters = (state: RootState) => state.users.filters;
@@ -167,4 +175,3 @@ export const selectUsersMutationStatus = (state: RootState) =>
   state.users.mutationStatus;
 
 export default usersSlice.reducer;
-

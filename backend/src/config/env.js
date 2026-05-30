@@ -11,8 +11,18 @@ const splitOrigins = (value) =>
     .map((origin) => origin.trim())
     .filter(Boolean);
 
+const toBoolean = (value, fallback) => {
+  if (value === undefined) {
+    return fallback;
+  }
+
+  return value === 'true';
+};
+
+const nodeEnv = process.env.NODE_ENV || 'development';
+
 export const env = Object.freeze({
-  nodeEnv: process.env.NODE_ENV || 'development',
+  nodeEnv,
   port: toNumber(process.env.PORT, 5001),
   mongoUri:
     process.env.MONGO_URI ||
@@ -25,5 +35,16 @@ export const env = Object.freeze({
   mongoServerSelectionTimeoutMs: toNumber(
     process.env.MONGO_SERVER_SELECTION_TIMEOUT_MS,
     5000
-  )
+  ),
+  jwtSecret:
+    process.env.JWT_SECRET ||
+    'local-development-secret-change-before-production',
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '15m',
+  authCookieName: process.env.AUTH_COOKIE_NAME || 'umd_auth',
+  authCookieMaxAgeMs: toNumber(
+    process.env.AUTH_COOKIE_MAX_AGE_MS,
+    15 * 60 * 1000
+  ),
+  otpExpiresMinutes: toNumber(process.env.OTP_EXPIRES_MINUTES, 10),
+  syncIndexes: toBoolean(process.env.SYNC_INDEXES, nodeEnv !== 'production')
 });

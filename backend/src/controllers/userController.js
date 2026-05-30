@@ -22,7 +22,9 @@ const ensureValidId = (id) => {
 
 export const getUsers = asyncHandler(async (req, res) => {
   const { search, role, status } = req.query;
-  const filters = {};
+  const filters = {
+    owner: req.account._id
+  };
 
   if (role) {
     filters.role = role;
@@ -47,7 +49,10 @@ export const getUsers = asyncHandler(async (req, res) => {
 export const getUserById = asyncHandler(async (req, res) => {
   ensureValidId(req.params.id);
 
-  const user = await User.findById(req.params.id);
+  const user = await User.findOne({
+    _id: req.params.id,
+    owner: req.account._id
+  });
 
   if (!user) {
     throw httpError(404, 'User not found');
@@ -59,7 +64,10 @@ export const getUserById = asyncHandler(async (req, res) => {
 });
 
 export const createUser = asyncHandler(async (req, res) => {
-  const user = await User.create(pickUserFields(req.body));
+  const user = await User.create({
+    ...pickUserFields(req.body),
+    owner: req.account._id
+  });
 
   res.status(201).json({
     data: user
@@ -69,8 +77,11 @@ export const createUser = asyncHandler(async (req, res) => {
 export const updateUser = asyncHandler(async (req, res) => {
   ensureValidId(req.params.id);
 
-  const user = await User.findByIdAndUpdate(
-    req.params.id,
+  const user = await User.findOneAndUpdate(
+    {
+      _id: req.params.id,
+      owner: req.account._id
+    },
     pickUserFields(req.body),
     {
       new: true,
@@ -90,7 +101,10 @@ export const updateUser = asyncHandler(async (req, res) => {
 export const deleteUser = asyncHandler(async (req, res) => {
   ensureValidId(req.params.id);
 
-  const user = await User.findByIdAndDelete(req.params.id);
+  const user = await User.findOneAndDelete({
+    _id: req.params.id,
+    owner: req.account._id
+  });
 
   if (!user) {
     throw httpError(404, 'User not found');
@@ -98,4 +112,3 @@ export const deleteUser = asyncHandler(async (req, res) => {
 
   res.status(204).send();
 });
-

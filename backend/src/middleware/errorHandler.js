@@ -30,7 +30,20 @@ export const errorHandler = (error, _req, res, _next) => {
 
   if (error.code === 11000) {
     statusCode = 409;
-    message = 'A user with this email already exists';
+    message = 'A record with this email or mobile number already exists';
+  }
+
+  if (error.message === 'Only image files are allowed') {
+    statusCode = 400;
+    message = error.message;
+  }
+
+  if (error.name === 'MulterError') {
+    statusCode = 400;
+    message =
+      error.code === 'LIMIT_FILE_SIZE'
+        ? 'Avatar must be 2MB or less'
+        : error.message;
   }
 
   const response = {
@@ -47,4 +60,3 @@ export const errorHandler = (error, _req, res, _next) => {
 
   res.status(statusCode).json(response);
 };
-

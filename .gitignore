@@ -2,6 +2,7 @@ node_modules/
 dist/
 build/
 coverage/
+backend/uploads/
 
 .env
 .env.*
@@ -15,4 +16,3 @@ pnpm-debug.log*
 .DS_Store
 .idea/
 .vscode/
-

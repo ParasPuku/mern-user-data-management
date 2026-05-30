@@ -14,6 +14,10 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: env.VITE_API_PROXY_TARGET || 'http://localhost:5001',
           changeOrigin: true
+        },
+        '/uploads': {
+          target: env.VITE_API_PROXY_TARGET || 'http://localhost:5001',
+          changeOrigin: true
         }
       }
     }

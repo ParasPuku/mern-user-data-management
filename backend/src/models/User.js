@@ -2,6 +2,12 @@ import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema(
   {
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Account',
+      required: true,
+      index: true
+    },
     name: {
       type: String,
       required: [true, 'Name is required'],
@@ -12,7 +18,6 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: [true, 'Email is required'],
-      unique: true,
       lowercase: true,
       trim: true,
       match: [/^\S+@\S+\.\S+$/, 'Email must be valid']
@@ -36,12 +41,14 @@ const userSchema = new mongoose.Schema(
         ret.id = ret._id.toString();
         delete ret._id;
         delete ret.__v;
+        delete ret.owner;
         return ret;
       }
     }
   }
 );
 
+userSchema.index({ owner: 1, email: 1 }, { unique: true });
 userSchema.index({ name: 'text', email: 'text' });
 
 export const User = mongoose.model('User', userSchema);

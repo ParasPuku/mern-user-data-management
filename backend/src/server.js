@@ -5,7 +5,8 @@ import { env } from './config/env.js';
 const startServer = async () => {
   try {
     await connectDB(env.mongoUri, {
-      serverSelectionTimeoutMs: env.mongoServerSelectionTimeoutMs
+      serverSelectionTimeoutMs: env.mongoServerSelectionTimeoutMs,
+      syncIndexes: env.syncIndexes
     });
 
     const server = app.listen(env.port, () => {

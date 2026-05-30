@@ -5,7 +5,7 @@ A full-stack MERN workspace with a Vite React TypeScript frontend and a plain Ja
 ## Stack
 
 - Frontend: React, TypeScript, Vite, Redux Toolkit, React Redux
-- Backend: Node.js, Express, MongoDB, Mongoose
+- Backend: Node.js, Express, MongoDB, Mongoose, JWT auth cookies
 - Tooling: npm workspaces, Vite HMR/Fast Refresh, Nodemon
 
 ## Project Structure
@@ -43,9 +43,34 @@ npm run check          # Run available validation checks
 
 ## API Endpoints
 
+- `POST /api/auth/signup`
+- `POST /api/auth/login/password`
+- `POST /api/auth/login/otp/request`
+- `POST /api/auth/login/otp/verify`
+- `POST /api/auth/password/forgot`
+- `POST /api/auth/password/verify-otp`
+- `POST /api/auth/password/set`
+- `GET /api/auth/session`
+- `PATCH /api/auth/profile`
+- `POST /api/auth/profile/avatar`
+- `POST /api/auth/logout`
 - `GET /api/health`
 - `GET /api/users`
 - `GET /api/users/:id`
 - `POST /api/users`
 - `PATCH /api/users/:id`
 - `DELETE /api/users/:id`
+
+The `/api/users` routes require authentication. Each signed-in account can only access its own user records.
+
+## Authentication Notes
+
+OTP codes are generated locally and printed in the backend terminal:
+
+```text
+[DEV OTP] login OTP for user@example.com: 123456
+```
+
+Real SMS delivery requires an SMS provider such as MSG91, Fast2SMS, Twilio, Firebase, or AWS SNS.
+
+The local auth session expires after 15 minutes by default. Adjust `JWT_EXPIRES_IN` and `AUTH_COOKIE_MAX_AGE_MS` in `backend/.env` if needed.
