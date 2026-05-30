@@ -1,5 +1,6 @@
 import { RefreshCcw, Search } from 'lucide-react';
 
+import { ButtonSpinner } from '../../components/LoadingButton';
 import type { RequestStatus, UserFilters as UserFilterValues } from './types';
 
 type UserFiltersProps = {
@@ -61,7 +62,7 @@ export const UserFilters = ({
       title="Refresh users"
       type="button"
     >
-      <RefreshCcw size={16} />
+      {listStatus === 'loading' ? <ButtonSpinner /> : <RefreshCcw size={16} />}
     </button>
 
     <button className="text-button" onClick={onReset} type="button">

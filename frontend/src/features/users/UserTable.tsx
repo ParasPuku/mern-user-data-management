@@ -1,5 +1,6 @@
 import { Pencil, Trash2 } from 'lucide-react';
 
+import { ButtonSpinner } from '../../components/LoadingButton';
 import type { RequestStatus, User } from './types';
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -87,7 +88,7 @@ export const UserTable = ({
                     title={`Delete ${user.name}`}
                     type="button"
                   >
-                    <Trash2 size={16} />
+                    {isMutating ? <ButtonSpinner /> : <Trash2 size={16} />}
                   </button>
                 </div>
               </td>
@@ -98,4 +99,3 @@ export const UserTable = ({
     </div>
   );
 };
-

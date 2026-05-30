@@ -1,15 +1,14 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import { LockKeyhole } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { useAppDispatch, useAppSelector } from '../../../app/hooks';
-import { StatusBanner } from '../../../components/StatusBanner';
+import { LoadingButton } from '../../../components/LoadingButton';
 import {
-  clearAuthError,
   selectAuthActionStatus,
-  selectAuthError,
   setPassword
 } from '../authSlice';
+import { validateSetPassword } from '../validation';
 
 type SetPasswordLocationState = {
   resetToken?: string;
@@ -20,28 +19,34 @@ export const SetPasswordPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const actionStatus = useAppSelector(selectAuthActionStatus);
-  const error = useAppSelector(selectAuthError);
   const resetToken = (location.state as SetPasswordLocationState | null)
     ?.resetToken;
   const [password, setPasswordValue] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const isLoading = actionStatus === 'loading';
+  const values = useMemo(
+    () => ({
+      confirmPassword,
+      password,
+      resetToken: resetToken || ''
+    }),
+    [confirmPassword, password, resetToken]
+  );
+  const isFormValid = validateSetPassword(values).isValid;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!resetToken) {
+    if (!isFormValid) {
       return;
     }
 
-    await dispatch(
-      setPassword({
-        resetToken,
-        password,
-        confirmPassword
-      })
-    ).unwrap();
-    navigate('/reset-success');
+    try {
+      await dispatch(setPassword(values)).unwrap();
+      navigate('/reset-success');
+    } catch {
+      // Toast middleware displays the API error.
+    }
   };
 
   return (
@@ -49,11 +54,6 @@ export const SetPasswordPage = () => {
       <section className="auth-card">
         <p className="eyebrow">New password</p>
         <h1>Set Password</h1>
-
-        <StatusBanner
-          message={error}
-          onDismiss={() => dispatch(clearAuthError())}
-        />
 
         {!resetToken ? (
           <div className="empty-state">
@@ -88,18 +88,19 @@ export const SetPasswordPage = () => {
               />
             </label>
 
-            <button
+            <LoadingButton
               className="primary-button"
-              disabled={isLoading}
+              disabled={!isFormValid}
+              isLoading={isLoading}
+              loadingLabel="Saving password"
               type="submit"
             >
               <LockKeyhole size={17} />
               Set Password
-            </button>
+            </LoadingButton>
           </form>
         )}
       </section>
     </main>
   );
 };
-

@@ -2,6 +2,7 @@ import { LogOut, UserRound, UsersRound } from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 
 import { useAppDispatch, useAppSelector } from '../app/hooks';
+import { ButtonSpinner } from './LoadingButton';
 import {
   logout,
   selectAccount,
@@ -64,13 +65,14 @@ export const AppLayout = () => {
           )}
 
           <button
+            aria-busy={actionStatus === 'loading'}
             className="icon-button"
             disabled={actionStatus === 'loading'}
             onClick={handleLogout}
             title="Sign out"
             type="button"
           >
-            <LogOut size={17} />
+            {actionStatus === 'loading' ? <ButtonSpinner /> : <LogOut size={17} />}
           </button>
         </div>
       </nav>

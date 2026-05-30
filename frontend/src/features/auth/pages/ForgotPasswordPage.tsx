@@ -1,36 +1,45 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import { ArrowLeft, Send } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { useAppDispatch, useAppSelector } from '../../../app/hooks';
-import { StatusBanner } from '../../../components/StatusBanner';
+import { LoadingButton } from '../../../components/LoadingButton';
 import {
-  clearAuthError,
   requestPasswordReset,
-  selectAuthActionStatus,
-  selectAuthError
+  selectAuthActionStatus
 } from '../authSlice';
+import { validateOtpRequest } from '../validation';
 
 export const ForgotPasswordPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const actionStatus = useAppSelector(selectAuthActionStatus);
-  const error = useAppSelector(selectAuthError);
   const [identifier, setIdentifier] = useState('');
   const isLoading = actionStatus === 'loading';
+  const values = useMemo(() => ({ identifier }), [identifier]);
+  const isFormValid = validateOtpRequest(values).isValid;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const result = await dispatch(requestPasswordReset({ identifier })).unwrap();
 
-    navigate('/otp', {
-      state: {
-        deliveryTarget: result.deliveryTarget,
-        devOtp: result.devOtp,
-        identifier,
-        mode: 'password-reset'
-      }
-    });
+    if (!isFormValid) {
+      return;
+    }
+
+    try {
+      const result = await dispatch(requestPasswordReset(values)).unwrap();
+
+      navigate('/otp', {
+        state: {
+          deliveryTarget: result.deliveryTarget,
+          devOtp: result.devOtp,
+          identifier,
+          mode: 'password-reset'
+        }
+      });
+    } catch {
+      // Toast middleware displays the API error.
+    }
   };
 
   return (
@@ -44,11 +53,6 @@ export const ForgotPasswordPage = () => {
         <p className="eyebrow">Account recovery</p>
         <h1>Forgot Password</h1>
 
-        <StatusBanner
-          message={error}
-          onDismiss={() => dispatch(clearAuthError())}
-        />
-
         <form className="auth-form" onSubmit={handleSubmit}>
           <label>
             Email or mobile number
@@ -61,10 +65,16 @@ export const ForgotPasswordPage = () => {
             />
           </label>
 
-          <button className="primary-button" disabled={isLoading} type="submit">
+          <LoadingButton
+            className="primary-button"
+            disabled={!isFormValid}
+            isLoading={isLoading}
+            loadingLabel="Sending OTP"
+            type="submit"
+          >
             <Send size={17} />
             Send OTP
-          </button>
+          </LoadingButton>
         </form>
       </section>
     </main>

@@ -1,21 +1,19 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import { UserPlus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { useAppDispatch, useAppSelector } from '../../../app/hooks';
-import { StatusBanner } from '../../../components/StatusBanner';
+import { LoadingButton } from '../../../components/LoadingButton';
 import {
-  clearAuthError,
   selectAuthActionStatus,
-  selectAuthError,
   signUp
 } from '../authSlice';
+import { validateSignUp } from '../validation';
 
 export const SignUpPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const actionStatus = useAppSelector(selectAuthActionStatus);
-  const error = useAppSelector(selectAuthError);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
@@ -23,21 +21,32 @@ export const SignUpPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
   const isLoading = actionStatus === 'loading';
+  const values = useMemo(
+    () => ({
+      confirmPassword,
+      email,
+      fullName,
+      mobile,
+      password,
+      termsAccepted
+    }),
+    [confirmPassword, email, fullName, mobile, password, termsAccepted]
+  );
+  const isFormValid = validateSignUp(values).isValid;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    await dispatch(
-      signUp({
-        fullName,
-        email,
-        mobile,
-        password,
-        confirmPassword,
-        termsAccepted
-      })
-    ).unwrap();
-    navigate('/');
+    if (!isFormValid) {
+      return;
+    }
+
+    try {
+      await dispatch(signUp(values)).unwrap();
+      navigate('/');
+    } catch {
+      // Toast middleware displays the API error.
+    }
   };
 
   return (
@@ -45,11 +54,6 @@ export const SignUpPage = () => {
       <section className="auth-card auth-card--wide">
         <p className="eyebrow">Create account</p>
         <h1>Sign Up</h1>
-
-        <StatusBanner
-          message={error}
-          onDismiss={() => dispatch(clearAuthError())}
-        />
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <label>
@@ -123,10 +127,16 @@ export const SignUpPage = () => {
             <span>I agree to the terms and policy</span>
           </label>
 
-          <button className="primary-button" disabled={isLoading} type="submit">
+          <LoadingButton
+            className="primary-button"
+            disabled={!isFormValid}
+            isLoading={isLoading}
+            loadingLabel="Creating account"
+            type="submit"
+          >
             <UserPlus size={17} />
             Sign Up
-          </button>
+          </LoadingButton>
         </form>
 
         <p className="auth-switch">
@@ -136,4 +146,3 @@ export const SignUpPage = () => {
     </main>
   );
 };
-

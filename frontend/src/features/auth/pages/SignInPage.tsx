@@ -1,16 +1,15 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import { KeyRound, Mail, Smartphone } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { useAppDispatch, useAppSelector } from '../../../app/hooks';
-import { StatusBanner } from '../../../components/StatusBanner';
+import { LoadingButton } from '../../../components/LoadingButton';
 import {
-  clearAuthError,
   requestLoginOtp,
   selectAuthActionStatus,
-  selectAuthError,
   signInWithPassword
 } from '../authSlice';
+import { validateOtpRequest, validatePasswordLogin } from '../validation';
 
 type SignInMode = 'password' | 'otp';
 
@@ -18,31 +17,52 @@ export const SignInPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const actionStatus = useAppSelector(selectAuthActionStatus);
-  const error = useAppSelector(selectAuthError);
   const [mode, setMode] = useState<SignInMode>('password');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [identifier, setIdentifier] = useState('');
   const isLoading = actionStatus === 'loading';
+  const passwordValues = useMemo(() => ({ email, password }), [email, password]);
+  const otpValues = useMemo(() => ({ identifier }), [identifier]);
+  const isPasswordValid = validatePasswordLogin(passwordValues).isValid;
+  const isOtpValid = validateOtpRequest(otpValues).isValid;
 
   const handlePasswordSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    await dispatch(signInWithPassword({ email, password })).unwrap();
-    navigate('/');
+
+    if (!isPasswordValid) {
+      return;
+    }
+
+    try {
+      await dispatch(signInWithPassword(passwordValues)).unwrap();
+      navigate('/');
+    } catch {
+      // Toast middleware displays the API error.
+    }
   };
 
   const handleOtpSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const result = await dispatch(requestLoginOtp({ identifier })).unwrap();
 
-    navigate('/otp', {
-      state: {
-        deliveryTarget: result.deliveryTarget,
-        devOtp: result.devOtp,
-        identifier,
-        mode: 'login'
-      }
-    });
+    if (!isOtpValid) {
+      return;
+    }
+
+    try {
+      const result = await dispatch(requestLoginOtp(otpValues)).unwrap();
+
+      navigate('/otp', {
+        state: {
+          deliveryTarget: result.deliveryTarget,
+          devOtp: result.devOtp,
+          identifier,
+          mode: 'login'
+        }
+      });
+    } catch {
+      // Toast middleware displays the API error.
+    }
   };
 
   return (
@@ -50,11 +70,6 @@ export const SignInPage = () => {
       <section className="auth-card">
         <p className="eyebrow">Welcome back</p>
         <h1>Sign In</h1>
-
-        <StatusBanner
-          message={error}
-          onDismiss={() => dispatch(clearAuthError())}
-        />
 
         <div className="segmented-control" role="tablist">
           <button
@@ -106,10 +121,16 @@ export const SignInPage = () => {
               Forgot Password
             </Link>
 
-            <button className="primary-button" disabled={isLoading} type="submit">
+            <LoadingButton
+              className="primary-button"
+              disabled={!isPasswordValid}
+              isLoading={isLoading}
+              loadingLabel="Signing in"
+              type="submit"
+            >
               <KeyRound size={17} />
               Sign In
-            </button>
+            </LoadingButton>
           </form>
         ) : (
           <form className="auth-form" onSubmit={handleOtpSubmit}>
@@ -124,10 +145,16 @@ export const SignInPage = () => {
               />
             </label>
 
-            <button className="primary-button" disabled={isLoading} type="submit">
+            <LoadingButton
+              className="primary-button"
+              disabled={!isOtpValid}
+              isLoading={isLoading}
+              loadingLabel="Sending OTP"
+              type="submit"
+            >
               <Smartphone size={17} />
               Send OTP
-            </button>
+            </LoadingButton>
           </form>
         )}
 

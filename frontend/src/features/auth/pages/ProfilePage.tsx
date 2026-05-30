@@ -2,15 +2,14 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import { Camera, Save } from 'lucide-react';
 
 import { useAppDispatch, useAppSelector } from '../../../app/hooks';
-import { StatusBanner } from '../../../components/StatusBanner';
+import { LoadingButton } from '../../../components/LoadingButton';
 import {
-  clearAuthError,
   selectAccount,
   selectAuthActionStatus,
-  selectAuthError,
   updateProfile,
   uploadAvatar
 } from '../authSlice';
+import { validateProfile } from '../validation';
 
 const getInitials = (name = '') =>
   name
@@ -24,10 +23,13 @@ export const ProfilePage = () => {
   const dispatch = useAppDispatch();
   const account = useAppSelector(selectAccount);
   const actionStatus = useAppSelector(selectAuthActionStatus);
-  const error = useAppSelector(selectAuthError);
   const [fullName, setFullName] = useState(account?.fullName || '');
   const [mobile, setMobile] = useState(account?.mobile || '');
   const isLoading = actionStatus === 'loading';
+  const values = useMemo(() => ({ fullName, mobile }), [fullName, mobile]);
+  const isFormValid = validateProfile(values).isValid;
+  const hasChanges =
+    fullName !== (account?.fullName || '') || mobile !== (account?.mobile || '');
 
   const initials = useMemo(
     () => getInitials(account?.fullName),
@@ -41,15 +43,29 @@ export const ProfilePage = () => {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    await dispatch(updateProfile({ fullName, mobile })).unwrap();
+
+    if (!isFormValid || !hasChanges) {
+      return;
+    }
+
+    try {
+      await dispatch(updateProfile(values)).unwrap();
+    } catch {
+      // Toast middleware displays the API error.
+    }
   };
 
   const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
 
     if (file) {
-      await dispatch(uploadAvatar(file)).unwrap();
-      event.target.value = '';
+      try {
+        await dispatch(uploadAvatar(file)).unwrap();
+      } catch {
+        // Toast middleware displays the API error.
+      } finally {
+        event.target.value = '';
+      }
     }
   };
 
@@ -61,11 +77,6 @@ export const ProfilePage = () => {
           <h1>Profile</h1>
         </div>
       </header>
-
-      <StatusBanner
-        message={error}
-        onDismiss={() => dispatch(clearAuthError())}
-      />
 
       <main className="profile-grid">
         <section className="tool-panel profile-card">
@@ -135,14 +146,19 @@ export const ProfilePage = () => {
               />
             </label>
 
-            <button className="primary-button" disabled={isLoading} type="submit">
+            <LoadingButton
+              className="primary-button"
+              disabled={!isFormValid || !hasChanges}
+              isLoading={isLoading}
+              loadingLabel="Saving changes"
+              type="submit"
+            >
               <Save size={17} />
               Save changes
-            </button>
+            </LoadingButton>
           </form>
         </section>
       </main>
     </>
   );
 };
-

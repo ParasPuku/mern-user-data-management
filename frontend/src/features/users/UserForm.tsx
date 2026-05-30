@@ -1,7 +1,9 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Plus, Save, X } from 'lucide-react';
 
+import { LoadingButton } from '../../components/LoadingButton';
 import type { RequestStatus, User, UserFormValues } from './types';
+import { validateUserForm } from './validation';
 
 const emptyForm: UserFormValues = {
   name: '',
@@ -27,6 +29,7 @@ export const UserForm = ({
   const [localError, setLocalError] = useState<string | null>(null);
   const isEditing = Boolean(selectedUser);
   const isSaving = mutationStatus === 'loading';
+  const isFormValid = validateUserForm(formValues).isValid;
 
   useEffect(() => {
     if (!selectedUser) {
@@ -52,8 +55,10 @@ export const UserForm = ({
       email: formValues.email.trim().toLowerCase()
     };
 
-    if (!normalizedValues.name || !normalizedValues.email) {
-      setLocalError('Name and email are required');
+    const validation = validateUserForm(normalizedValues);
+
+    if (!validation.isValid) {
+      setLocalError(validation.errors[0] || 'Please complete the form');
       return;
     }
 
@@ -159,11 +164,16 @@ export const UserForm = ({
         </select>
       </label>
 
-      <button className="primary-button" disabled={isSaving} type="submit">
+      <LoadingButton
+        className="primary-button"
+        disabled={!isFormValid}
+        isLoading={isSaving}
+        loadingLabel={isEditing ? 'Saving changes' : 'Creating user'}
+        type="submit"
+      >
         {isEditing ? <Save size={17} /> : <Plus size={17} />}
-        {isSaving ? 'Saving' : isEditing ? 'Save changes' : 'Create user'}
-      </button>
+        {isEditing ? 'Save changes' : 'Create user'}
+      </LoadingButton>
     </form>
   );
 };
-

@@ -3,16 +3,15 @@ import { ArrowLeft, RotateCcw, ShieldCheck } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { useAppDispatch, useAppSelector } from '../../../app/hooks';
-import { StatusBanner } from '../../../components/StatusBanner';
+import { LoadingButton } from '../../../components/LoadingButton';
 import {
-  clearAuthError,
   requestLoginOtp,
   requestPasswordReset,
   selectAuthActionStatus,
-  selectAuthError,
   verifyLoginOtp,
   verifyPasswordResetOtp
 } from '../authSlice';
+import { validateOtpRequest, validateOtpVerification } from '../validation';
 
 type OtpMode = 'login' | 'password-reset';
 
@@ -28,7 +27,6 @@ export const OtpPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const actionStatus = useAppSelector(selectAuthActionStatus);
-  const error = useAppSelector(selectAuthError);
   const state = location.state as OtpLocationState | null;
   const mode = state?.mode || 'login';
   const [identifier, setIdentifier] = useState(state?.identifier || '');
@@ -38,6 +36,13 @@ export const OtpPage = () => {
   const [devOtp, setDevOtp] = useState(state?.devOtp || '');
   const [code, setCode] = useState('');
   const isLoading = actionStatus === 'loading';
+  const verifyValues = useMemo(
+    () => ({ code, identifier }),
+    [code, identifier]
+  );
+  const requestValues = useMemo(() => ({ identifier }), [identifier]);
+  const isVerifyValid = validateOtpVerification(verifyValues).isValid;
+  const isResendValid = validateOtpRequest(requestValues).isValid;
 
   const heading = useMemo(
     () => (mode === 'login' ? 'Verify Sign In' : 'Verify Reset OTP'),
@@ -47,31 +52,47 @@ export const OtpPage = () => {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (mode === 'password-reset') {
-      const result = await dispatch(
-        verifyPasswordResetOtp({ identifier, code })
-      ).unwrap();
-
-      navigate('/set-password', {
-        state: {
-          resetToken: result.resetToken
-        }
-      });
+    if (!isVerifyValid) {
       return;
     }
 
-    await dispatch(verifyLoginOtp({ identifier, code })).unwrap();
-    navigate('/');
+    try {
+      if (mode === 'password-reset') {
+        const result = await dispatch(
+          verifyPasswordResetOtp(verifyValues)
+        ).unwrap();
+
+        navigate('/set-password', {
+          state: {
+            resetToken: result.resetToken
+          }
+        });
+        return;
+      }
+
+      await dispatch(verifyLoginOtp(verifyValues)).unwrap();
+      navigate('/');
+    } catch {
+      // Toast middleware displays the API error.
+    }
   };
 
   const handleResend = async () => {
-    const result =
-      mode === 'password-reset'
-        ? await dispatch(requestPasswordReset({ identifier })).unwrap()
-        : await dispatch(requestLoginOtp({ identifier })).unwrap();
+    if (!isResendValid) {
+      return;
+    }
 
-    setDeliveryTarget(result.deliveryTarget);
-    setDevOtp(result.devOtp || '');
+    try {
+      const result =
+        mode === 'password-reset'
+          ? await dispatch(requestPasswordReset(requestValues)).unwrap()
+          : await dispatch(requestLoginOtp(requestValues)).unwrap();
+
+      setDeliveryTarget(result.deliveryTarget);
+      setDevOtp(result.devOtp || '');
+    } catch {
+      // Toast middleware displays the API error.
+    }
   };
 
   return (
@@ -98,11 +119,6 @@ export const OtpPage = () => {
             <strong>{devOtp}</strong>
           </div>
         ) : null}
-
-        <StatusBanner
-          message={error}
-          onDismiss={() => dispatch(clearAuthError())}
-        />
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <label>
@@ -131,20 +147,28 @@ export const OtpPage = () => {
             />
           </label>
 
-          <button className="primary-button" disabled={isLoading} type="submit">
+          <LoadingButton
+            className="primary-button"
+            disabled={!isVerifyValid}
+            isLoading={isLoading}
+            loadingLabel="Verifying"
+            type="submit"
+          >
             <ShieldCheck size={17} />
             Verify OTP
-          </button>
+          </LoadingButton>
 
-          <button
+          <LoadingButton
             className="text-button text-button--full"
-            disabled={isLoading || !identifier}
+            disabled={!isResendValid}
+            isLoading={isLoading}
+            loadingLabel="Sending OTP"
             onClick={handleResend}
             type="button"
           >
             <RotateCcw size={16} />
             Resend OTP
-          </button>
+          </LoadingButton>
         </form>
       </section>
     </main>
