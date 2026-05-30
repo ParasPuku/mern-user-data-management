@@ -1,0 +1,24 @@
+{
+  "name": "mern-user-data-management",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n backend,frontend -c cyan,magenta \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "npm run dev --workspace @user-data-management/frontend",
+    "dev:backend": "npm run dev --workspace @user-data-management/backend",
+    "build": "npm run build --workspace @user-data-management/frontend",
+    "check": "npm run check --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20.11.0",
+    "npm": ">=10.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
+
