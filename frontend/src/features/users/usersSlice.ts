@@ -3,12 +3,16 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 
 import type { RootState } from '../../app/store';
 import type {
+  ApiListResponse,
   RequestStatus,
   User,
   UserFilters,
   UserFormValues,
+  UserListQuery,
+  UserPagination,
   UserProfile,
-  UserProfileValues
+  UserProfileValues,
+  UserSummary
 } from './types';
 import { usersApi } from './usersApi';
 
@@ -16,6 +20,8 @@ type UsersState = {
   items: User[];
   profilesByUserId: Record<string, UserProfile | null>;
   filters: UserFilters;
+  pagination: UserPagination;
+  summary: UserSummary;
   listStatus: RequestStatus;
   mutationStatus: RequestStatus;
   profileStatus: RequestStatus;
@@ -29,10 +35,27 @@ const initialFilters: UserFilters = {
   status: 'all'
 };
 
+const initialPagination: UserPagination = {
+  page: 1,
+  limit: 10,
+  totalItems: 0,
+  totalPages: 1,
+  hasNextPage: false,
+  hasPreviousPage: false
+};
+
+const initialSummary: UserSummary = {
+  total: 0,
+  active: 0,
+  inactive: 0
+};
+
 const initialState: UsersState = {
   items: [],
   profilesByUserId: {},
   filters: initialFilters,
+  pagination: initialPagination,
+  summary: initialSummary,
   listStatus: 'idle',
   mutationStatus: 'idle',
   profileStatus: 'idle',
@@ -44,12 +67,21 @@ const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Something went wrong';
 
 export const fetchUsers = createAsyncThunk<
-  User[],
-  UserFilters | undefined,
-  { rejectValue: string }
->('users/fetchUsers', async (filters, { rejectWithValue }) => {
+  ApiListResponse<User>,
+  UserListQuery | undefined,
+  { state: RootState; rejectValue: string }
+>('users/fetchUsers', async (queryOverride, { getState, rejectWithValue }) => {
   try {
-    return await usersApi.getUsers(filters);
+    const { filters, pagination } = getState().users;
+    const query =
+      queryOverride ||
+      ({
+        ...filters,
+        page: pagination.page,
+        limit: pagination.limit
+      } satisfies UserListQuery);
+
+    return await usersApi.getUsers(query);
   } catch (error) {
     return rejectWithValue(getErrorMessage(error));
   }
@@ -144,9 +176,18 @@ const usersSlice = createSlice({
         ...state.filters,
         ...action.payload
       };
+      state.pagination.page = 1;
     },
     resetFilters(state) {
       state.filters = initialFilters;
+      state.pagination.page = 1;
+    },
+    setUsersPage(state, action: PayloadAction<number>) {
+      state.pagination.page = Math.max(1, action.payload);
+    },
+    setUsersPageLimit(state, action: PayloadAction<number>) {
+      state.pagination.limit = action.payload;
+      state.pagination.page = 1;
     },
     clearUsersError(state) {
       state.error = null;
@@ -155,6 +196,8 @@ const usersSlice = createSlice({
       state.items = [];
       state.profilesByUserId = {};
       state.filters = initialFilters;
+      state.pagination = initialPagination;
+      state.summary = initialSummary;
       state.listStatus = 'idle';
       state.mutationStatus = 'idle';
       state.profileStatus = 'idle';
@@ -170,7 +213,12 @@ const usersSlice = createSlice({
       })
       .addCase(fetchUsers.fulfilled, (state, action) => {
         state.listStatus = 'succeeded';
-        state.items = action.payload;
+        state.items = action.payload.data;
+
+        if (!action.meta.arg) {
+          state.pagination = action.payload.meta.pagination;
+          state.summary = action.payload.meta.summary;
+        }
       })
       .addCase(fetchUsers.rejected, (state, action) => {
         state.listStatus = 'failed';
@@ -255,11 +303,20 @@ const usersSlice = createSlice({
   }
 });
 
-export const { clearUsers, clearUsersError, resetFilters, setFilters } =
-  usersSlice.actions;
+export const {
+  clearUsers,
+  clearUsersError,
+  resetFilters,
+  setFilters,
+  setUsersPage,
+  setUsersPageLimit
+} = usersSlice.actions;
 
 export const selectUsers = (state: RootState) => state.users.items;
 export const selectUserFilters = (state: RootState) => state.users.filters;
+export const selectUsersPagination = (state: RootState) =>
+  state.users.pagination;
+export const selectUsersSummary = (state: RootState) => state.users.summary;
 export const selectUsersError = (state: RootState) => state.users.error;
 export const selectUsersListStatus = (state: RootState) =>
   state.users.listStatus;

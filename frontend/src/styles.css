@@ -156,7 +156,16 @@ button:disabled {
 }
 
 .users-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  height: clamp(480px, calc(100vh - 280px), 760px);
   padding: 20px;
+}
+
+.users-panel .panel-heading,
+.users-panel .pagination-bar {
+  margin: 0;
 }
 
 .panel-heading {
@@ -399,6 +408,10 @@ button:disabled {
   color: var(--text);
 }
 
+.row-actions .icon-button{
+  height: 35px;
+}
+
 .icon-button .button-spinner {
   min-width: 18px;
 }
@@ -621,10 +634,11 @@ button:disabled {
 }
 
 .table-wrap {
-  max-height: clamp(300px, calc(100vh - 310px), 640px);
+  min-height: 0;
   overflow: auto;
   border: 1px solid var(--border);
   border-radius: 8px;
+  scrollbar-width: none;
 }
 
 table {
@@ -636,7 +650,7 @@ table {
 th,
 td {
   border-bottom: 1px solid var(--border);
-  padding: 13px 14px;
+  padding: 8px 14px;
   text-align: left;
   vertical-align: middle;
   white-space: nowrap;
@@ -699,6 +713,64 @@ tbody tr:last-child td {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fbfcfd;
+  padding: 10px 12px;
+}
+
+.pagination-info {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.pagination-controls,
+.pagination-stepper,
+.pagination-size {
+  display: inline-flex;
+  align-items: center;
+}
+
+.pagination-controls {
+  gap: 14px;
+}
+
+.pagination-stepper {
+  gap: 8px;
+}
+
+.pagination-size {
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.pagination-size select {
+  min-height: 36px;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 0 9px;
+}
+
+.pagination-page {
+  min-width: 62px;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 800;
+  text-align: center;
 }
 
 .toast-viewport {
@@ -1245,6 +1317,15 @@ tbody tr:last-child td {
     grid-column: 1 / -1;
   }
 
+  .pagination-bar {
+    align-items: stretch;
+    display: grid;
+  }
+
+  .pagination-controls {
+    justify-content: space-between;
+  }
+
   .top-nav {
     grid-template-columns: auto 1fr;
   }
@@ -1304,6 +1385,16 @@ tbody tr:last-child td {
   .filters .icon-button,
   .filters .text-button {
     width: 100%;
+  }
+
+  .pagination-controls,
+  .pagination-size {
+    align-items: stretch;
+    display: grid;
+  }
+
+  .pagination-stepper {
+    justify-content: space-between;
   }
 
   .member-row {

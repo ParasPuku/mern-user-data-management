@@ -26,6 +26,20 @@ const pickUserProfileFields = (payload) => {
   );
 };
 
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 10;
+const MAX_LIMIT = 100;
+
+const toPositiveInteger = (value, fallback) => {
+  const parsedValue = Number.parseInt(String(value), 10);
+
+  if (!Number.isFinite(parsedValue) || parsedValue < 1) {
+    return fallback;
+  }
+
+  return parsedValue;
+};
+
 const ensureValidId = (id) => {
   if (!mongoose.isValidObjectId(id)) {
     throw httpError(400, 'Invalid user id');
@@ -49,6 +63,11 @@ const findOwnedUser = async (accountId, id) => {
 
 export const getUsers = asyncHandler(async (req, res) => {
   const { search, role, status } = req.query;
+  const page = toPositiveInteger(req.query.page, DEFAULT_PAGE);
+  const limit = Math.min(
+    toPositiveInteger(req.query.limit, DEFAULT_LIMIT),
+    MAX_LIMIT
+  );
   const filters = {
     owner: req.account._id
   };
@@ -66,10 +85,40 @@ export const getUsers = asyncHandler(async (req, res) => {
     filters.$or = [{ name: searchRegex }, { email: searchRegex }];
   }
 
-  const users = await User.find(filters).sort({ createdAt: -1 });
+  const [totalItems, activeItems, inactiveItems] = await Promise.all([
+    User.countDocuments(filters),
+    status === 'inactive'
+      ? Promise.resolve(0)
+      : User.countDocuments({ ...filters, status: 'active' }),
+    status === 'active'
+      ? Promise.resolve(0)
+      : User.countDocuments({ ...filters, status: 'inactive' })
+  ]);
+  const totalPages = Math.max(Math.ceil(totalItems / limit), 1);
+  const currentPage = Math.min(page, totalPages);
+  const skip = (currentPage - 1) * limit;
+  const users = await User.find(filters)
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
 
   res.json({
-    data: users
+    data: users,
+    meta: {
+      pagination: {
+        page: currentPage,
+        limit,
+        totalItems,
+        totalPages,
+        hasNextPage: currentPage < totalPages,
+        hasPreviousPage: currentPage > 1
+      },
+      summary: {
+        total: totalItems,
+        active: activeItems,
+        inactive: inactiveItems
+      }
+    }
   });
 });
 

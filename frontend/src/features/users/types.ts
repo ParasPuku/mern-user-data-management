@@ -8,6 +8,26 @@ export type UserFilters = {
   status: UserStatus | 'all';
 };
 
+export type UserPagination = {
+  page: number;
+  limit: number;
+  totalItems: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+};
+
+export type UserSummary = {
+  total: number;
+  active: number;
+  inactive: number;
+};
+
+export type UserListQuery = UserFilters & {
+  page: number;
+  limit: number;
+};
+
 export type UserFormValues = {
   name: string;
   email: string;
@@ -37,6 +57,10 @@ export type UserProfile = UserProfileValues & {
 
 export type ApiListResponse<T> = {
   data: T[];
+  meta: {
+    pagination: UserPagination;
+    summary: UserSummary;
+  };
 };
 
 export type ApiItemResponse<T> = {

@@ -39,10 +39,12 @@ const emptyTeamForm: TeamFormValues = {
   description: ''
 };
 
-const userFetchFilters = {
+const userFetchQuery = {
   search: '',
   role: 'all' as const,
-  status: 'all' as const
+  status: 'all' as const,
+  page: 1,
+  limit: 100
 };
 
 export const TeamManagementPage = () => {
@@ -105,7 +107,7 @@ export const TeamManagementPage = () => {
 
   useEffect(() => {
     dispatch(fetchTeams());
-    dispatch(fetchUsers(userFetchFilters));
+    dispatch(fetchUsers(userFetchQuery));
   }, [dispatch]);
 
   useEffect(() => {

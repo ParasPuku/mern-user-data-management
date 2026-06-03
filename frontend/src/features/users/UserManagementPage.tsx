@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { StatusBanner } from '../../components/StatusBanner';
 import { UserFilters } from './UserFilters';
 import { UserForm } from './UserForm';
+import { UserPagination } from './UserPagination';
 import { UserProfilePanel } from './UserProfilePanel';
 import { UserTable } from './UserTable';
 import type { User, UserFormValues, UserProfileValues } from './types';
@@ -24,7 +25,11 @@ import {
   selectUsersError,
   selectUsersListStatus,
   selectUsersMutationStatus,
+  selectUsersPagination,
+  selectUsersSummary,
   setFilters,
+  setUsersPage,
+  setUsersPageLimit,
   updateUser
 } from './usersSlice';
 
@@ -34,6 +39,8 @@ export const UserManagementPage = () => {
   const filters = useAppSelector(selectUserFilters);
   const listStatus = useAppSelector(selectUsersListStatus);
   const mutationStatus = useAppSelector(selectUsersMutationStatus);
+  const pagination = useAppSelector(selectUsersPagination);
+  const summary = useAppSelector(selectUsersSummary);
   const error = useAppSelector(selectUsersError);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
@@ -52,12 +59,9 @@ export const UserManagementPage = () => {
     selectUserProfileMutationStatus
   );
 
-  const activeUsers = users.filter((user) => user.status === 'active').length;
-  const inactiveUsers = users.length - activeUsers;
-
   useEffect(() => {
-    dispatch(fetchUsers(filters));
-  }, [dispatch, filters]);
+    dispatch(fetchUsers());
+  }, [dispatch, filters, pagination.limit, pagination.page]);
 
   useEffect(() => {
     if (profileUserId) {
@@ -89,24 +93,43 @@ export const UserManagementPage = () => {
     if (selectedUser) {
       await dispatch(updateUser({ id: selectedUser.id, values })).unwrap();
       setSelectedUserId(null);
+      dispatch(fetchUsers());
       return;
     }
 
     await dispatch(createUser(values)).unwrap();
+
+    if (pagination.page === 1) {
+      dispatch(fetchUsers());
+      return;
+    }
+
+    dispatch(setUsersPage(1));
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     const user = users.find((item) => item.id === id);
     const shouldDelete = window.confirm(
       `Delete ${user?.name || 'this user'}?`
     );
 
     if (shouldDelete) {
-      dispatch(deleteUser(id));
+      try {
+        await dispatch(deleteUser(id)).unwrap();
+      } catch {
+        return;
+      }
 
       if (profileUserId === id) {
         setProfileUserId(null);
       }
+
+      if (users.length === 1 && pagination.page > 1) {
+        dispatch(setUsersPage(pagination.page - 1));
+        return;
+      }
+
+      dispatch(fetchUsers());
     }
   };
 
@@ -142,7 +165,7 @@ export const UserManagementPage = () => {
   };
 
   const handleRefresh = () => {
-    dispatch(fetchUsers(filters));
+    dispatch(fetchUsers());
 
     if (profileUserId) {
       dispatch(fetchUserProfile(profileUserId));
@@ -159,15 +182,15 @@ export const UserManagementPage = () => {
 
         <div className="summary-strip" aria-label="User summary">
           <div>
-            <span>{users.length}</span>
-            <p>Total</p>
+            <span>{summary.total}</span>
+            <p>Total results</p>
           </div>
           <div>
-            <span>{activeUsers}</span>
+            <span>{summary.active}</span>
             <p>Active</p>
           </div>
           <div>
-            <span>{inactiveUsers}</span>
+            <span>{summary.inactive}</span>
             <p>Inactive</p>
           </div>
         </div>
@@ -211,6 +234,13 @@ export const UserManagementPage = () => {
             onEdit={handleEdit}
             onProfile={handleProfile}
             users={users}
+          />
+
+          <UserPagination
+            listStatus={listStatus}
+            onLimitChange={(limit) => dispatch(setUsersPageLimit(limit))}
+            onPageChange={(page) => dispatch(setUsersPage(page))}
+            pagination={pagination}
           />
         </section>
       </main>

@@ -3,37 +3,45 @@ import type {
   ApiItemResponse,
   ApiListResponse,
   User,
-  UserFilters,
   UserFormValues,
+  UserListQuery,
   UserProfile,
   UserProfileValues
 } from './types';
 
-const toQueryString = (filters?: UserFilters) => {
+const toQueryString = (query?: UserListQuery) => {
   const params = new URLSearchParams();
 
-  if (filters?.search.trim()) {
-    params.set('search', filters.search.trim());
+  if (query?.search.trim()) {
+    params.set('search', query.search.trim());
   }
 
-  if (filters?.role && filters.role !== 'all') {
-    params.set('role', filters.role);
+  if (query?.role && query.role !== 'all') {
+    params.set('role', query.role);
   }
 
-  if (filters?.status && filters.status !== 'all') {
-    params.set('status', filters.status);
+  if (query?.status && query.status !== 'all') {
+    params.set('status', query.status);
   }
 
-  const query = params.toString();
-  return query ? `?${query}` : '';
+  if (query?.page) {
+    params.set('page', String(query.page));
+  }
+
+  if (query?.limit) {
+    params.set('limit', String(query.limit));
+  }
+
+  const queryString = params.toString();
+  return queryString ? `?${queryString}` : '';
 };
 
 export const usersApi = {
-  async getUsers(filters?: UserFilters) {
+  async getUsers(query?: UserListQuery) {
     const response = await http.get<ApiListResponse<User>>(
-      `/users${toQueryString(filters)}`
+      `/users${toQueryString(query)}`
     );
-    return response.data;
+    return response;
   },
   async createUser(values: UserFormValues) {
     const response = await http.post<ApiItemResponse<User>>('/users', values);
