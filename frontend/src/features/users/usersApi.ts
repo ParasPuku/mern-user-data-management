@@ -4,7 +4,9 @@ import type {
   ApiListResponse,
   User,
   UserFilters,
-  UserFormValues
+  UserFormValues,
+  UserProfile,
+  UserProfileValues
 } from './types';
 
 const toQueryString = (filters?: UserFilters) => {
@@ -46,6 +48,21 @@ export const usersApi = {
   },
   async deleteUser(id: string) {
     await http.delete<void>(`/users/${id}`);
+  },
+  async getUserProfile(userId: string) {
+    const response = await http.get<ApiItemResponse<UserProfile | null>>(
+      `/users/${userId}/profile`
+    );
+    return response.data;
+  },
+  async saveUserProfile(userId: string, values: UserProfileValues) {
+    const response = await http.put<ApiItemResponse<UserProfile>>(
+      `/users/${userId}/profile`,
+      values
+    );
+    return response.data;
+  },
+  async deleteUserProfile(userId: string) {
+    await http.delete<void>(`/users/${userId}/profile`);
   }
 };
-

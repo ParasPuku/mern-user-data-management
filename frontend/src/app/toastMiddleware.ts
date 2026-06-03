@@ -3,7 +3,9 @@ import { createListenerMiddleware, isAnyOf } from '@reduxjs/toolkit';
 import {
   clearUsers,
   createUser,
+  deleteUserProfile,
   deleteUser,
+  saveUserProfile,
   updateUser
 } from '../features/users/usersSlice';
 import {
@@ -49,7 +51,9 @@ const successMessages: Record<string, string> = {
   [removeTeamMember.fulfilled.type]: 'Team member removed successfully',
   [createUser.fulfilled.type]: 'User saved successfully',
   [updateUser.fulfilled.type]: 'User updated successfully',
-  [deleteUser.fulfilled.type]: 'User deleted successfully'
+  [deleteUser.fulfilled.type]: 'User deleted successfully',
+  [saveUserProfile.fulfilled.type]: 'User profile saved successfully',
+  [deleteUserProfile.fulfilled.type]: 'User profile cleared successfully'
 };
 
 const readErrorMessage = (action: unknown) => {
@@ -87,7 +91,9 @@ toastMiddleware.startListening({
     removeTeamMember.fulfilled,
     createUser.fulfilled,
     updateUser.fulfilled,
-    deleteUser.fulfilled
+    deleteUser.fulfilled,
+    saveUserProfile.fulfilled,
+    deleteUserProfile.fulfilled
   ),
   effect: (action, listenerApi) => {
     const message = successMessages[action.type];
@@ -119,7 +125,9 @@ toastMiddleware.startListening({
     removeTeamMember.rejected,
     createUser.rejected,
     updateUser.rejected,
-    deleteUser.rejected
+    deleteUser.rejected,
+    saveUserProfile.rejected,
+    deleteUserProfile.rejected
   ),
   effect: (action, listenerApi) => {
     const message = readErrorMessage(action);

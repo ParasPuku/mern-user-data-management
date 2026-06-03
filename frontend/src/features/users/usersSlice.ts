@@ -6,15 +6,20 @@ import type {
   RequestStatus,
   User,
   UserFilters,
-  UserFormValues
+  UserFormValues,
+  UserProfile,
+  UserProfileValues
 } from './types';
 import { usersApi } from './usersApi';
 
 type UsersState = {
   items: User[];
+  profilesByUserId: Record<string, UserProfile | null>;
   filters: UserFilters;
   listStatus: RequestStatus;
   mutationStatus: RequestStatus;
+  profileStatus: RequestStatus;
+  profileMutationStatus: RequestStatus;
   error: string | null;
 };
 
@@ -26,9 +31,12 @@ const initialFilters: UserFilters = {
 
 const initialState: UsersState = {
   items: [],
+  profilesByUserId: {},
   filters: initialFilters,
   listStatus: 'idle',
   mutationStatus: 'idle',
+  profileStatus: 'idle',
+  profileMutationStatus: 'idle',
   error: null
 };
 
@@ -84,6 +92,49 @@ export const deleteUser = createAsyncThunk<
   }
 });
 
+export const fetchUserProfile = createAsyncThunk<
+  { userId: string; profile: UserProfile | null },
+  string,
+  { rejectValue: string }
+>('users/fetchUserProfile', async (userId, { rejectWithValue }) => {
+  try {
+    return {
+      profile: await usersApi.getUserProfile(userId),
+      userId
+    };
+  } catch (error) {
+    return rejectWithValue(getErrorMessage(error));
+  }
+});
+
+export const saveUserProfile = createAsyncThunk<
+  { userId: string; profile: UserProfile },
+  { userId: string; values: UserProfileValues },
+  { rejectValue: string }
+>('users/saveUserProfile', async ({ userId, values }, { rejectWithValue }) => {
+  try {
+    return {
+      profile: await usersApi.saveUserProfile(userId, values),
+      userId
+    };
+  } catch (error) {
+    return rejectWithValue(getErrorMessage(error));
+  }
+});
+
+export const deleteUserProfile = createAsyncThunk<
+  string,
+  string,
+  { rejectValue: string }
+>('users/deleteUserProfile', async (userId, { rejectWithValue }) => {
+  try {
+    await usersApi.deleteUserProfile(userId);
+    return userId;
+  } catch (error) {
+    return rejectWithValue(getErrorMessage(error));
+  }
+});
+
 const usersSlice = createSlice({
   name: 'users',
   initialState,
@@ -102,9 +153,12 @@ const usersSlice = createSlice({
     },
     clearUsers(state) {
       state.items = [];
+      state.profilesByUserId = {};
       state.filters = initialFilters;
       state.listStatus = 'idle';
       state.mutationStatus = 'idle';
+      state.profileStatus = 'idle';
+      state.profileMutationStatus = 'idle';
       state.error = null;
     }
   },
@@ -155,10 +209,48 @@ const usersSlice = createSlice({
       .addCase(deleteUser.fulfilled, (state, action) => {
         state.mutationStatus = 'succeeded';
         state.items = state.items.filter((user) => user.id !== action.payload);
+        delete state.profilesByUserId[action.payload];
       })
       .addCase(deleteUser.rejected, (state, action) => {
         state.mutationStatus = 'failed';
         state.error = action.payload || 'Unable to delete user';
+      })
+      .addCase(fetchUserProfile.pending, (state) => {
+        state.profileStatus = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchUserProfile.fulfilled, (state, action) => {
+        state.profileStatus = 'succeeded';
+        state.profilesByUserId[action.payload.userId] = action.payload.profile;
+      })
+      .addCase(fetchUserProfile.rejected, (state, action) => {
+        state.profileStatus = 'failed';
+        state.error = action.payload || 'Unable to load user profile';
+      })
+      .addCase(saveUserProfile.pending, (state) => {
+        state.profileMutationStatus = 'loading';
+        state.error = null;
+      })
+      .addCase(saveUserProfile.fulfilled, (state, action) => {
+        state.profileMutationStatus = 'succeeded';
+        state.profilesByUserId[action.payload.userId] =
+          action.payload.profile;
+      })
+      .addCase(saveUserProfile.rejected, (state, action) => {
+        state.profileMutationStatus = 'failed';
+        state.error = action.payload || 'Unable to save user profile';
+      })
+      .addCase(deleteUserProfile.pending, (state) => {
+        state.profileMutationStatus = 'loading';
+        state.error = null;
+      })
+      .addCase(deleteUserProfile.fulfilled, (state, action) => {
+        state.profileMutationStatus = 'succeeded';
+        state.profilesByUserId[action.payload] = null;
+      })
+      .addCase(deleteUserProfile.rejected, (state, action) => {
+        state.profileMutationStatus = 'failed';
+        state.error = action.payload || 'Unable to delete user profile';
       });
   }
 });
@@ -173,5 +265,11 @@ export const selectUsersListStatus = (state: RootState) =>
   state.users.listStatus;
 export const selectUsersMutationStatus = (state: RootState) =>
   state.users.mutationStatus;
+export const selectUserProfileById = (userId: string | null) => (state: RootState) =>
+  userId ? state.users.profilesByUserId[userId] : null;
+export const selectUserProfileStatus = (state: RootState) =>
+  state.users.profileStatus;
+export const selectUserProfileMutationStatus = (state: RootState) =>
+  state.users.profileMutationStatus;
 
 export default usersSlice.reducer;

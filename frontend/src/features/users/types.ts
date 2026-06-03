@@ -21,6 +21,20 @@ export type User = UserFormValues & {
   updatedAt: string;
 };
 
+export type UserProfileValues = {
+  employeeId: string;
+  department: string;
+  location: string;
+  notes: string;
+};
+
+export type UserProfile = UserProfileValues & {
+  id: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type ApiListResponse<T> = {
   data: T[];
 };
@@ -28,4 +42,3 @@ export type ApiListResponse<T> = {
 export type ApiItemResponse<T> = {
   data: T;
 };
-

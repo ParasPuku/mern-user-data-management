@@ -44,7 +44,7 @@ export const errorHandler = (error, _req, res, _next) => {
       duplicateFields.includes('owner') &&
       duplicateFields.includes('user')
     ) {
-      message = 'User already belongs to another team';
+      message = 'A profile already exists for this user';
     } else if (
       duplicateFields.includes('owner') &&
       duplicateFields.includes('name')

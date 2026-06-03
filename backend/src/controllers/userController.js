@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 
+import { TeamMembership } from '../models/TeamMembership.js';
 import { User } from '../models/User.js';
+import { UserProfile } from '../models/UserProfile.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { httpError } from '../utils/httpError.js';
 
@@ -14,10 +16,35 @@ const pickUserFields = (payload) => {
   );
 };
 
+const pickUserProfileFields = (payload) => {
+  const allowedFields = ['employeeId', 'department', 'location', 'notes'];
+
+  return Object.fromEntries(
+    allowedFields
+      .filter((field) => payload[field] !== undefined)
+      .map((field) => [field, payload[field]])
+  );
+};
+
 const ensureValidId = (id) => {
   if (!mongoose.isValidObjectId(id)) {
     throw httpError(400, 'Invalid user id');
   }
+};
+
+const findOwnedUser = async (accountId, id) => {
+  ensureValidId(id);
+
+  const user = await User.findOne({
+    _id: id,
+    owner: accountId
+  });
+
+  if (!user) {
+    throw httpError(404, 'User not found');
+  }
+
+  return user;
 };
 
 export const getUsers = asyncHandler(async (req, res) => {
@@ -47,16 +74,7 @@ export const getUsers = asyncHandler(async (req, res) => {
 });
 
 export const getUserById = asyncHandler(async (req, res) => {
-  ensureValidId(req.params.id);
-
-  const user = await User.findOne({
-    _id: req.params.id,
-    owner: req.account._id
-  });
-
-  if (!user) {
-    throw httpError(404, 'User not found');
-  }
+  const user = await findOwnedUser(req.account._id, req.params.id);
 
   res.json({
     data: user
@@ -99,15 +117,69 @@ export const updateUser = asyncHandler(async (req, res) => {
 });
 
 export const deleteUser = asyncHandler(async (req, res) => {
-  ensureValidId(req.params.id);
-  const user = await User.findOneAndDelete({
-    _id: req.params.id,
-    owner: req.account._id
+  const user = await findOwnedUser(req.account._id, req.params.id);
+
+  await Promise.all([
+    UserProfile.deleteOne({
+      owner: req.account._id,
+      user: user._id
+    }),
+    TeamMembership.deleteMany({
+      owner: req.account._id,
+      user: user._id
+    }),
+    user.deleteOne()
+  ]);
+
+  res.status(204).send();
+});
+
+export const getUserProfile = asyncHandler(async (req, res) => {
+  const user = await findOwnedUser(req.account._id, req.params.id);
+  const profile = await UserProfile.findOne({
+    owner: req.account._id,
+    user: user._id
   });
 
-  if (!user) {
-    throw httpError(404, 'User not found');
-  }
+  res.json({
+    data: profile
+  });
+});
+
+export const upsertUserProfile = asyncHandler(async (req, res) => {
+  const user = await findOwnedUser(req.account._id, req.params.id);
+  const profile = await UserProfile.findOneAndUpdate(
+    {
+      owner: req.account._id,
+      user: user._id
+    },
+    {
+      $set: pickUserProfileFields(req.body),
+      $setOnInsert: {
+        owner: req.account._id,
+        user: user._id
+      }
+    },
+    {
+      new: true,
+      runValidators: true,
+      setDefaultsOnInsert: true,
+      upsert: true
+    }
+  );
+
+  res.json({
+    data: profile
+  });
+});
+
+export const deleteUserProfile = asyncHandler(async (req, res) => {
+  const user = await findOwnedUser(req.account._id, req.params.id);
+
+  await UserProfile.deleteOne({
+    owner: req.account._id,
+    user: user._id
+  });
 
   res.status(204).send();
 });

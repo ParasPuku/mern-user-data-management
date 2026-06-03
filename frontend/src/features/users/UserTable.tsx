@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from 'lucide-react';
+import { IdCard, Pencil, Trash2 } from 'lucide-react';
 
 import { ButtonSpinner } from '../../components/LoadingButton';
 import type { RequestStatus, User } from './types';
@@ -13,6 +13,7 @@ type UserTableProps = {
   users: User[];
   onDelete: (id: string) => void;
   onEdit: (user: User) => void;
+  onProfile: (user: User) => void;
 };
 
 export const UserTable = ({
@@ -20,7 +21,8 @@ export const UserTable = ({
   mutationStatus,
   users,
   onDelete,
-  onEdit
+  onEdit,
+  onProfile
 }: UserTableProps) => {
   const isLoading = listStatus === 'loading';
   const isMutating = mutationStatus === 'loading';
@@ -72,6 +74,15 @@ export const UserTable = ({
               <td>{dateFormatter.format(new Date(user.createdAt))}</td>
               <td>
                 <div className="row-actions">
+                  <button
+                    className="icon-button"
+                    disabled={isMutating}
+                    onClick={() => onProfile(user)}
+                    title={`Manage profile for ${user.name}`}
+                    type="button"
+                  >
+                    <IdCard size={16} />
+                  </button>
                   <button
                     className="icon-button"
                     disabled={isMutating}
