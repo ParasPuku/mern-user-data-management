@@ -113,7 +113,7 @@ export const requestLoginOtp = asyncHandler(async (req, res) => {
   const { account, normalizedIdentifier } = await findAccountByIdentifier(
     req.body.identifier
   );
-
+console.log("requestLoginOtp", req)
   const otp = await issueOtp({
     account,
     identifier: normalizedIdentifier,
@@ -210,6 +210,12 @@ export const setPassword = asyncHandler(async (req, res) => {
 });
 
 export const getMe = asyncHandler(async (req, res) => {
+  res.json({
+    data: serializeAccount(req.account, req.session?.expiresAt)
+  });
+});
+
+export const refreshSession = asyncHandler(async (req, res) => {
   res.json({
     data: serializeAccount(req.account, req.session?.expiresAt)
   });

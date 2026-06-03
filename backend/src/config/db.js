@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 
 import { Account } from '../models/Account.js';
 import { OtpToken } from '../models/OtpToken.js';
+import { Team } from '../models/Team.js';
+import { TeamMembership } from '../models/TeamMembership.js';
 import { User } from '../models/User.js';
 
 export const connectDB = async (mongoUri, options = {}) => {
@@ -16,6 +18,8 @@ export const connectDB = async (mongoUri, options = {}) => {
     await Promise.all([
       Account.syncIndexes(),
       OtpToken.syncIndexes(),
+      Team.syncIndexes(),
+      TeamMembership.syncIndexes(),
       User.syncIndexes()
     ]);
     console.log('MongoDB indexes synchronized');

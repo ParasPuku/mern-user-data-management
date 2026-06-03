@@ -29,8 +29,33 @@ export const errorHandler = (error, _req, res, _next) => {
   }
 
   if (error.code === 11000) {
+    const duplicateFields = Object.keys(error.keyPattern || error.keyValue || {});
+
     statusCode = 409;
-    message = 'A record with this email or mobile number already exists';
+    message = 'A record with this value already exists';
+
+    if (
+      duplicateFields.includes('owner') &&
+      duplicateFields.includes('team') &&
+      duplicateFields.includes('user')
+    ) {
+      message = 'User already belongs to this team';
+    } else if (
+      duplicateFields.includes('owner') &&
+      duplicateFields.includes('user')
+    ) {
+      message = 'User already belongs to another team';
+    } else if (
+      duplicateFields.includes('owner') &&
+      duplicateFields.includes('name')
+    ) {
+      message = 'A team with this name already exists';
+    } else if (
+      duplicateFields.includes('email') ||
+      duplicateFields.includes('mobile')
+    ) {
+      message = 'A record with this email or mobile number already exists';
+    }
   }
 
   if (error.message === 'Only image files are allowed') {

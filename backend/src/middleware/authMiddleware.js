@@ -3,8 +3,10 @@ import { Account } from '../models/Account.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { httpError } from '../utils/httpError.js';
 import {
+  createAuthSession,
   getTokenExpiresAt,
   isAuthPayloadExpired,
+  setAuthCookie,
   verifyToken
 } from '../utils/token.js';
 
@@ -23,34 +25,49 @@ const readToken = (req) => {
   return null;
 };
 
-export const requireAuth = asyncHandler(async (req, _res, next) => {
-  const token = readToken(req);
+const buildAuthMiddleware = ({ refreshSession = true } = {}) =>
+  asyncHandler(async (req, res, next) => {
+    const token = readToken(req);
 
-  if (!token) {
-    throw httpError(401, 'Authentication required');
-  }
+    if (!token) {
+      throw httpError(401, 'Authentication required');
+    }
 
-  let payload;
+    let payload;
 
-  try {
-    payload = verifyToken(token, 'auth');
-  } catch {
-    throw httpError(401, 'Session expired. Please sign in again');
-  }
+    try {
+      payload = verifyToken(token, 'auth');
+    } catch {
+      throw httpError(401, 'Session expired. Please sign in again');
+    }
 
-  if (isAuthPayloadExpired(payload)) {
-    throw httpError(401, 'Session expired. Please sign in again');
-  }
+    if (isAuthPayloadExpired(payload)) {
+      throw httpError(401, 'Session expired. Please sign in again');
+    }
 
-  const account = await Account.findById(payload.sub);
+    const account = await Account.findById(payload.sub);
 
-  if (!account) {
-    throw httpError(401, 'Session expired. Please sign in again');
-  }
+    if (!account) {
+      throw httpError(401, 'Session expired. Please sign in again');
+    }
 
-  req.account = account;
-  req.session = {
-    expiresAt: getTokenExpiresAt(payload)
-  };
-  next();
+    let expiresAt = getTokenExpiresAt(payload);
+
+    if (refreshSession) {
+      const session = createAuthSession(account);
+      setAuthCookie(res, session.token);
+      expiresAt = session.expiresAt;
+    }
+
+    req.account = account;
+    req.session = {
+      expiresAt,
+      refreshed: refreshSession
+    };
+    next();
+  });
+
+export const requireAuth = buildAuthMiddleware();
+export const requireAuthCheckOnly = buildAuthMiddleware({
+  refreshSession: false
 });

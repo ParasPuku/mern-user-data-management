@@ -1,4 +1,4 @@
-import { LogOut, UserRound, UsersRound } from 'lucide-react';
+import { Layers3, LogOut, UserRound, UsersRound } from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 
 import { useAppDispatch, useAppSelector } from '../app/hooks';
@@ -8,6 +8,7 @@ import {
   selectAccount,
   selectAuthActionStatus
 } from '../features/auth/authSlice';
+import { clearTeams } from '../features/teams/teamsSlice';
 import { clearUsers } from '../features/users/usersSlice';
 
 const getInitials = (name = '') =>
@@ -29,6 +30,7 @@ export const AppLayout = () => {
       await dispatch(logout()).unwrap();
     } finally {
       dispatch(clearUsers());
+      dispatch(clearTeams());
       navigate('/signin');
     }
   };
@@ -44,6 +46,10 @@ export const AppLayout = () => {
           <NavLink to="/">
             <UsersRound size={17} />
             Users
+          </NavLink>
+          <NavLink to="/teams">
+            <Layers3 size={17} />
+            Teams
           </NavLink>
           <NavLink to="/profile">
             <UserRound size={17} />

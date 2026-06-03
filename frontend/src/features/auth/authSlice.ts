@@ -72,6 +72,18 @@ export const verifyAuthSession = createAsyncThunk<
   }
 });
 
+export const refreshAuthSession = createAsyncThunk<
+  Account,
+  void,
+  { rejectValue: string }
+>('auth/refreshAuthSession', async (_, { rejectWithValue }) => {
+  try {
+    return await authApi.refreshSession();
+  } catch (error) {
+    return rejectWithValue(getErrorMessage(error));
+  }
+});
+
 export const signUp = createAsyncThunk<
   Account,
   SignUpValues,
@@ -230,6 +242,24 @@ const authSlice = createSlice({
         state.account = action.payload;
       })
       .addCase(verifyAuthSession.rejected, (state, action) => {
+        const message = action.payload || 'Something went wrong';
+
+        if (isSessionErrorMessage(message)) {
+          state.status = 'unauthenticated';
+          state.account = null;
+          state.actionStatus = 'idle';
+          state.error = null;
+          state.otpResult = null;
+        }
+      })
+      .addCase(refreshAuthSession.fulfilled, (state, action) => {
+        if (state.status !== 'authenticated') {
+          return;
+        }
+
+        state.account = action.payload;
+      })
+      .addCase(refreshAuthSession.rejected, (state, action) => {
         const message = action.payload || 'Something went wrong';
 
         if (isSessionErrorMessage(message)) {

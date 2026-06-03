@@ -8,6 +8,7 @@ import {
 } from '../features/users/usersSlice';
 import {
   logout,
+  refreshAuthSession,
   requestLoginOtp,
   requestPasswordReset,
   setPassword,
@@ -21,6 +22,14 @@ import {
   verifyPasswordResetOtp
 } from '../features/auth/authSlice';
 import { addToast } from '../features/notifications/notificationsSlice';
+import {
+  addTeamMember,
+  clearTeams,
+  createTeam,
+  deleteTeam,
+  removeTeamMember,
+  updateTeam
+} from '../features/teams/teamsSlice';
 
 const successMessages: Record<string, string> = {
   [signUp.fulfilled.type]: 'Account created successfully',
@@ -33,6 +42,11 @@ const successMessages: Record<string, string> = {
   [updateProfile.fulfilled.type]: 'Profile updated successfully',
   [uploadAvatar.fulfilled.type]: 'Profile photo updated successfully',
   [logout.fulfilled.type]: 'Signed out successfully',
+  [createTeam.fulfilled.type]: 'Team created successfully',
+  [updateTeam.fulfilled.type]: 'Team updated successfully',
+  [deleteTeam.fulfilled.type]: 'Team deleted successfully',
+  [addTeamMember.fulfilled.type]: 'Team member added successfully',
+  [removeTeamMember.fulfilled.type]: 'Team member removed successfully',
   [createUser.fulfilled.type]: 'User saved successfully',
   [updateUser.fulfilled.type]: 'User updated successfully',
   [deleteUser.fulfilled.type]: 'User deleted successfully'
@@ -66,6 +80,11 @@ toastMiddleware.startListening({
     updateProfile.fulfilled,
     uploadAvatar.fulfilled,
     logout.fulfilled,
+    createTeam.fulfilled,
+    updateTeam.fulfilled,
+    deleteTeam.fulfilled,
+    addTeamMember.fulfilled,
+    removeTeamMember.fulfilled,
     createUser.fulfilled,
     updateUser.fulfilled,
     deleteUser.fulfilled
@@ -91,7 +110,13 @@ toastMiddleware.startListening({
     updateProfile.rejected,
     uploadAvatar.rejected,
     verifyAuthSession.rejected,
+    refreshAuthSession.rejected,
     logout.rejected,
+    createTeam.rejected,
+    updateTeam.rejected,
+    deleteTeam.rejected,
+    addTeamMember.rejected,
+    removeTeamMember.rejected,
     createUser.rejected,
     updateUser.rejected,
     deleteUser.rejected
@@ -119,6 +144,7 @@ toastMiddleware.startListening({
     if (isSessionError(message) && hadAuthenticatedSession) {
       listenerApi.dispatch(sessionExpired());
       listenerApi.dispatch(clearUsers());
+      listenerApi.dispatch(clearTeams());
       listenerApi.dispatch(
         addToast('Session expired. Please sign in again', 'error')
       );

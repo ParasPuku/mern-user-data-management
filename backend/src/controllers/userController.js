@@ -100,7 +100,6 @@ export const updateUser = asyncHandler(async (req, res) => {
 
 export const deleteUser = asyncHandler(async (req, res) => {
   ensureValidId(req.params.id);
-
   const user = await User.findOneAndDelete({
     _id: req.params.id,
     owner: req.account._id

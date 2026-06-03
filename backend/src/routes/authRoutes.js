@@ -3,6 +3,7 @@ import { Router } from 'express';
 import {
   getMe,
   logout,
+  refreshSession,
   requestLoginOtp,
   requestPasswordReset,
   setPassword,
@@ -13,7 +14,10 @@ import {
   verifyLoginOtp,
   verifyPasswordResetOtp
 } from '../controllers/authController.js';
-import { requireAuth } from '../middleware/authMiddleware.js';
+import {
+  requireAuth,
+  requireAuthCheckOnly
+} from '../middleware/authMiddleware.js';
 import { uploadAvatar } from '../middleware/uploadAvatar.js';
 
 export const authRoutes = Router();
@@ -26,7 +30,8 @@ authRoutes.post('/password/forgot', requestPasswordReset);
 authRoutes.post('/password/verify-otp', verifyPasswordResetOtp);
 authRoutes.post('/password/set', setPassword);
 authRoutes.post('/logout', logout);
-authRoutes.get('/session', requireAuth, getMe);
+authRoutes.get('/session', requireAuthCheckOnly, getMe);
+authRoutes.post('/session/refresh', requireAuth, refreshSession);
 authRoutes.patch('/profile', requireAuth, updateProfile);
 authRoutes.post(
   '/profile/avatar',

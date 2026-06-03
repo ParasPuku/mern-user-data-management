@@ -17,6 +17,12 @@ export const authApi = {
     const response = await http.get<ApiItemResponse<Account>>('/auth/session');
     return response.data;
   },
+  async refreshSession() {
+    const response = await http.post<ApiItemResponse<Account>>(
+      '/auth/session/refresh'
+    );
+    return response.data;
+  },
   async signUp(values: SignUpValues) {
     const response = await http.post<ApiItemResponse<Account>>(
       '/auth/signup',
