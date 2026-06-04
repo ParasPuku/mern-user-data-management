@@ -37,7 +37,7 @@ const initialFilters: UserFilters = {
 
 const initialPagination: UserPagination = {
   page: 1,
-  limit: 10,
+  limit: 5,
   totalItems: 0,
   totalPages: 1,
   hasNextPage: false,
