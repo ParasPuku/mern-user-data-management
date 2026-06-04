@@ -18,6 +18,7 @@ import { ResetSuccessPage } from './features/auth/pages/ResetSuccessPage';
 import { SetPasswordPage } from './features/auth/pages/SetPasswordPage';
 import { SignInPage } from './features/auth/pages/SignInPage';
 import { SignUpPage } from './features/auth/pages/SignUpPage';
+import { SkillManagementPage } from './features/skills/SkillManagementPage';
 import { TeamManagementPage } from './features/teams/TeamManagementPage';
 import { UserManagementPage } from './features/users/UserManagementPage';
 
@@ -185,6 +186,7 @@ export const App = () => {
       >
         <Route index element={<UserManagementPage />} />
         <Route element={<TeamManagementPage />} path="teams" />
+        <Route element={<SkillManagementPage />} path="skills" />
         <Route element={<ProfilePage />} path="profile" />
       </Route>
 

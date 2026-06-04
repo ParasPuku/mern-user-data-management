@@ -1,4 +1,10 @@
-import { Layers3, LogOut, UserRound, UsersRound } from 'lucide-react';
+import {
+  BadgeCheck,
+  Layers3,
+  LogOut,
+  UserRound,
+  UsersRound
+} from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 
 import { useAppDispatch, useAppSelector } from '../app/hooks';
@@ -8,6 +14,7 @@ import {
   selectAccount,
   selectAuthActionStatus
 } from '../features/auth/authSlice';
+import { clearSkills } from '../features/skills/skillsSlice';
 import { clearTeams } from '../features/teams/teamsSlice';
 import { clearUsers } from '../features/users/usersSlice';
 
@@ -31,6 +38,7 @@ export const AppLayout = () => {
     } finally {
       dispatch(clearUsers());
       dispatch(clearTeams());
+      dispatch(clearSkills());
       navigate('/signin');
     }
   };
@@ -50,6 +58,10 @@ export const AppLayout = () => {
           <NavLink to="/teams">
             <Layers3 size={17} />
             Teams
+          </NavLink>
+          <NavLink to="/skills">
+            <BadgeCheck size={17} />
+            Skills
           </NavLink>
           <NavLink to="/profile">
             <UserRound size={17} />

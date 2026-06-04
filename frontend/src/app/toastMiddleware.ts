@@ -25,6 +25,15 @@ import {
 } from '../features/auth/authSlice';
 import { addToast } from '../features/notifications/notificationsSlice';
 import {
+  addUserSkill,
+  clearSkills,
+  createSkill,
+  deleteSkill,
+  removeUserSkill,
+  updateSkill,
+  updateUserSkill
+} from '../features/skills/skillsSlice';
+import {
   addTeamMember,
   clearTeams,
   createTeam,
@@ -49,6 +58,12 @@ const successMessages: Record<string, string> = {
   [deleteTeam.fulfilled.type]: 'Team deleted successfully',
   [addTeamMember.fulfilled.type]: 'Team member added successfully',
   [removeTeamMember.fulfilled.type]: 'Team member removed successfully',
+  [createSkill.fulfilled.type]: 'Skill created successfully',
+  [updateSkill.fulfilled.type]: 'Skill updated successfully',
+  [deleteSkill.fulfilled.type]: 'Skill deleted successfully',
+  [addUserSkill.fulfilled.type]: 'Skill assigned successfully',
+  [updateUserSkill.fulfilled.type]: 'Skill assignment updated successfully',
+  [removeUserSkill.fulfilled.type]: 'Skill removed from user successfully',
   [createUser.fulfilled.type]: 'User saved successfully',
   [updateUser.fulfilled.type]: 'User updated successfully',
   [deleteUser.fulfilled.type]: 'User deleted successfully',
@@ -89,6 +104,12 @@ toastMiddleware.startListening({
     deleteTeam.fulfilled,
     addTeamMember.fulfilled,
     removeTeamMember.fulfilled,
+    createSkill.fulfilled,
+    updateSkill.fulfilled,
+    deleteSkill.fulfilled,
+    addUserSkill.fulfilled,
+    updateUserSkill.fulfilled,
+    removeUserSkill.fulfilled,
     createUser.fulfilled,
     updateUser.fulfilled,
     deleteUser.fulfilled,
@@ -123,6 +144,12 @@ toastMiddleware.startListening({
     deleteTeam.rejected,
     addTeamMember.rejected,
     removeTeamMember.rejected,
+    createSkill.rejected,
+    updateSkill.rejected,
+    deleteSkill.rejected,
+    addUserSkill.rejected,
+    updateUserSkill.rejected,
+    removeUserSkill.rejected,
     createUser.rejected,
     updateUser.rejected,
     deleteUser.rejected,
@@ -153,6 +180,7 @@ toastMiddleware.startListening({
       listenerApi.dispatch(sessionExpired());
       listenerApi.dispatch(clearUsers());
       listenerApi.dispatch(clearTeams());
+      listenerApi.dispatch(clearSkills());
       listenerApi.dispatch(
         addToast('Session expired. Please sign in again', 'error')
       );

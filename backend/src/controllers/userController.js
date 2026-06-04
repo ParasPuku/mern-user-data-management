@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { TeamMembership } from '../models/TeamMembership.js';
 import { User } from '../models/User.js';
 import { UserProfile } from '../models/UserProfile.js';
+import { UserSkill } from '../models/UserSkill.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { httpError } from '../utils/httpError.js';
 
@@ -174,6 +175,10 @@ export const deleteUser = asyncHandler(async (req, res) => {
       user: user._id
     }),
     TeamMembership.deleteMany({
+      owner: req.account._id,
+      user: user._id
+    }),
+    UserSkill.deleteMany({
       owner: req.account._id,
       user: user._id
     }),

@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url';
 import { env } from './config/env.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 import { authRoutes } from './routes/authRoutes.js';
+import { skillRoutes } from './routes/skillRoutes.js';
 import { teamRoutes } from './routes/teamRoutes.js';
 import { userRoutes } from './routes/userRoutes.js';
 
@@ -51,6 +52,7 @@ app.get('/api/health', (_req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/skills', skillRoutes);
 app.use('/api/teams', teamRoutes);
 app.use(notFound);
 app.use(errorHandler);
