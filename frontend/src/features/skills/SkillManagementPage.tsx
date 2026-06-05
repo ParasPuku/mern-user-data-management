@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
+import { CustomDropdown } from '../../components/CustomDropdown';
+import type { CustomDropdownOption } from '../../components/CustomDropdown';
 import { ButtonSpinner, LoadingButton } from '../../components/LoadingButton';
 import { StatusBanner } from '../../components/StatusBanner';
 import {
@@ -41,9 +43,45 @@ import type { Skill, SkillFormValues, SkillLevel } from './types';
 
 const emptySkillForm: SkillFormValues = {
   name: '',
-  category: '',
+  category: 'General',
   description: ''
 };
+
+const skillCatalog = [
+  { category: 'Frontend', name: 'React' },
+  { category: 'Frontend', name: 'TypeScript' },
+  { category: 'Frontend', name: 'Redux Toolkit' },
+  { category: 'Frontend', name: 'HTML & CSS' },
+  { category: 'Backend', name: 'Node.js' },
+  { category: 'Backend', name: 'Express.js' },
+  { category: 'Backend', name: 'REST API' },
+  { category: 'Database', name: 'MongoDB' },
+  { category: 'Database', name: 'PostgreSQL' },
+  { category: 'Cloud', name: 'AWS' },
+  { category: 'DevOps', name: 'Docker' },
+  { category: 'DevOps', name: 'Kubernetes' },
+  { category: 'Testing', name: 'Jest' },
+  { category: 'Tools', name: 'Git' }
+] as const;
+
+const skillNameOptions = skillCatalog.map((skill) => ({
+  label: skill.name,
+  value: skill.name
+}));
+
+const skillCategoryOptions = [
+  'General',
+  'Frontend',
+  'Backend',
+  'Database',
+  'Cloud',
+  'DevOps',
+  'Testing',
+  'Tools'
+].map((category) => ({
+  label: category,
+  value: category
+}));
 
 const userFetchQuery = {
   search: '',
@@ -65,6 +103,17 @@ const formatLevel = (level: SkillLevel) =>
     .split('-')
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
+
+const withCurrentOption = (
+  options: CustomDropdownOption[],
+  value: string
+) => {
+  if (!value || options.some((option) => option.value === value)) {
+    return options;
+  }
+
+  return [{ label: value, value }, ...options];
+};
 
 export const SkillManagementPage = () => {
   const dispatch = useAppDispatch();
@@ -110,8 +159,7 @@ export const SkillManagementPage = () => {
     skills.flatMap((skill) => skill.userIds)
   ).size;
   const isEditing = Boolean(editingSkillId);
-  const canSaveSkill =
-    formValues.name.trim().length >= 2 && !isMutating;
+  const canSaveSkill = formValues.name.trim().length >= 2 && !isMutating;
   const canAssignSkill =
     Boolean(selectedUserId && selectedSkillId) && !isLoadingAssignments;
 
@@ -198,6 +246,18 @@ export const SkillManagementPage = () => {
     });
   };
 
+  const handleSkillNameChange = (name: string) => {
+    const selectedSkillOption = skillCatalog.find(
+      (skill) => skill.name === name
+    );
+
+    setFormValues((current) => ({
+      ...current,
+      category: selectedSkillOption?.category || current.category || 'General',
+      name
+    }));
+  };
+
   const handleDeleteSkill = async (skill: Skill) => {
     const shouldDelete = window.confirm(`Delete ${skill.name}?`);
 
@@ -272,7 +332,7 @@ export const SkillManagementPage = () => {
     <>
       <header className="app-header">
         <div>
-          <p className="eyebrow">Many-to-many relationship</p>
+          <p className="eyebrow">Skill Assignment Workspace</p>
           <h1>Users & Skills</h1>
         </div>
 
@@ -324,36 +384,29 @@ export const SkillManagementPage = () => {
               ) : null}
             </div>
 
-            <label>
-              Skill name
-              <input
-                maxLength={80}
-                onChange={(event) =>
-                  setFormValues((current) => ({
-                    ...current,
-                    name: event.target.value
-                  }))
-                }
-                placeholder="React, MongoDB, AWS"
-                required
-                value={formValues.name}
-              />
-            </label>
+            <CustomDropdown
+              label="Skill name"
+              onChange={handleSkillNameChange}
+              options={withCurrentOption(skillNameOptions, formValues.name)}
+              placeholder="Select skill"
+              value={formValues.name}
+            />
 
-            <label>
-              Category
-              <input
-                maxLength={80}
-                onChange={(event) =>
-                  setFormValues((current) => ({
-                    ...current,
-                    category: event.target.value
-                  }))
-                }
-                placeholder="Frontend, Backend, DevOps"
-                value={formValues.category}
-              />
-            </label>
+            <CustomDropdown
+              label="Category"
+              onChange={(category) =>
+                setFormValues((current) => ({
+                  ...current,
+                  category
+                }))
+              }
+              options={withCurrentOption(
+                skillCategoryOptions,
+                formValues.category
+              )}
+              placeholder="Select category"
+              value={formValues.category}
+            />
 
             <label>
               Description
