@@ -1174,7 +1174,971 @@ Because tokens are sensitive.
 
 Avoid logging full request objects because cookies and account data can appear in logs.
 
-## 30. File Map
+## 30. Real-World Topic: Authentication vs Authorization
+
+Authentication and authorization are different.
+
+Authentication:
+
+```txt
+Who are you?
+Example: Lolo logged in successfully.
+```
+
+Authorization:
+
+```txt
+What are you allowed to do?
+Example: Lolo can create users but cannot delete users.
+```
+
+Your current app mainly handles authentication:
+
+```js
+// backend/src/middleware/authMiddleware.js
+req.account = account;
+```
+
+That tells the backend who is logged in.
+
+A real-world app also checks permissions:
+
+```js
+const requireRole = (...allowedRoles) => (req, _res, next) => {
+  if (!allowedRoles.includes(req.account.role)) {
+    throw httpError(403, 'You do not have permission');
+  }
+
+  next();
+};
+```
+
+Example route:
+
+```js
+userRoutes.delete('/:id', requireAuth, requireRole('admin'), deleteUser);
+```
+
+Interview answer:
+
+```txt
+Authentication identifies the user.
+Authorization controls what the authenticated user can access.
+```
+
+## 31. Real-World Topic: JWT Is Signed, Not Encrypted
+
+A JWT payload can be decoded by anyone.
+
+Example payload:
+
+```js
+{
+  sub: '6a1ed9c9a29f23d6f7f8df44',
+  purpose: 'auth',
+  iat: 1780664703,
+  exp: 1780665603
+}
+```
+
+This is safe because it does not contain secrets.
+
+Do not put sensitive data inside JWT:
+
+```js
+// Bad
+{
+  password: 'Password123',
+  otp: '123456',
+  cardNumber: '4111111111111111'
+}
+```
+
+JWT signing means:
+
+```txt
+Backend can detect if token was modified.
+```
+
+It does not mean:
+
+```txt
+Payload is hidden from everyone.
+```
+
+Interview answer:
+
+```txt
+JWT payload is base64url encoded and signed. It is not encrypted by default.
+Do not store secrets in JWT payload.
+```
+
+## 32. Real-World Topic: Cookie Domain, Path, SameSite, Secure
+
+Cookie behavior depends heavily on cookie options.
+
+Your app:
+
+```js
+res.cookie(env.authCookieName, token, {
+  httpOnly: true,
+  secure: env.nodeEnv === 'production',
+  sameSite: 'lax',
+  maxAge: env.authCookieMaxAgeMs,
+  path: '/'
+});
+```
+
+`path: '/'`
+
+```txt
+Cookie is sent to all backend paths.
+Example: /api/users, /api/skills, /api/auth/session
+```
+
+`domain`
+
+You are not explicitly setting domain right now.
+
+That means browser uses the current host.
+
+Real production example:
+
+```js
+res.cookie('umd_auth', token, {
+  domain: '.example.com',
+  path: '/',
+  httpOnly: true,
+  secure: true,
+  sameSite: 'lax'
+});
+```
+
+This can allow cookie usage across:
+
+```txt
+app.example.com
+api.example.com
+```
+
+But this must be configured carefully.
+
+`sameSite: 'lax'`
+
+```txt
+Good default for many web apps.
+Helps reduce CSRF risk.
+```
+
+`sameSite: 'none'`
+
+Required for some cross-site cookie flows, but must use secure cookies:
+
+```js
+res.cookie('umd_auth', token, {
+  sameSite: 'none',
+  secure: true
+});
+```
+
+Important browser rule:
+
+```txt
+SameSite=None requires Secure=true.
+```
+
+## 33. Real-World Topic: Same-Origin vs Same-Site
+
+These sound similar, but they are different.
+
+Same-origin means:
+
+```txt
+Same protocol + same domain + same port
+```
+
+Example:
+
+```txt
+http://localhost:5174
+http://localhost:5001
+```
+
+These are not same-origin because ports are different.
+
+Same-site is based more on registrable domain.
+
+Example:
+
+```txt
+https://app.example.com
+https://api.example.com
+```
+
+These may be same-site but not same-origin.
+
+Why it matters:
+
+```txt
+CORS is mostly about origin.
+SameSite cookie behavior is about site.
+```
+
+Interview answer:
+
+```txt
+Same-origin is stricter. Same-site is broader and mostly affects cookie rules.
+```
+
+## 34. Real-World Topic: CSRF With Cookie Authentication
+
+Cookie-based auth has one important risk: CSRF.
+
+CSRF means:
+
+```txt
+Another website tricks the browser into sending an authenticated request.
+```
+
+Because cookies are sent automatically, the browser may include `umd_auth`.
+
+Your app reduces risk using:
+
+```js
+sameSite: 'lax'
+```
+
+But for high-security apps, add CSRF protection.
+
+Common pattern: double-submit CSRF token.
+
+Backend sends a readable CSRF cookie:
+
+```js
+res.cookie('csrf_token', csrfToken, {
+  httpOnly: false,
+  sameSite: 'lax',
+  secure: true
+});
+```
+
+Frontend reads that CSRF token and sends it in a header:
+
+```ts
+fetch('/api/users', {
+  method: 'POST',
+  credentials: 'include',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-CSRF-Token': csrfToken
+  },
+  body: JSON.stringify(values)
+});
+```
+
+Backend verifies:
+
+```js
+const csrfFromCookie = req.cookies.csrf_token;
+const csrfFromHeader = req.get('X-CSRF-Token');
+
+if (!csrfFromCookie || csrfFromCookie !== csrfFromHeader) {
+  throw httpError(403, 'Invalid CSRF token');
+}
+```
+
+Interview answer:
+
+```txt
+HttpOnly cookies protect against token theft through JavaScript.
+But because cookies are sent automatically, CSRF protection may still be needed.
+SameSite helps, but sensitive apps often add CSRF tokens.
+```
+
+## 35. Real-World Topic: XSS And HttpOnly Cookies
+
+XSS means attacker runs JavaScript in your app.
+
+If token is in localStorage:
+
+```js
+localStorage.getItem('token');
+```
+
+Malicious JavaScript can steal it.
+
+If token is in HttpOnly cookie:
+
+```js
+document.cookie;
+```
+
+JavaScript cannot read the auth cookie.
+
+But HttpOnly does not make XSS harmless.
+
+An attacker might still perform actions from the page:
+
+```js
+fetch('/api/users', {
+  method: 'POST',
+  credentials: 'include',
+  body: JSON.stringify(...)
+});
+```
+
+So you still need:
+
+```txt
+Input sanitization
+React escaping
+Content Security Policy
+CSRF protections where needed
+No dangerous innerHTML
+```
+
+Interview answer:
+
+```txt
+HttpOnly protects the token from being read by JavaScript, but it does not fully prevent requests from malicious JavaScript if XSS exists.
+```
+
+## 36. Real-World Topic: Server-Side Session vs JWT Session
+
+There are two common approaches.
+
+### Server-side session
+
+Backend stores session in DB/Redis:
+
+```js
+{
+  sessionId: 'random-session-id',
+  accountId: '6a1ed9...',
+  expiresAt: '2026-06-09T10:00:00Z'
+}
+```
+
+Browser cookie stores only:
+
+```txt
+session_id=random-session-id
+```
+
+Backend flow:
+
+```txt
+Read session_id cookie
+Find session in Redis/DB
+Find account
+Attach req.account
+```
+
+Pros:
+
+```txt
+Easy to revoke immediately.
+Easy logout from all devices.
+Smaller cookie.
+```
+
+Cons:
+
+```txt
+Needs DB/Redis lookup on every request.
+More infrastructure.
+```
+
+### JWT session
+
+Browser cookie stores JWT:
+
+```txt
+umd_auth=JWT
+```
+
+Backend verifies JWT signature.
+
+Pros:
+
+```txt
+No session DB required.
+Fast verification.
+Easy horizontal scaling.
+```
+
+Cons:
+
+```txt
+Harder to revoke before expiry unless you add server-side tracking.
+Token can become stale if account permissions change.
+```
+
+Your current app uses:
+
+```txt
+JWT stored in HttpOnly cookie
+```
+
+## 37. Real-World Topic: Access Token + Refresh Token
+
+Many production systems use two tokens:
+
+```txt
+Access token: short lived, used for APIs
+Refresh token: longer lived, used to get new access token
+```
+
+Example:
+
+```txt
+Access token expires in 5-15 minutes
+Refresh token expires in 7-30 days
+```
+
+Common cookie setup:
+
+```js
+res.cookie('access_token', accessToken, {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'lax',
+  maxAge: 15 * 60 * 1000
+});
+
+res.cookie('refresh_token', refreshToken, {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'lax',
+  maxAge: 7 * 24 * 60 * 60 * 1000
+});
+```
+
+Refresh route:
+
+```js
+authRoutes.post('/token/refresh', refreshAccessToken);
+```
+
+Flow:
+
+```txt
+API request fails because access token expired
+Frontend calls /token/refresh
+Backend validates refresh token
+Backend issues new access token
+Frontend retries API
+```
+
+Your current app uses one auth cookie and refreshes session on activity:
+
+```js
+// backend/src/middleware/authMiddleware.js
+if (refreshSession) {
+  const session = createAuthSession(account);
+  setAuthCookie(res, session.token);
+}
+```
+
+That is fine for learning and local app behavior.
+
+Interview answer:
+
+```txt
+For larger production systems, access-token plus refresh-token rotation is common.
+Refresh tokens are usually stored securely and rotated to detect token reuse.
+```
+
+## 38. Real-World Topic: Token Revocation And Logout From All Devices
+
+Pure JWT is stateless.
+
+Problem:
+
+```txt
+If JWT expires in 15 minutes, backend cannot easily revoke it before expiry unless backend tracks something.
+```
+
+Current logout:
+
+```js
+// backend/src/controllers/authController.js
+export const logout = asyncHandler(async (_req, res) => {
+  clearAuthCookie(res);
+  res.json({
+    message: 'Logged out successfully'
+  });
+});
+```
+
+This clears cookie in the current browser.
+
+But if the same JWT exists somewhere else, it may remain valid until expiry.
+
+Real-world revocation options:
+
+### Option A: Session collection
+
+```js
+const sessionSchema = new mongoose.Schema({
+  account: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Account',
+    required: true
+  },
+  tokenId: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  userAgent: String,
+  ipAddress: String,
+  expiresAt: Date,
+  revokedAt: Date
+});
+```
+
+Token includes `jti`:
+
+```js
+jwt.sign(
+  { sub: account.id, purpose: 'auth', jti: session.tokenId },
+  env.jwtSecret,
+  { expiresIn: '15m' }
+);
+```
+
+Middleware checks session:
+
+```js
+const session = await Session.findOne({
+  tokenId: payload.jti,
+  revokedAt: null
+});
+
+if (!session) {
+  throw httpError(401, 'Session revoked');
+}
+```
+
+### Option B: tokenVersion on account
+
+Account:
+
+```js
+{
+  tokenVersion: 3
+}
+```
+
+JWT:
+
+```js
+{
+  sub: account.id,
+  tokenVersion: account.tokenVersion
+}
+```
+
+Logout from all devices:
+
+```js
+account.tokenVersion += 1;
+await account.save();
+```
+
+Middleware:
+
+```js
+if (payload.tokenVersion !== account.tokenVersion) {
+  throw httpError(401, 'Session revoked');
+}
+```
+
+Interview answer:
+
+```txt
+JWTs are hard to revoke unless we store session records, blacklist token ids, or use a tokenVersion strategy.
+```
+
+## 39. Real-World Topic: Multiple Devices
+
+Users often log in from:
+
+```txt
+Laptop Chrome
+Mobile Safari
+Office machine
+```
+
+Each device can have its own cookie/session.
+
+Real-world session record:
+
+```js
+{
+  account: accountId,
+  deviceName: 'Chrome on macOS',
+  ipAddress: '103.x.x.x',
+  lastSeenAt: new Date(),
+  expiresAt: new Date(),
+  revokedAt: null
+}
+```
+
+This enables:
+
+```txt
+Show active devices
+Logout one device
+Logout all devices
+Detect suspicious login
+```
+
+Your app currently does not store device sessions in DB.
+
+It uses the browser cookie as the session carrier.
+
+## 40. Real-World Topic: Absolute Timeout vs Idle Timeout
+
+There are two session timeout styles.
+
+### Idle timeout
+
+```txt
+Logout after 15 minutes of no activity.
+```
+
+If user is active, session keeps refreshing.
+
+Your app does this style with refresh behavior:
+
+```js
+// backend/src/middleware/authMiddleware.js
+if (refreshSession) {
+  const session = createAuthSession(account);
+  setAuthCookie(res, session.token);
+}
+```
+
+### Absolute timeout
+
+```txt
+Logout after 8 hours no matter how active the user is.
+```
+
+This prevents sessions from lasting forever.
+
+Real-world systems often combine both:
+
+```txt
+Idle timeout: 15 minutes
+Absolute timeout: 8 hours
+```
+
+Example payload:
+
+```js
+{
+  sub: account.id,
+  iat: loginTime,
+  exp: idleExpiry,
+  absoluteExp: loginTime + 8 hours
+}
+```
+
+Middleware checks both:
+
+```js
+if (Date.now() > payload.absoluteExp) {
+  throw httpError(401, 'Session expired');
+}
+```
+
+Interview answer:
+
+```txt
+Idle timeout extends while user is active. Absolute timeout ends session after a maximum lifetime.
+```
+
+## 41. Real-World Topic: Cookie Deletion Must Match Cookie Options
+
+When clearing a cookie, options should match the original cookie.
+
+Set cookie:
+
+```js
+res.cookie('umd_auth', token, {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'lax',
+  path: '/'
+});
+```
+
+Clear cookie:
+
+```js
+res.clearCookie('umd_auth', {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'lax',
+  path: '/'
+});
+```
+
+If domain/path do not match, browser may not delete the cookie you expected.
+
+Your app does this correctly for shared options:
+
+```js
+// backend/src/utils/token.js
+export const clearAuthCookie = (res) => {
+  res.clearCookie(env.authCookieName, {
+    httpOnly: true,
+    secure: env.nodeEnv === 'production',
+    sameSite: 'lax',
+    path: '/'
+  });
+};
+```
+
+## 42. Real-World Topic: CORS, Cookies, And Wildcard Origins
+
+For credentialed requests, this is not valid:
+
+```txt
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+```
+
+Browsers reject wildcard origin with credentials.
+
+Correct:
+
+```js
+cors({
+  origin: ['http://localhost:5174'],
+  credentials: true
+});
+```
+
+Frontend:
+
+```ts
+fetch('/api/users', {
+  credentials: 'include'
+});
+```
+
+Backend:
+
+```js
+app.use(
+  cors({
+    origin: env.corsOrigin.includes('*') ? true : env.corsOrigin,
+    credentials: true
+  })
+);
+```
+
+For production, prefer explicit origins:
+
+```env
+CORS_ORIGIN=https://app.example.com
+```
+
+## 43. Real-World Topic: Secure Cookies Behind Proxy
+
+In production, apps often run behind:
+
+```txt
+Nginx
+AWS load balancer
+Render/Railway/Vercel proxy
+Cloudflare
+```
+
+The browser talks HTTPS to proxy, but Node may receive HTTP from proxy.
+
+For secure cookies and correct protocol detection, Express may need:
+
+```js
+app.set('trust proxy', 1);
+```
+
+Then secure cookies work correctly behind trusted proxies.
+
+Example:
+
+```js
+if (env.nodeEnv === 'production') {
+  app.set('trust proxy', 1);
+}
+```
+
+Interview answer:
+
+```txt
+When running behind a reverse proxy, Express may need trust proxy so secure cookies and req.secure behave correctly.
+```
+
+## 44. Real-World Topic: Password Reset Tokens Are Different From Auth Tokens
+
+Your app has two token purposes:
+
+```js
+// backend/src/utils/token.js
+jwt.sign({ sub: account.id, purpose: 'auth' }, ...)
+
+jwt.sign({ sub: account.id, purpose: 'password-reset' }, ...)
+```
+
+Verification checks purpose:
+
+```js
+export const verifyToken = (token, expectedPurpose) => {
+  const payload = jwt.verify(token, env.jwtSecret);
+
+  if (expectedPurpose && payload.purpose !== expectedPurpose) {
+    throw new Error('Invalid token purpose');
+  }
+
+  return payload;
+};
+```
+
+Why this matters:
+
+```txt
+A password reset token should not work as a login token.
+A login token should not work as a password reset token.
+```
+
+Interview answer:
+
+```txt
+Token purpose separates use cases and prevents one token type from being misused for another flow.
+```
+
+## 45. Real-World Topic: Token Storage Comparison
+
+### HttpOnly Cookie
+
+Pros:
+
+```txt
+JavaScript cannot read token.
+Browser sends automatically.
+Good for web apps.
+```
+
+Cons:
+
+```txt
+Need CSRF awareness.
+CORS/cookie settings can be tricky.
+```
+
+### localStorage
+
+Pros:
+
+```txt
+Simple to implement.
+Easy to manually attach Authorization header.
+```
+
+Cons:
+
+```txt
+JavaScript can read token.
+More exposed during XSS.
+```
+
+### Memory only
+
+Pros:
+
+```txt
+Token disappears on refresh.
+Lower persistence risk.
+```
+
+Cons:
+
+```txt
+User may lose login on page refresh unless refresh flow exists.
+```
+
+Current app uses:
+
+```txt
+HttpOnly cookie
+```
+
+## 46. Real-World Topic: Common Production Checklist
+
+Before production, check:
+
+```txt
+JWT_SECRET is strong and not default
+NODE_ENV=production
+Cookies use secure=true over HTTPS
+CORS origin is explicit, not wildcard
+No full req logging
+No token logging
+Rate limits on login and OTP
+CSRF plan for cookie-auth write requests
+Session revocation or short expiry strategy
+Audit logs for sensitive actions
+Account lockout for repeated failed login
+Password hashing uses bcrypt/argon2
+Reset tokens are short-lived
+Cookies are cleared with matching options
+```
+
+Your app already has:
+
+```txt
+HttpOnly auth cookie
+JWT expiry
+Cookie maxAge
+Rate limiting
+Password hashing
+OTP expiry
+Protected route middleware
+Account-scoped data through owner
+```
+
+Things you can add later:
+
+```txt
+CSRF token
+Device/session table
+Logout from all devices
+Access + refresh token rotation
+Role/permission middleware
+Audit logs
+```
+
+## 47. Updated Interview Master Answer
+
+Strong interview answer:
+
+```txt
+In our app, authentication starts when a user signs up or logs in. The backend validates the credentials, finds or creates the Account, then creates a JWT. The JWT payload contains the account id in sub and a purpose field like auth. The backend signs this token with JWT_SECRET and sends it to the browser using res.cookie(), which becomes a Set-Cookie response header.
+
+The browser stores that cookie automatically. Because it is HttpOnly, frontend JavaScript cannot read the token, which is safer than storing JWT in localStorage. On future API calls, our fetch wrapper uses credentials: 'include', so the browser automatically sends the cookie back to the backend.
+
+The backend uses cookie-parser to read req.cookies. The requireAuth middleware verifies the JWT signature and expiry, checks the purpose, fetches the Account by payload.sub, and attaches it as req.account. Protected controllers then use req.account._id to scope data, for example owner: req.account._id when creating users.
+
+Session expiry is handled by JWT expiry and cookie maxAge. Our middleware can refresh the session by issuing a fresh cookie when the user is active. Logout clears the cookie using res.clearCookie().
+
+In production, we must also consider CSRF protection, secure cookies over HTTPS, explicit CORS origins, token revocation, device sessions, and avoiding token logs.
+```
+
+## 48. File Map
 
 Main backend files:
 
