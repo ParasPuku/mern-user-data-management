@@ -1394,23 +1394,230 @@ Same-origin is stricter. Same-site is broader and mostly affects cookie rules.
 
 Cookie-based auth has one important risk: CSRF.
 
-CSRF means:
+CSRF stands for Cross-Site Request Forgery.
 
 ```txt
-Another website tricks the browser into sending an authenticated request.
+Cross-Site Request Forgery is a web security vulnerability where an attacker tricks an authenticated user's browser into sending an unwanted, state-changing request to a trusted website.
 ```
 
-Because cookies are sent automatically, the browser may include `umd_auth`.
+The attacker does not need to know your password or token. They abuse the fact that your browser is already logged in and automatically sends cookies.
 
-Your app reduces risk using:
+### How CSRF Works
+
+Example: online banking.
+
+Step 1: active session
+
+```txt
+You log in to your bank website.
+The bank remembers your authentication using a cookie.
+Your browser now has a valid auth cookie for the bank.
+```
+
+Step 2: malicious link or website
+
+```txt
+An attacker tricks you into clicking a link or opening a website they control.
+```
+
+Step 3: unauthorized request
+
+The attacker's site secretly makes your browser send a request to the trusted app:
+
+```html
+<form action="https://bank.example.com/transfer" method="POST">
+  <input name="toAccount" value="attacker-account" />
+  <input name="amount" value="10000" />
+</form>
+<script>
+  document.forms[0].submit();
+</script>
+```
+
+Step 4: browser sends cookies automatically
+
+```txt
+Because you are already logged in to the bank, your browser may attach the bank auth cookie to that request.
+```
+
+Step 5: action executed
+
+```txt
+If the bank only checks the auth cookie, the server may believe the request is valid and transfer money.
+```
+
+That is CSRF:
+
+```txt
+The request came from the user's browser, but the user did not intend to make that request.
+```
+
+### Why Cookie Auth Needs CSRF Awareness
+
+In your app, frontend uses:
+
+```ts
+// frontend/src/services/http.ts
+credentials: 'include'
+```
+
+That is correct for cookie authentication because it tells the browser to send cookies.
+
+But it also explains why CSRF matters:
+
+```txt
+Cookies are automatic.
+If an attacker can trigger a cross-site request, the browser may attach cookies automatically.
+```
+
+CSRF usually targets state-changing requests:
+
+```txt
+POST
+PUT
+PATCH
+DELETE
+```
+
+Examples in your app:
+
+```txt
+POST /api/users
+POST /api/skills
+PATCH /api/auth/profile
+DELETE /api/users/:id
+```
+
+Important rule:
+
+```txt
+GET requests should not change data.
+State-changing actions should use POST, PUT, PATCH, or DELETE.
+```
+
+### Current Protection In This App
+
+Your app reduces CSRF risk using:
 
 ```js
 sameSite: 'lax'
 ```
 
-But for high-security apps, add CSRF protection.
+Full cookie snapshot:
 
-Common pattern: double-submit CSRF token.
+```js
+// backend/src/utils/token.js
+res.cookie(env.authCookieName, token, {
+  httpOnly: true,
+  secure: env.nodeEnv === 'production',
+  sameSite: 'lax',
+  maxAge: env.authCookieMaxAgeMs,
+  path: '/'
+});
+```
+
+`SameSite=Lax` helps reduce CSRF because the browser limits when cookies are sent on cross-site requests.
+
+For high-security apps, SameSite should usually be combined with more protections.
+
+### Prevention Method 1: SameSite Cookie Attribute
+
+`SameSite=Strict`
+
+```txt
+Most restrictive.
+Cookie is generally not sent when the request starts from another site.
+Good security, but can be inconvenient for some login/navigation flows.
+```
+
+`SameSite=Lax`
+
+```txt
+Balanced default.
+Cookie is sent for normal same-site requests and some safe top-level navigations.
+Often a good default for web apps.
+```
+
+`SameSite=None`
+
+```txt
+Cookie can be sent in cross-site contexts.
+Must be used with Secure=true.
+Needed for some third-party or cross-site setups.
+```
+
+Important browser rule:
+
+```txt
+SameSite=None requires Secure=true.
+```
+
+### Prevention Method 2: Anti-CSRF Tokens
+
+An anti-CSRF token is a unique, unpredictable value that real frontend requests must include.
+
+Idea:
+
+```txt
+Backend gives the real frontend a CSRF token.
+Every state-changing request must include that token.
+An attacker's site cannot read your app's token, so the forged request fails.
+```
+
+Two common patterns:
+
+```txt
+1. Synchronizer Token Pattern
+2. Double-Submit Cookie Pattern
+```
+
+### Synchronizer Token Pattern
+
+The server generates and stores a token for the user's session.
+
+Flow:
+
+```txt
+Server creates random CSRF token
+Server stores it in session storage
+Server sends token to frontend
+Frontend sends token in X-CSRF-Token header
+Backend compares header token with stored token
+```
+
+Pseudo-code:
+
+```js
+const csrfToken = crypto.randomUUID();
+
+await Session.updateOne(
+  { account: req.account._id },
+  { csrfToken }
+);
+
+res.json({
+  data: {
+    csrfToken
+  }
+});
+```
+
+Backend verifies:
+
+```js
+const csrfFromHeader = req.get('X-CSRF-Token');
+const session = await Session.findOne({ account: req.account._id });
+
+if (!csrfFromHeader || csrfFromHeader !== session.csrfToken) {
+  throw httpError(403, 'Invalid CSRF token');
+}
+```
+
+This pattern is common when the backend stores server-side sessions.
+
+### Double-Submit Cookie Pattern
+
+This pattern sends a separate readable CSRF cookie.
 
 Backend sends a readable CSRF cookie:
 
@@ -1420,6 +1627,21 @@ res.cookie('csrf_token', csrfToken, {
   sameSite: 'lax',
   secure: true
 });
+```
+
+Notice:
+
+```js
+httpOnly: false
+```
+
+That is intentional for the CSRF cookie because frontend JavaScript must read it.
+
+This is different from your auth cookie:
+
+```js
+// Auth cookie
+httpOnly: true
 ```
 
 Frontend reads that CSRF token and sends it in a header:
@@ -1447,12 +1669,78 @@ if (!csrfFromCookie || csrfFromCookie !== csrfFromHeader) {
 }
 ```
 
+Why this works:
+
+```txt
+The attacker's site may trigger a request, but it cannot read your app's csrf_token cookie value because of browser same-origin rules.
+So it cannot add the correct X-CSRF-Token header.
+```
+
+### Prevention Method 3: Re-Authentication
+
+For critical actions, ask the user to confirm identity again.
+
+Examples:
+
+```txt
+Change password
+Change mobile number
+Transfer money
+Delete account
+Add payout bank account
+Disable two-factor authentication
+```
+
+Example backend idea:
+
+```js
+const isPasswordValid = await req.account.validatePassword(req.body.password);
+
+if (!isPasswordValid) {
+  throw httpError(401, 'Please re-enter your password');
+}
+
+// Continue critical action
+```
+
+This protects users even if someone temporarily accesses their logged-in browser.
+
+### Prevention Method 4: Check Origin Or Referer
+
+Backend can also check where the request came from.
+
+```js
+const allowedOrigins = ['https://app.example.com'];
+const origin = req.get('origin');
+
+if (origin && !allowedOrigins.includes(origin)) {
+  throw httpError(403, 'Invalid request origin');
+}
+```
+
+This is useful as an extra layer, but should not be the only defense.
+
+### CSRF vs XSS
+
+CSRF:
+
+```txt
+Attacker tricks browser into sending a request.
+Attacker does not need to read your token.
+Main risk with automatic cookies.
+```
+
+XSS:
+
+```txt
+Attacker runs JavaScript inside your website.
+HttpOnly prevents reading auth cookie, but XSS can still perform actions from inside your page.
+```
+
 Interview answer:
 
 ```txt
-HttpOnly cookies protect against token theft through JavaScript.
-But because cookies are sent automatically, CSRF protection may still be needed.
-SameSite helps, but sensitive apps often add CSRF tokens.
+CSRF is an attack where a malicious site tricks an already-authenticated user's browser into sending an unwanted state-changing request to a trusted site. It works especially with cookie-based authentication because browsers automatically attach cookies. Defenses include SameSite cookies, anti-CSRF tokens such as synchronizer tokens or double-submit cookies, checking Origin/Referer headers, and requiring re-authentication for critical actions.
 ```
 
 ## 35. Real-World Topic: XSS And HttpOnly Cookies

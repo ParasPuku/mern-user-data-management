@@ -66,6 +66,8 @@ export const setAuthCookie = (res, token) => {
     maxAge: env.authCookieMaxAgeMs,
     path: '/'
   });
+  res.set('X-Paras-Name', 'Paras');
+  res.set('X-Paras-Data', JSON.stringify({ name: 'Paras' }));
 };
 
 export const clearAuthCookie = (res) => {
