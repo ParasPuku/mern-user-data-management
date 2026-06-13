@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 
 import { toastMiddleware } from './toastMiddleware';
+import adminReducer from '../features/admin/adminSlice';
 import authReducer from '../features/auth/authSlice';
 import notificationsReducer from '../features/notifications/notificationsSlice';
 import skillsReducer from '../features/skills/skillsSlice';
@@ -9,6 +10,7 @@ import usersReducer from '../features/users/usersSlice';
 
 export const store = configureStore({
   reducer: {
+    admin: adminReducer,
     auth: authReducer,
     notifications: notificationsReducer,
     skills: skillsReducer,

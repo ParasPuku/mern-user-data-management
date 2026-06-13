@@ -5,9 +5,11 @@ import { useAppDispatch, useAppSelector } from './app/hooks';
 import { AppLayout } from './components/AppLayout';
 import { PublicRoute } from './components/PublicRoute';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { AdminSettingsPage } from './features/admin/AdminSettingsPage';
 import {
   bootstrapAuth,
   refreshAuthSession,
+  selectAccount,
   selectAuthStatus,
   verifyAuthSession
 } from './features/auth/authSlice';
@@ -36,6 +38,7 @@ const ACTIVITY_EVENTS = [
 export const App = () => {
   const dispatch = useAppDispatch();
   const authStatus = useAppSelector(selectAuthStatus);
+  const account = useAppSelector(selectAccount);
 
   useEffect(() => {
     if (authStatus === 'idle') {
@@ -188,6 +191,16 @@ export const App = () => {
         <Route element={<TeamManagementPage />} path="teams" />
         <Route element={<SkillManagementPage />} path="skills" />
         <Route element={<ProfilePage />} path="profile" />
+        <Route
+          element={
+            account?.role === 'admin' ? (
+              <AdminSettingsPage />
+            ) : (
+              <Navigate replace to="/" />
+            )
+          }
+          path="admin"
+        />
       </Route>
 
       <Route element={<Navigate replace to="/" />} path="*" />

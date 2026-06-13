@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { StatusBanner } from '../../components/StatusBanner';
+import { selectAccount } from '../auth/authSlice';
 import { UserFilters } from './UserFilters';
 import { UserForm } from './UserForm';
 import { UserPagination } from './UserPagination';
@@ -42,6 +43,7 @@ export const UserManagementPage = () => {
   const pagination = useAppSelector(selectUsersPagination);
   const summary = useAppSelector(selectUsersSummary);
   const error = useAppSelector(selectUsersError);
+  const account = useAppSelector(selectAccount);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
 
@@ -58,6 +60,7 @@ export const UserManagementPage = () => {
   const profileMutationStatus = useAppSelector(
     selectUserProfileMutationStatus
   );
+  const canDeleteUsers = (account?.role || 'admin') === 'admin';
 
   useEffect(() => {
     dispatch(fetchUsers());
@@ -108,6 +111,10 @@ export const UserManagementPage = () => {
   };
 
   const handleDelete = async (id: string) => {
+    if (!canDeleteUsers) {
+      return;
+    }
+
     const user = users.find((item) => item.id === id);
     const shouldDelete = window.confirm(
       `Delete ${user?.name || 'this user'}?`
@@ -228,6 +235,7 @@ export const UserManagementPage = () => {
           </div>
 
           <UserTable
+            canDeleteUsers={canDeleteUsers}
             listStatus={listStatus}
             mutationStatus={mutationStatus}
             onDelete={handleDelete}

@@ -2,6 +2,7 @@ import {
   BadgeCheck,
   Layers3,
   LogOut,
+  ShieldCheck,
   UserRound,
   UsersRound
 } from 'lucide-react';
@@ -9,6 +10,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { ButtonSpinner } from './LoadingButton';
+import { clearAdmin } from '../features/admin/adminSlice';
 import {
   logout,
   selectAccount,
@@ -39,6 +41,7 @@ export const AppLayout = () => {
       dispatch(clearUsers());
       dispatch(clearTeams());
       dispatch(clearSkills());
+      dispatch(clearAdmin());
       navigate('/signin');
     }
   };
@@ -67,6 +70,12 @@ export const AppLayout = () => {
             <UserRound size={17} />
             Profile
           </NavLink>
+          {account?.role === 'admin' ? (
+            <NavLink to="/admin">
+              <ShieldCheck size={17} />
+              Admin
+            </NavLink>
+          ) : null}
         </div>
 
         <div className="account-menu">

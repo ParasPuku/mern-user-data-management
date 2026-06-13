@@ -1,6 +1,10 @@
 import { createListenerMiddleware, isAnyOf } from '@reduxjs/toolkit';
 
 import {
+  clearAdmin,
+  updateManagedAccountRole
+} from '../features/admin/adminSlice';
+import {
   clearUsers,
   createUser,
   deleteUserProfile,
@@ -68,7 +72,8 @@ const successMessages: Record<string, string> = {
   [updateUser.fulfilled.type]: 'User updated successfully',
   [deleteUser.fulfilled.type]: 'User deleted successfully',
   [saveUserProfile.fulfilled.type]: 'User profile saved successfully',
-  [deleteUserProfile.fulfilled.type]: 'User profile cleared successfully'
+  [deleteUserProfile.fulfilled.type]: 'User profile cleared successfully',
+  [updateManagedAccountRole.fulfilled.type]: 'Account role updated successfully'
 };
 
 const readErrorMessage = (action: unknown) => {
@@ -114,7 +119,8 @@ toastMiddleware.startListening({
     updateUser.fulfilled,
     deleteUser.fulfilled,
     saveUserProfile.fulfilled,
-    deleteUserProfile.fulfilled
+    deleteUserProfile.fulfilled,
+    updateManagedAccountRole.fulfilled
   ),
   effect: (action, listenerApi) => {
     const message = successMessages[action.type];
@@ -154,7 +160,8 @@ toastMiddleware.startListening({
     updateUser.rejected,
     deleteUser.rejected,
     saveUserProfile.rejected,
-    deleteUserProfile.rejected
+    deleteUserProfile.rejected,
+    updateManagedAccountRole.rejected
   ),
   effect: (action, listenerApi) => {
     const message = readErrorMessage(action);
@@ -181,6 +188,7 @@ toastMiddleware.startListening({
       listenerApi.dispatch(clearUsers());
       listenerApi.dispatch(clearTeams());
       listenerApi.dispatch(clearSkills());
+      listenerApi.dispatch(clearAdmin());
       listenerApi.dispatch(
         addToast('Session expired. Please sign in again', 'error')
       );

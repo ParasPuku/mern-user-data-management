@@ -40,6 +40,12 @@ const accountSchema = new mongoose.Schema(
         message: 'Terms and policy must be accepted'
       }
     },
+    role: {
+      type: String,
+      enum: ['admin', 'manager', 'member'],
+      default: 'admin',
+      required: true
+    },
     avatarUrl: {
       type: String,
       default: ''
@@ -91,4 +97,3 @@ accountSchema.statics.findByIdentifier = function findByIdentifier(identifier) {
 };
 
 export const Account = mongoose.model('Account', accountSchema);
-

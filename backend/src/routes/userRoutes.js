@@ -16,6 +16,7 @@ import {
   removeUserSkill as removeSkillAssignment,
   updateUserSkill as updateSkillAssignment
 } from '../controllers/skillController.js';
+import { requireRole } from '../middleware/authorizeMiddleware.js';
 import { requireAuth } from '../middleware/authMiddleware.js';
 
 export const userRoutes = Router();
@@ -35,4 +36,8 @@ userRoutes
   .route('/:id/skills/:skillId')
   .patch(updateSkillAssignment)
   .delete(removeSkillAssignment);
-userRoutes.route('/:id').get(getUserById).patch(updateUser).delete(deleteUser);
+userRoutes
+  .route('/:id')
+  .get(getUserById)
+  .patch(updateUser)
+  .delete(requireRole('admin'), deleteUser);

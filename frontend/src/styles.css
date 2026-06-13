@@ -977,6 +977,21 @@ tbody tr:last-child td {
   color: #3b4397;
 }
 
+.badge--role-admin {
+  background: #e5efff;
+  color: #164fc4;
+}
+
+.badge--role-manager {
+  background: #eaf7f0;
+  color: #126643;
+}
+
+.badge--role-member {
+  background: #fff3d6;
+  color: #7a4b00;
+}
+
 .badge--active {
   background: var(--success-bg);
   color: var(--success-text);
@@ -1466,6 +1481,115 @@ tbody tr:last-child td {
   font-weight: 900;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.admin-summary-strip {
+  grid-template-columns: repeat(4, minmax(86px, 1fr));
+}
+
+.admin-panel {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+}
+
+.admin-table-wrap {
+  max-height: calc(100vh - 340px);
+  min-height: 300px;
+}
+
+.admin-table-wrap table {
+  min-width: 900px;
+}
+
+.admin-account-cell {
+  display: inline-grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  gap: 11px;
+  min-width: 220px;
+}
+
+.admin-account-cell span {
+  display: grid;
+  min-width: 0;
+}
+
+.admin-account-cell small {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+}
+
+.admin-account-avatar {
+  width: 42px;
+  height: 42px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface-muted);
+  object-fit: cover;
+}
+
+.admin-account-avatar--fallback {
+  display: inline-grid;
+  place-items: center;
+  color: var(--primary-strong);
+  font-size: 0.88rem;
+  font-weight: 900;
+}
+
+.role-select {
+  min-height: 38px;
+  min-width: 132px;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 0 10px;
+}
+
+.admin-access-map {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-access-map div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fbfcfd;
+  padding: 12px;
+}
+
+.admin-access-map svg {
+  grid-row: span 2;
+  color: var(--primary);
+}
+
+.admin-access-map span {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.admin-access-map strong {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
 .profile-grid {
   display: grid;
   grid-template-columns: 320px minmax(0, 520px);
@@ -1569,6 +1693,10 @@ tbody tr:last-child td {
     width: 100%;
   }
 
+  .admin-summary-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .summary-strip div {
     padding: 12px;
   }
@@ -1585,7 +1713,8 @@ tbody tr:last-child td {
 
   .membership-form,
   .relationship-map,
-  .skill-map-grid {
+  .skill-map-grid,
+  .admin-access-map {
     grid-template-columns: 1fr;
   }
 

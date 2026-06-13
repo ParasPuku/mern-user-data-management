@@ -32,6 +32,8 @@ const initialState: SkillsState = {
   error: null
 };
 
+const emptyUserSkills: UserSkill[] = [];
+
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Something went wrong';
 
@@ -347,6 +349,8 @@ export const selectSkillAssignmentStatus = (state: RootState) =>
 export const selectSkillsError = (state: RootState) => state.skills.error;
 export const selectUserSkillsById =
   (userId: string | null) => (state: RootState) =>
-    userId ? state.skills.userSkillsByUserId[userId] || [] : [];
+    userId
+      ? state.skills.userSkillsByUserId[userId] || emptyUserSkills
+      : emptyUserSkills;
 
 export default skillsSlice.reducer;

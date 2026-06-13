@@ -182,8 +182,11 @@ export const SkillManagementPage = () => {
 
   useEffect(() => {
     const nextSkillId = availableSkills[0]?.id || '';
+    const needsSkillReset =
+      Boolean(selectedSkillId && assignedSkillIds.has(selectedSkillId)) ||
+      Boolean(!selectedSkillId && nextSkillId);
 
-    if (!selectedSkillId || assignedSkillIds.has(selectedSkillId)) {
+    if (needsSkillReset && nextSkillId !== selectedSkillId) {
       setSelectedSkillId(nextSkillId);
     }
   }, [assignedSkillIds, availableSkills, selectedSkillId]);

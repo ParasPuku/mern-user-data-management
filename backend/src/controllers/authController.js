@@ -23,11 +23,16 @@ const getSessionExpiresInMs = (sessionExpiresAt) =>
     ? Math.max(new Date(sessionExpiresAt).getTime() - Date.now(), 0)
     : null;
 
-const serializeAccount = (account, sessionExpiresAt = null) => ({
-  ...account.toJSON(),
-  sessionExpiresAt,
-  sessionExpiresInMs: getSessionExpiresInMs(sessionExpiresAt)
-});
+const serializeAccount = (account, sessionExpiresAt = null) => {
+  const serializedAccount = account.toJSON();
+
+  return {
+    ...serializedAccount,
+    role: serializedAccount.role || 'admin',
+    sessionExpiresAt,
+    sessionExpiresInMs: getSessionExpiresInMs(sessionExpiresAt)
+  };
+};
 
 const assertPassword = (password, confirmPassword = password) => {
   if (!password || password.length < 8) {

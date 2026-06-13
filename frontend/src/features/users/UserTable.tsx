@@ -8,6 +8,7 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 });
 
 type UserTableProps = {
+  canDeleteUsers: boolean;
   listStatus: RequestStatus;
   mutationStatus: RequestStatus;
   users: User[];
@@ -17,6 +18,7 @@ type UserTableProps = {
 };
 
 export const UserTable = ({
+  canDeleteUsers,
   listStatus,
   mutationStatus,
   users,
@@ -94,9 +96,13 @@ export const UserTable = ({
                   </button>
                   <button
                     className="icon-button icon-button--danger"
-                    disabled={isMutating}
+                    disabled={isMutating || !canDeleteUsers}
                     onClick={() => onDelete(user.id)}
-                    title={`Delete ${user.name}`}
+                    title={
+                      canDeleteUsers
+                        ? `Delete ${user.name}`
+                        : 'Only admin accounts can delete users'
+                    }
                     type="button"
                   >
                     {isMutating ? <ButtonSpinner /> : <Trash2 size={16} />}

@@ -1,11 +1,13 @@
 export type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'unauthenticated';
 export type AuthActionStatus = 'idle' | 'loading' | 'succeeded' | 'failed';
+export type AccountRole = 'admin' | 'manager' | 'member';
 
 export type Account = {
   id: string;
   fullName: string;
   email: string;
   mobile: string;
+  role: AccountRole;
   sessionExpiresAt: string | null;
   sessionExpiresInMs: number | null;
   avatarUrl: string;
