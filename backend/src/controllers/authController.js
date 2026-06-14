@@ -118,7 +118,6 @@ export const requestLoginOtp = asyncHandler(async (req, res) => {
   const { account, normalizedIdentifier } = await findAccountByIdentifier(
     req.body.identifier
   );
-console.log("requestLoginOtp", req)
   const otp = await issueOtp({
     account,
     identifier: normalizedIdentifier,

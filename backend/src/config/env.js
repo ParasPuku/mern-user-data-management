@@ -46,5 +46,10 @@ export const env = Object.freeze({
     15 * 60 * 1000
   ),
   otpExpiresMinutes: toNumber(process.env.OTP_EXPIRES_MINUTES, 10),
+  otpMaxAttempts: toNumber(process.env.OTP_MAX_ATTEMPTS, 5),
+  redisConnectTimeoutMs: toNumber(process.env.REDIS_CONNECT_TIMEOUT_MS, 1000),
+  redisEnabled: toBoolean(process.env.REDIS_ENABLED, true),
+  redisKeyPrefix: process.env.REDIS_KEY_PREFIX || 'umd',
+  redisUrl: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
   syncIndexes: toBoolean(process.env.SYNC_INDEXES, nodeEnv !== 'production')
 });

@@ -5,7 +5,7 @@ A full-stack MERN workspace with a Vite React TypeScript frontend and a plain Ja
 ## Stack
 
 - Frontend: React, TypeScript, Vite, Redux Toolkit, React Redux
-- Backend: Node.js, Express, MongoDB, Mongoose, JWT auth cookies
+- Backend: Node.js, Express, MongoDB, Mongoose, Redis, JWT auth cookies
 - Tooling: npm workspaces, Vite HMR/Fast Refresh, Nodemon
 
 ## Project Structure
@@ -30,6 +30,20 @@ npm run dev
 The frontend runs on `http://localhost:5173` with Vite HMR enabled. The backend runs on `http://localhost:5001`.
 
 Make sure MongoDB is running locally, or update `backend/.env` with your MongoDB Atlas connection string.
+
+Redis is used for temporary OTP storage when available. Start Redis locally with one of these options:
+
+```bash
+redis-server
+```
+
+or with Docker:
+
+```bash
+docker run --name umd-redis -p 6379:6379 redis:7
+```
+
+If Redis is not running, the backend logs a warning and falls back to MongoDB for OTP storage.
 
 ## Useful Scripts
 
@@ -68,8 +82,10 @@ The `/api/users` routes require authentication. Each signed-in account can only 
 OTP codes are generated locally and printed in the backend terminal:
 
 ```text
-[DEV OTP] login OTP for user@example.com: 123456
+[DEV OTP] login OTP for user@example.com: 123456 (redis)
 ```
+
+The value in parentheses shows where the OTP was stored. It will be `redis` when Redis is available and `mongodb` when the fallback path is used.
 
 Real SMS delivery requires an SMS provider such as MSG91, Fast2SMS, Twilio, Firebase, or AWS SNS.
 
