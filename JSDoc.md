@@ -525,7 +525,7 @@ const doubled = numbers.map((number) => number * 2);
 
 ### 24. What is an IIFE?
 
-IIFE means Immediately Invoked Function Expression.
+IIFE means Immediately Invoked Function Expression, and IIFE is a function that gets executes automatically as soon as it is defined. It requires no explicit call later in the script and is primarily used to create local lexical scopes. This isolation prevents variable name bleeding into the global namespace.
 
 Example:
 
@@ -542,7 +542,17 @@ Use cases:
 
 ### 25. What is currying?
 
-Currying converts a function with multiple arguments into a sequence of functions.
+Currying transforms/converts a function with multiple arguments into a sequence of functions. 
+
+Ex - f(a,b,c) => f(a)(b)(c)
+
+Note - Currying is a functional programming technique in JavaScript that transforms a function with multiple arguments into a nested sequence of functions, each taking a single argument. Instead of taking all its parameters at once, the function accepts the first parameter, returns a new function to handle the second parameter, and repeats this chain until all arguments are resolved.
+
+This approach works by leveraging JavaScript closures, allowing inner functions to remember and access variables declared in their outer scopes.
+
+Currying (The Transformation Step) - 
+Definition: This is the structural conversion itself.Action: Taking a function like f(a, b, c) and rewriting it into a structure like f(a)(b)(c).
+Mechanism: It relies on lexical scoping and closures to remember each argument as it is passed down the chain.
 
 Example:
 
@@ -567,6 +577,10 @@ const add = (a) => (b) => a + b;
 ### 26. What is this in JavaScript?
 
 `this` refers to the object that is calling the function.
+
+this is a keyword that acts as a reference to an object, and its value is determined at runtime depending entirely on how and where a function is called.
+
+this is not static and its value changes contextually based on the "call-site" of the code.
 
 Example:
 
