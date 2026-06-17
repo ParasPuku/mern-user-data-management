@@ -609,7 +609,11 @@ Rules:
 
 ### 28. What are call, apply, and bind?
 
-They are used to set `this`.
+In JavaScript, call, apply, and bind are built-in methods used to explicitly set the this context (the execution context) inside a function. 
+
+They allow you to control which object the this keyword refers to, enabling powerful code reuse and method borrowing.
+
+Note - Basically They are used to set `this`.
 
 `call` passes arguments one by one.
 
@@ -958,6 +962,20 @@ JSON method limitations:
 - converts Date to string
 - does not support undefined
 - fails for circular references
+
+Difference between Shallow Copy and Deep Copy: 
+👥 Shallow Copy
+Definition: 
+Copies only the first layer of an object or array.
+Nested Data: Shared by reference between the original and the copy.
+Side Effect: Changing nested items in the copy mutates the original.
+Methods: [...arr], {...obj}, Object.assign(), or arr.slice().
+
+🧬 Deep Copy
+Definition: Copies all layers of an object or array recursively.
+Nested Data: Fully duplicated into brand new memory locations.
+Side Effect: Changing any item in the copy never affects the original.
+Methods: structuredClone(obj) or JSON.parse(JSON.stringify(obj)).
 
 ## Asynchronous JavaScript
 
