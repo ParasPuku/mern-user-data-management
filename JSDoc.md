@@ -1048,7 +1048,7 @@ setTimeout macrotask runs after microtasks.
 
 ### 51. What is a Promise?
 
-Promise represents a future value.
+A Promise in JavaScript is an object represents the eventual completion (or failure) of an asynchronous operation and its resulting value and promise represents a future value.
 
 States:
 
