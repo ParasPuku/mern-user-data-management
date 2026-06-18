@@ -2,7 +2,7 @@
 
 This document explains Redis from the basics and then connects it to the actual implementation in this MERN User Data Management app.
 
-## What Redis Is
+## What Redis Is?
 
 Redis is an in-memory key-value data store.
 
