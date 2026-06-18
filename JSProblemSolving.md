@@ -6,6 +6,7 @@ It focuses on:
 
 - 10 array-based questions
 - 10 string-based questions
+- 5 object-based questions
 - Vanilla JavaScript only
 - simple logic that is easy to explain in interviews
 
@@ -876,6 +877,226 @@ Push each word into a new array and join them again.
 
 ---
 
+# Object Problem Solving Questions
+
+## 1. Count Number Of Keys In An Object
+
+### Question
+
+Find how many keys are present in an object.
+
+### Code
+
+```js
+function countKeys(obj) {
+  var keys = Object.keys(obj);
+  return keys.length;
+}
+
+var user = {
+  name: 'Paras',
+  age: 25,
+  city: 'Bengaluru'
+};
+
+console.log(countKeys(user));
+```
+
+### Output
+
+```js
+3
+```
+
+### Explanation
+
+`Object.keys(obj)` returns an array of object keys.
+
+Then we use `.length` to count them.
+
+---
+
+## 2. Check If Object Has A Property
+
+### Question
+
+Check whether a given property exists in an object.
+
+### Code
+
+```js
+function hasProperty(obj, key) {
+  return obj.hasOwnProperty(key);
+}
+
+var user = {
+  name: 'Paras',
+  role: 'admin'
+};
+
+console.log(hasProperty(user, 'name'));
+console.log(hasProperty(user, 'email'));
+```
+
+### Output
+
+```js
+true
+false
+```
+
+### Explanation
+
+`hasOwnProperty()` checks whether the property exists directly inside the object.
+
+---
+
+## 3. Convert Object To Array
+
+### Question
+
+Convert an object into an array of key-value pairs.
+
+### Code
+
+```js
+function objectToArray(obj) {
+  return Object.entries(obj);
+}
+
+var user = {
+  name: 'Paras',
+  age: 25
+};
+
+console.log(objectToArray(user));
+```
+
+### Output
+
+```js
+[
+  ['name', 'Paras'],
+  ['age', 25]
+]
+```
+
+### Explanation
+
+`Object.entries(obj)` converts an object into an array.
+
+Each item contains:
+
+- key
+- value
+
+---
+
+## 4. Merge Two Objects
+
+### Question
+
+Merge two objects into one object.
+
+### Code
+
+```js
+function mergeObjects(obj1, obj2) {
+  return Object.assign({}, obj1, obj2);
+}
+
+var user = {
+  name: 'Paras',
+  age: 25
+};
+
+var address = {
+  city: 'Bengaluru',
+  country: 'India'
+};
+
+console.log(mergeObjects(user, address));
+```
+
+### Output
+
+```js
+{
+  name: 'Paras',
+  age: 25,
+  city: 'Bengaluru',
+  country: 'India'
+}
+```
+
+### Explanation
+
+`Object.assign()` copies properties from source objects into a new object.
+
+### Shorter Version
+
+```js
+var merged = { ...user, ...address };
+
+console.log(merged);
+```
+
+---
+
+## 5. Find Highest Value In An Object
+
+### Question
+
+Find the key that has the highest value in an object.
+
+### Code
+
+```js
+function findHighestScore(scores) {
+  var highestName = '';
+  var highestScore = -Infinity;
+
+  for (var key in scores) {
+    if (scores[key] > highestScore) {
+      highestScore = scores[key];
+      highestName = key;
+    }
+  }
+
+  return {
+    name: highestName,
+    score: highestScore
+  };
+}
+
+var scores = {
+  Amit: 80,
+  Neha: 95,
+  Ravi: 70
+};
+
+console.log(findHighestScore(scores));
+```
+
+### Output
+
+```js
+{ name: 'Neha', score: 95 }
+```
+
+### Explanation
+
+Loop through every key in the object.
+
+Compare each value with the current highest value.
+
+If a bigger value is found, update both:
+
+- highest key
+- highest value
+
+---
+
 # Quick Revision Summary
 
 ## Array Methods Used
@@ -899,6 +1120,15 @@ Push each word into a new array and join them again.
 - `slice()`
 - `sort()`
 
+## Object Methods Used
+
+- `Object.keys()`
+- `Object.entries()`
+- `Object.assign()`
+- `hasOwnProperty()`
+- object spread syntax
+- `for...in`
+
 ## Common Interview Tips
 
 - First explain the simple brute-force idea.
@@ -919,6 +1149,9 @@ Push each word into a new array and join them again.
 - negative numbers
 - array with one element
 - string with one character
+- object with no keys
+- missing object property
+- duplicate keys while merging objects
 
 ## Final Practice Checklist
 
@@ -944,4 +1177,8 @@ Practice these without looking at the solution:
 - character frequency
 - capitalize words
 - reverse words
-
+- count object keys
+- check object property
+- convert object to array
+- merge objects
+- find highest object value
