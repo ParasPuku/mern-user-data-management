@@ -236,6 +236,8 @@ Common causes:
 - context value change
 - Redux selector result change
 
+Note - Yes, by default in React, if a parent component re-renders, the child component will also re-render.
+
 ### 15. What is conditional rendering?
 
 Conditional rendering means showing UI based on condition.
@@ -491,6 +493,8 @@ This changes `count`, effect runs again, and loop continues.
 
 `useRef` stores a mutable value that does not cause re-render.
 
+The useRef Hook in React creates a mutable object that persists across component renders without triggering a re-render when its value changes. It acts like a private "box" where your component can store data that does not directly impact what is displayed on the screen.
+
 Example DOM ref:
 
 ```tsx
@@ -536,6 +540,8 @@ Use it when calculation is expensive or reference stability matters.
 ### 33. What is useCallback?
 
 `useCallback` memoizes a function reference.
+
+useCallback is a React Hook that caches (memoizes) a function definition between renders so React does not recreate the function every time the component updates.
 
 Example:
 
