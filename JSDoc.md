@@ -983,12 +983,24 @@ Definition:
 
 Asynchronous JavaScript allows long-running work without blocking the main thread.
 
+Asynchronous allows your code to start a long-running task and move on to other tasks immediately, instead of waiting for that task to finish.
+
 Examples:
 
 - API calls
 - timers
 - file system operations in Node.js
 - database calls
+
+⏳ Difference between Synchronous and Asynchronous - 
+
+- Synchronous (Blocking): Tasks execute sequentially one by one. A heavy task blocks the entire webpage.
+- Asynchronous (Non-Blocking): Tasks start now and finish later. The webpage remains responsive during execution.
+
+⚙️ How it Works Under the Hood
+- Single-Threaded: JavaScript can only execute one line of code at a time.
+- Web APIs: Heavy tasks (like fetching data) are handed over to the browser environment.
+- Event Loop: This mechanism monitors and pushes completed asynchronous tasks back into the JavaScript execution thread when it becomes empty.
 
 ### 49. What is event loop?
 
