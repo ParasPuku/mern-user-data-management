@@ -20,6 +20,26 @@ You can run these examples in:
 
 ## Array Problem Solving Questions
 
+## 0. Find missing number without using buil-in method
+### Code
+
+```js
+function missingNumber(arr){
+    var missingFlag = 0;
+    var missingValue = 0;
+    for(var i=0; i<arr.length; i++){
+        missingFlag++;
+        if(arr[i] > missingValue && arr[i] > missingFlag) {
+            missingValue=arr[i];
+        }
+    }
+    return missingFlag;
+}
+const result = missingNumber([1,2,3,4,6]);
+console.log("___missing value: ", result);
+console.log(reverseArray([1, 2, 3, 4, 5]));
+```
+
 ## 1. Reverse An Array Without Using reverse()
 
 ### Question
@@ -155,23 +175,27 @@ Find the second largest number in an array.
 ### Code
 
 ```js
-function secondLargest(arr) {
-  var largest = -Infinity;
-  var second = -Infinity;
-
-  for (var i = 0; i < arr.length; i++) {
-    if (arr[i] > largest) {
-      second = largest;
-      largest = arr[i];
-    } else if (arr[i] > second && arr[i] !== largest) {
-      second = arr[i];
+function secondLargest(arr){
+    var largest = 0;
+    var second = 0;
+    for(var i=0; i<arr.length; i++){
+        if(arr[i] > largest) {
+            largest=arr[i];
+        } 
     }
-  }
-
-  return second;
+    for (var i=0; i<arr.length; i++){
+        if(arr[i] > second && arr[i] < largest) {
+            second=arr[i];
+        }
+    }
+    return {
+        largest,
+        second
+    }
 }
-
-console.log(secondLargest([10, 5, 20, 8, 20]));
+const result = secondLargest([30,25,2,5,20, 29]);
+console.log("___largest result: ", result.largest);
+console.log("___second largest result: ", result.second);
 ```
 
 ### Output
