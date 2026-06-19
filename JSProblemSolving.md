@@ -129,19 +129,24 @@ Remove duplicate values from an array.
 ### Code
 
 ```js
-function removeDuplicates(arr) {
-  var result = [];
-
-  for (var i = 0; i < arr.length; i++) {
-    if (!result.includes(arr[i])) {
-      result.push(arr[i]);
+function findDuplicate(arr){
+    const newArr = arr;
+    var duplicateVal = [];
+    var cleanValue = [];
+    for(var i=0; i<newArr.length; i++){
+        if(!cleanValue.includes(newArr[i])){
+           cleanValue.push(newArr[i]);
+        } else {
+            duplicateVal.push(newArr[i]);
+        }
     }
-  }
-
-  return result;
+    return {arr, duplicateVal, cleanValue}
 }
 
-console.log(removeDuplicates([1, 2, 2, 3, 4, 4, 5]));
+const result = findDuplicate([1,2,3,2,4,5,6,4,1,1]);
+console.log("___original_array", result.arr);
+console.log("___duplicate_value", result.duplicateVal);
+console.log("___clean_value", result.cleanValue);
 ```
 
 ### Output
