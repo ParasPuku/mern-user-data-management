@@ -279,7 +279,7 @@ process.nextTick(() => {
 
 Output
 // --- EXECUTING THE CODE TRACKS ---
-```text
+```js
 ✍️ 0. Main Synchronous Code Execution
 ✍️ 1. Main Synchronous Code Execution
 🚀 2. process.nextTick - The Line Jumper!
