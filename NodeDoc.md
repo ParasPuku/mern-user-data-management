@@ -287,8 +287,6 @@ Output
 🎫 4. setImmediate
 ```
 
-console.log("✍️ 1. Main Synchronous Code Execution");
-
 ### 14. Why can process.nextTick be dangerous?
 
 Too many `process.nextTick` callbacks can starve the event loop.
