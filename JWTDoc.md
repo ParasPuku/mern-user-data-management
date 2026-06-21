@@ -309,8 +309,12 @@ This app uses:
 ```
 
 The library provides methods like:
+- `jwt.sign()`
+- `jwt.verify()`
+- `jwt.decode()`
 
-- `jwt.sign()` -- (The Creation Phase)
+
+`jwt.sign()` -- (The Creation Phase)
 - Where it happens: Backend (Node.js) during Login / Signup.
 - What it does: It takes your user data (payload) and mixes it with a secret password (JWT_SECRET) using an encryption algorithm to generate a long three-part string.
 - Security level: 🔐 High. Only the backend knows the secret key used to lock this token.
@@ -325,7 +329,7 @@ const token = jwt.sign(
 // Output is a token: xxxxx.yyyyy.zzzzz
 ```
 
-- `jwt.verify()` - [The Security Check Phase]
+`jwt.verify()` - [The Security Check Phase]
 - Where it happens: Backend (Node.js) inside your API route middleware.
 
 - What it does: It checks two critical parameters: Has the token expired? And does the signature match your JWT_SECRET? If someone altered the user data (e.g., changing their role from "user" to "admin"), the verification check fails immediately and throws an error.
@@ -343,7 +347,7 @@ try {
 }
 ```
 
-- `jwt.decode()` - [ The Reading Phase]
+`jwt.decode()` - [ The Reading Phase]
 - Where it happens: Frontend (React) or anywhere.
 
 - What it does: It simply reads the middle part of the token and translates it from base64 back into readable text. It does NOT check the secret key. It does not prove if the token is valid, fake, or expired. It just opens the package to read the contents.
