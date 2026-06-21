@@ -574,7 +574,9 @@ app.use(errorHandler);
 
 ### 30. What is express.json()?
 
-It parses JSON request body.
+It parses JSON request body which is passed data via modern Axios/Fetch API calls from your React frontend.
+
+JSON text payloads ({ "key": "value" }) from the frontend side.
 
 Example:
 
@@ -586,7 +588,7 @@ Without it, `req.body` may be undefined for JSON requests.
 
 ### 31. What is express.urlencoded()?
 
-It parses form URL-encoded data.
+It parses form URL-encoded data like URL query text strings (key=value&key2=value2) which gets attach when Traditional HTML <form> submissions sending raw browser requests.
 
 Example:
 
@@ -598,6 +600,20 @@ app.use(express.urlencoded({ extended: true }));
 
 It serves static files.
 
+express.static() is a built-in middleware function in Express used to serve static files directly to the browser.
+
+Static files are assets that do not change dynamically when the application runs—such as images, PDF documents, raw CSS stylesheets, and client-side JavaScript files.
+
+Without this middleware, if a client requests an image via a URL (like http://localhost:5001/logo.png), Express will treat it as an unhandled API route and return a 404 Not Found error.
+
+A Quick Recap of Why Your Logic is Spot-On
+
+- The 404 Problem (Without the middleware): Express is strictly a routing engine by default. If you ask for /logo.png, it searches through your manual endpoint list (app.get('/logo.png')). When it can't find a matching route declaration, it returns a 404 Not Found error.
+
+- The Interception Fix (With the middleware): When you add express.static('public'), you are telling Express: "Before throwing a 404 error, check if a file named logo.png physically exists inside my public folder.
+
+- "The File Type Freedom: It automatically reads, handles, and streams any binary or text file format to the browser—including PDF documents, JPEGs, PNGs, MP3 audio tracks, MP4 video snippets, favicon icons, and raw CSS files—setting the correct browser headers for you automatically.
+
 In this app:
 
 ```js
@@ -605,6 +621,71 @@ app.use('/uploads', express.static(uploadsDir));
 ```
 
 This serves uploaded avatars.
+
+## Error Handling
+### 33. How to handle error in Backend side 
+
+The 3 Pillars of Backend Error Handling
+
+1. Always Use Try-Catch in Asynchronous Code
+Because database operations (like MongoDB/Mongoose lookups) are asynchronous, an unhandled error inside a Promise will crash your entire server node. You must wrap them in a try/catch block.
+
+2. Pass Errors to the next() Function
+Express has a special built-in parameter called next. When you pass an error into it (next(error)), Express will immediately halt the current request loop, skip all regular routes, and shoot the error straight down to your global error-handling workspace.
+
+3. Create a Single Global Error Middleware (The Control Hub)
+Instead of copy-pasting res.status(500).json(...) into 50 different files, you write one global middleware function at the bottom of your server script to format and deliver all system alerts uniformly.
+
+Complete code
+=============
+
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+// --- 1. SAMPLE ROUTE HANDLER ---
+app.get('/api/users/:id', async (req, res, next) => {
+    try {
+        const userId = req.params.id;
+        
+        // Simulating a database validation check
+        if (userId === "invalid") {
+            // Create a custom error and assign an accurate HTTP Status Code
+            const err = new Error("User profile not found in our records.");
+            err.statusCode = 404;
+            throw err; // Blow the whistle! Jumps directly to the catch block below
+        }
+
+        res.json({ id: userId, name: "Paras" });
+    } catch (error) {
+        // 💡 CRITICAL: Pass the error to the next() tracker to send it down the pipeline
+        next(error); 
+    }
+});
+
+// --- 2. THE GLOBAL ERROR HANDLING MIDDLEWARE ---
+// 💡 Rule: It MUST have exactly 4 arguments (err, req, res, next) so Express recognizes it.
+// Put this line at the absolute bottom of your file, after all your routes.
+app.use((err, req, res, next) => {
+    // Fall back to a 500 Internal Server error if a specific code wasn't provided
+    const statusCode = err.statusCode || 500;
+    const message = err.message || "Something went wrong on our servers.";
+
+    console.error(`🚨 [SERVER ERROR] Status: ${statusCode} | Message: ${message}`);
+
+    // Send a clean, unified response to your React frontend application
+    res.status(statusCode).json({
+        success: false,
+        status: statusCode,
+        error: message,
+        // Only reveal the raw stack trace during local development, hide it in live production
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
+});
+
+app.listen(5001, () => console.log('🚀 Secure Server running on port 5001'));
+
 
 ## Routing
 
