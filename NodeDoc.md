@@ -234,8 +234,15 @@ Inside I/O callback, `setImmediate` usually runs before `setTimeout`.
 Quick Comparison: setImmediate vs setTimeout(..., 0)
 If you use both inside a Node.js backend environment, their execution order can vary depending on context, but generally:
 
-setImmediate: Always fires on the next check phase of the event loop wheel, immediately after I/O cycles complete.
 setTimeout(() => {}, 0): Must register a formal 0ms clock countdown inside the timer hardware tracking module, which makes it slightly more system-heavy than a direct immediate execution.
+
+`setImmediate:` Always fires on the next check phase of the event loop wheel, immediately after I/O cycles complete.
+
+`setTimeout:` setTimeout(() => {}, 0): Must register a formal 0ms clock countdown inside the timer hardware tracking module, which makes it slightly more system-heavy than a direct immediate execution.
+
+`setTimeout:` Even with 0ms, JavaScript must formally hand the task over to the system clock, register a timer, count down to zero, and then push the callback into the event loop queue. This process requires a tiny amount of performance overhead.
+
+`setImmediate:` It completely bypasses the system clock timer module. It says: "As soon as the current file finishes executing its immediate code (and handles any network/file I/O operations), run this block next."
 
 ### 13. process.nextTick vs Promise.then?
 
