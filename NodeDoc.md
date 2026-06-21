@@ -267,6 +267,28 @@ nextTick
 promise
 ```
 
+```js
+setImmediate(() => console.log("🎫 4. setImmediate"), 0);
+
+setTimeout(() => console.log("⏱️ 3. setTimeout (0ms)"), 0);
+console.log("✍️ 0. Main Synchronous Code Execution");
+process.nextTick(() => {
+  console.log("🚀 2. process.nextTick - The Line Jumper!");
+});
+```
+
+Output
+// --- EXECUTING THE CODE TRACKS ---
+```text
+✍️ 0. Main Synchronous Code Execution
+✍️ 1. Main Synchronous Code Execution
+🚀 2. process.nextTick - The Line Jumper!
+⏱️ 3. setTimeout (0ms)
+🎫 4. setImmediate
+```
+
+console.log("✍️ 1. Main Synchronous Code Execution");
+
 ### 14. Why can process.nextTick be dangerous?
 
 Too many `process.nextTick` callbacks can starve the event loop.
