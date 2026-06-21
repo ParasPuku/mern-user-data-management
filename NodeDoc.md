@@ -180,22 +180,62 @@ Important queues:
 - microtask queue
 - nextTick queue
 
-### 12. setTimeout vs setImmediate?
+### 12. setInterval vs setTimeout vs setImmediate?
+
+`setInterval` - Executes a function repeatedly, waiting for the specified millisecond duration between each execution cycle.
+
+```js
+// Prints every 2 seconds indefinitely
+const intervalId = setInterval(() => {
+  console.log("⏳ Clock ticking...");
+}, 2000);
+
+// How to stop the loop (Crucial for React cleanup!):
+clearInterval(intervalId);
+```
+
+`setTimeout` - Executes a function once after waiting for a specified number of milliseconds (1 second = 1000ms).
 
 `setTimeout` runs after minimum delay in timers phase.
 
+```js
+// Waits 3 seconds, then prints once
+const timerId = setTimeout(() => {
+  console.log("⏰ Alarm ringing!");
+}, 3000);
+
+// How to cancel it before it fires:
+clearTimeout(timerId);
+```
+
+`setImmediate` is used to execute a function right after the current block of code finishes, executing ahead of standard timers."
 `setImmediate` runs in check phase.
 
 Example:
 
 ```js
-setTimeout(() => console.log('timeout'), 0);
-setImmediate(() => console.log('immediate'));
+console.log("1. Start");
+setImmediate(() => {
+  console.log("3. Inside setImmediate");
+});
+console.log("2. End");
+
+// --- OUTPUT ---
+// 1. Start
+// 2. End
+// 3. Inside setImmediate
+
 ```
 
 Order can vary depending on context.
 
 Inside I/O callback, `setImmediate` usually runs before `setTimeout`.
+
+Quick Comparison: setImmediate vs setTimeout(..., 0)
+If you use both inside a Node.js backend environment, their execution order can vary depending on context, but generally:
+
+setImmediate: Always fires on the next check phase of the event loop wheel, immediately after I/O cycles complete.
+setTimeout(() => {}, 0): Must register a formal 0ms clock countdown inside the timer hardware tracking module, which makes it slightly more system-heavy than a direct immediate execution.
 
 ### 13. process.nextTick vs Promise.then?
 

@@ -597,6 +597,17 @@ await User.find({ owner }).explain('executionStats');
 
 Useful to check if indexes are being used.
 
+### executionStats
+
+Note - In MongoDB, executionStats is a diagnostic tool that gives you a detailed look into how efficiently a query ran under the hood. When troubleshooting a slow database query, appending .explain("executionStats") to your query string forces MongoDB to execute the command and return a detailed report of execution speeds, index efficiency, and row-scanning metrics.
+
+// How to run it in your MongoDB Shell
+```js
+db.users.find({ username: "paras" }).explain("executionStats");
+```
+
+The 4 Most Critical Metrics to ReadThe report returns a large JSON object. When analyzing it, you only need to look at these four properties inside the executionStats block:1. executionTimeMillisWhat it means: The exact total time it took MongoDB to find and return your data, measured in milliseconds.Goal: Keep this as close to 0 as possible.2. nReturnedWhat it means: The number of documents that matched your search query and were sent back to your application.Example: If 5 users are named "Paras", this value will be 5.3. totalDocsExaminedWhat it means: The number of physical records MongoDB had to open and read from disk/memory to find your results.4. totalKeysExaminedWhat it means: The number of entries checked inside your B-tree index structures. If this value is 0, it means your query ignored your indexes entirely.
+
 ## Relationships
 
 ### 40. Does MongoDB support relationships?
