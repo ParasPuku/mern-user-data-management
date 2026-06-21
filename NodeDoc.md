@@ -299,6 +299,8 @@ Why setTimeout ran first in your codeWhen you run a file normally, the main file
 
 ### 14. Why can process.nextTick be dangerous?
 
+"process.nextTick() is a specialized Node.js function that lets you schedule a callback to run immediately after the current block of code finishes, jumping ahead of all other asynchronous timers and event loop queues."
+
 Too many `process.nextTick` callbacks can starve the event loop.
 
 Example:
@@ -309,9 +311,31 @@ function loop() {
 }
 ```
 
+The Execution Checklist
+- Synchronous Tasks: Standard top-to-bottom code runs.
+- process.nextTick() Queue: Node.js pauses to clear this entirely.
+- Promises/Microtasks: Standard .then() callbacks run.
+- The Event Loop Wheel Turns: setTimeout, setInterval, and setImmediate finally get their turn.
+
+setTimeout(() => console.log("⏱️ 3. setTimeout (0ms)"), 0);
+
+process.nextTick(() => {
+  console.log("🚀 2. process.nextTick - High Priority!");
+});
+
+console.log("✍️ 1. Main Synchronous Line");
+
+// --- OUTPUT ---
+// 1. Main Synchronous Line
+// 2. process.nextTick - High Priority!
+// 3. setTimeout (0ms)
+
+
 This can prevent timers/I/O from running.
 
 ### 15. What is libuv?
+
+"Libuv is the underlying C library that provides Node.js with its Event Loop and Thread Pool, allowing a single-threaded language like JavaScript to handle thousands of heavy network and file tasks concurrently without blocking."
 
 libuv is a C library used by Node.js.
 
