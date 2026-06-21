@@ -811,6 +811,12 @@ const flatten = (arr) =>
   );
 ```
 
+#### 39. Difference between Statefull and Stateless.
+
+Stateful means an application or system remembers previous interactions (its context or "state").
+
+Stateless means each request is treated as brand new, with no memory of past events.
+
 ### 39. Difference between slice and splice?
 
 `slice` returns a copy and does not mutate original array.
