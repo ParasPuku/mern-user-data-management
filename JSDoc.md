@@ -172,6 +172,31 @@ console.log(b); // ReferenceError
 console.log(c); // ReferenceError
 ```
 
+## Does let and const gets hoisted during compilation time?
+
+Yes, let and const are hoisted during the compile phase, but unlike var, they are not initialized with undefined.
+
+How hoisting works for let and const?
+
+1. Compilation phase (Creation): The JavaScript engine reads your code and registers the variable in Memory.
+
+2. Execution Phase (Initialization): Memory is allocated, but the variable in an uninitialized state.
+
+The Temporal Dead Zone (TDZ) -
+ Because they are hoised but not initialized, let and const enter a Temporal Dead Zone (TDZ) from the top of the block untill the line where they are actually decalred and assigned a value. 
+ 
+If you attempt to access or use the variable while it is in TDZ, JavaScript will throw a ReferenceError. 
+
+Var Variable
+Hoisted - Yes
+Initialized during Hoisting - Yes(as undefined)
+Accessing becomes declaration - Returns undefined
+
+let/const Variable 
+Hoisted - Yes
+Initialized during Hoisting - No
+Accessing becomes declaration - Throws ReferenceError
+
 ### 7. Can const object be changed?
 
 Yes. `const` prevents reassignment, not mutation.
