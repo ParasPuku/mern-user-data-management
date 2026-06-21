@@ -286,6 +286,16 @@ Output
 ⏱️ 3. setTimeout (0ms)
 🎫 4. setImmediate
 ```
+Note - The Clockwise Flow of the Event Loop - 
+  The Node.js event loop runs continuously in a strict clockwise order:
+  Timer Phase(setTimeout) -> I/O Phase -> Poll Phase -> Check Phase(setImmediate) 
+  Because the Timers Phase comes before the Check Phase on the wheel, setTimeout naturally gets checked first if both are ready.
+
+Why setTimeout ran first in your codeWhen you run a file normally, the main file script executes line-by-line.
+
+- It registers the setTimeout and the setImmediate.
+- Once the main script finishes, the Event Loop starts up and starts turning the wheel from the very beginning—which is the Timers Phase.
+- Because setTimeout is at the beginning of the wheel, its callback gets fired first, and setImmediate must wait until the wheel spins down to the Check Phase.
 
 ### 14. Why can process.nextTick be dangerous?
 
