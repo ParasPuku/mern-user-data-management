@@ -365,6 +365,18 @@ console.log(data.username); // "paras"
 // Used ONLY to update your React UI navbar, never for database security!
 ```
 
+## Does everytime new token gets created when we do login with same user id/name and password?
+
+Yes, a completely new token is generated every single time you log in.
+
+Even if the user data (like your ID or username) stays exactly the same, the token changes because of two critical factors:
+
+1. The Timestamp (iat)
+Every time you run jwt.sign(), JSON Web Tokens automatically embed an iat (Issued At) timestamp inside the payload, tracking the exact second the token was minted. Because time is always moving forward, the generated string will always look different.
+
+2. Security Cycle (Invalidating Old Sessions)
+Generating a fresh token ensures that if a user logs in from a new device, they get a completely pristine expiration window. It also allows backends to implement rotation strategies to keep sessions secure.
+
 ## JWT Environment Config
 
 File:
