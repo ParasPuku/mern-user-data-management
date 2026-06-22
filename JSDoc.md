@@ -375,6 +375,8 @@ console.log(name); // ReferenceError
 
 ### 16. What is lexical scope?
 
+"Lexical Scope means variable access is defined by the physical location of the code structure. Inner functions have permanent access to the variables declared in their outer parent scopes, but parent scopes cannot access the inner contents of their children."
+
 Lexical scope means a function can access variables from the place where it was defined.
 
 Example:
@@ -384,10 +386,12 @@ function outer() {
   const name = 'Paras';
 
   function inner() {
-    console.log(name);
+    const age = 10;
+    console.log("Person Name", name);
   }
 
   inner();
+  // console.log("Person Age", age) // ❌ ERROR: Parent cannot see age. It would throw a ReferenceError!
 }
 
 outer(); // Paras
