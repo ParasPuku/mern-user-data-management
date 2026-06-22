@@ -530,6 +530,8 @@ user.arrow(); // undefined
 
 A callback is a function passed as an argument to another function.
 
+A callback is a function passed as an argument (input) into another function, with the expectation that it will be executed ("called back") later on.
+
 Example:
 
 ```js
