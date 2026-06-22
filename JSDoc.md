@@ -565,6 +565,7 @@ const doubled = numbers.map((number) => number * 2);
 - Returns a New Function as an Output
 
 // multiplier is a HIGHER-ORDER FUNCTION because it returns a function
+```js
 function createMultiplier(factor) {
     return function(number) {
         return number * factor;
@@ -577,7 +578,7 @@ const triple = createMultiplier(3);
 
 console.log(double(5)); // Output: 10
 console.log(triple(5)); // Output: 15
-
+```
 
 ### 24. What is an IIFE?
 
