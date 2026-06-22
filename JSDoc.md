@@ -546,10 +546,12 @@ greet('Paras', (message) => {
 
 ### 23. What is a higher-order function?
 
+A higher-order function a function that does at least one of two things: it either takes one or more functions as arguments, or it returns a new function as its output.
+
 A higher-order function either:
 
 - accepts a function as argument
-- returns a function
+
 
 Example:
 
@@ -559,6 +561,23 @@ const doubled = numbers.map((number) => number * 2);
 ```
 
 `map` is a higher-order function.
+
+- Returns a New Function as an Output
+
+// multiplier is a HIGHER-ORDER FUNCTION because it returns a function
+function createMultiplier(factor) {
+    return function(number) {
+        return number * factor;
+    };
+}
+
+// Manufacture custom functions using the HOF
+const double = createMultiplier(2);
+const triple = createMultiplier(3);
+
+console.log(double(5)); // Output: 10
+console.log(triple(5)); // Output: 15
+
 
 ### 24. What is an IIFE?
 
