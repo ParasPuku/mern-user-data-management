@@ -477,7 +477,7 @@ const sayHi = function () {
 
 ### 20. What is an arrow function?
 
-Arrow function is a shorter syntax for writing functions.
+Arrow function is a shorter syntax for writing functions, and its introduced in ES6 features. It does not create its own this context—instead, it inherits the this value from its surrounding code.
 
 Example:
 
