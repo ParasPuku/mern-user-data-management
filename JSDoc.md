@@ -479,6 +479,12 @@ const sayHi = function () {
 
 Arrow function is a shorter syntax for writing functions, and its introduced in ES6 features. It does not create its own this context—instead, it inherits the this value from its surrounding code.
 
+1. No Personal this - It captures the this value of the enclosing lexical context. It can never be bound dynamically.
+
+2. No arguments Object - Regular functions have a built-in local array tracker called arguments that catches every input passed to it. Arrow functions do not have this. If you need a list of inputs, you use the rest parameter (...args) instead:
+
+3. Cannot be used as Constructors (new keyword) - You cannot use an arrow function to build a classical blueprint object class. Trying to run const user = new MyArrowFunction() will throw an immediate runtime crash error.
+
 Example:
 
 ```js
