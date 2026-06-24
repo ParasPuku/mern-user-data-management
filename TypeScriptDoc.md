@@ -58,8 +58,8 @@ TypeScript must be compiled/transpiled to JavaScript.
 Benefits:
 
 - catches errors before runtime
-- better autocomplete
-- safer refactoring
+- better autocomplete - Autocomplete in TypeScript works through a background mechanism called the TypeScript Language Service (TSServer), which parses your code structure and maps data types to provide real-time editor suggestions.
+- safer refactoring - Refactoring in TypeScript is the process of improving the internal structure of your code without altering its external runtime behavior.
 - self-documenting code
 - better large-app maintainability
 - typed API responses
@@ -250,6 +250,8 @@ b.toUpperCase(); // error
 
 `void` means function returns nothing.
 
+void (Returns Nothing): The function starts, does its job, reaches the bottom curly brace }, and successfully stops. It returns nothing to you, but it successfully finishes.
+
 Example:
 
 ```ts
@@ -260,7 +262,11 @@ function logMessage(message: string): void {
 
 ### 17. What is never?
 
-`never` means value never occurs.
+`never` means value never occurs. 
+
+In TypeScript - never is a special type that represents values that will never exist.
+
+Think of it as a dead end. If a variable or a function has the type never, it means that point in your code can absolutely never be reached.
 
 Use cases:
 
@@ -274,7 +280,16 @@ Example:
 function fail(message: string): never {
   throw new Error(message);
 }
+
+function keepRunning(): never {
+  while (true) {
+    console.log("Running..."); // This loop goes on forever. It never stops to return anything.
+  }
+}
+
 ```
+
+Note - never (Never Finishes): The function starts, but it gets permanently stuck or crashes. It never reaches the bottom of the function. It is physically impossible for the execution to get past it.
 
 Exhaustive check:
 
@@ -313,7 +328,9 @@ type Account = {
 
 ### 19. What is type alias?
 
-Type alias gives a name to a type.
+Type alias gives a name to a type. 
+
+Type Alias: Requires an = sign.
 
 Example:
 
@@ -324,9 +341,19 @@ type User = {
 };
 ```
 
+Type Alias: Can be anything, including Union Types (a list of allowed choices).
+
+```ts
+// You CANNOT do this with an interface
+type DoorState = "open" | "closed" | "locked"; 
+type ID = string | number;
+```
+
 ### 20. What is interface?
 
 Interface defines object shape.
+
+Interface: Does not use an = sign.
 
 Example:
 
@@ -336,6 +363,20 @@ interface User {
   name: string;
 }
 ```
+
+Interface uses extends -
+
+```ts
+interface Animal {
+  name: string;
+}
+
+interface Dog extends Animal {
+  breed: string; // Dog now has name and breed
+}
+```
+
+Interface: Can only be an object { }.
 
 ### 21. type vs interface?
 

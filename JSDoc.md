@@ -597,6 +597,11 @@ Use cases:
 - avoid polluting global scope
 - create private scope
 
+### 25. What is pure function?
+
+In JavaScript, a pure function is a function that always returns the same output given the same input arguments and produces absolutely no side effects. It is a foundational concept in functional programming.
+
+
 ### 25. What is currying?
 
 Currying transforms/converts a function with multiple arguments into a sequence of functions. 
@@ -768,6 +773,7 @@ console.log(user.toString);
 
 ### 33. What is class in JavaScript?
 
+Class - A class is a blueprint for creating objects.
 Class is syntactic sugar over prototype-based inheritance.
 
 Example:

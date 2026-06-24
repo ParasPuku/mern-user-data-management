@@ -286,7 +286,7 @@ Using index can cause bugs when list order changes.
 
 ### 18. What is Virtual DOM?
 
-Virtual DOM is a lightweight JavaScript representation of the real DOM.
+Virtual DOM is a lightweight, and in-memory representation of the real DOM.
 
 When state changes:
 
@@ -379,6 +379,8 @@ Use functional update when next value depends on previous value.
 ### 24. Why state updates are asynchronous?
 
 React batches state updates for performance.
+
+State updates in frameworks like React aren't asynchronous in the traditional sense; rather, they are queued and batched. Instead of re-rendering the component for every single setState call, React waits until the current execution block finishes, groups multiple updates together, and processes them in a single render pass.
 
 Example:
 
@@ -575,6 +577,8 @@ useCallback(fn, deps) === useMemo(() => fn, deps)
 
 ### 35. What is useContext?
 
+`The useContext hook` in React is a built-in function that lets functional components read and subscribe to data from a context object without manually passing props through intermediate components. It provides an elegant solution to prop drilling, which is the tedious process of passing props down multiple levels of a component tree just to reach a deeply nested child.
+
 `useContext` reads value from React Context.
 
 Example:
@@ -649,8 +653,8 @@ Custom hook name should start with `use`.
 ## Forms
 
 ### 38. Controlled vs uncontrolled components?
-
-Controlled input:
+- Controlled components rely on React state to manage form data
+- Controlled input: 
 
 ```tsx
 const [name, setName] = useState('');
@@ -660,7 +664,8 @@ const [name, setName] = useState('');
 
 React controls the input value.
 
-Uncontrolled input:
+- Uncontrolled components let the DOM handle form data internally.
+- Uncontrolled input:
 
 ```tsx
 const inputRef = useRef<HTMLInputElement | null>(null);
@@ -881,6 +886,18 @@ export const store = configureStore({
   }
 });
 ```
+
+### 53. What is Thunk in Redux?
+In Redux Toolkit (RTK), a thunk is a function that contains delayed, asynchronous logic. Because a standard Redux store can only handle synchronous data flow, Redux Toolkit automatically includes the Redux Thunk middleware by default to let you perform side effects like fetching API data.
+
+- How createAsyncThunk Works
+When you create an async thunk, you provide an action type prefix and a payload creator function that returns a Promise. The thunk then automatically generates and dispatches three separate lifecycle actions:
+
+- pending: Dispatched immediately when the thunk starts running.
+
+- fulfilled: Dispatched if the Promise resolves successfully with data.
+
+- rejected: Dispatched if the Promise fails or rejects.
 
 ### 53. What is reducer?
 
