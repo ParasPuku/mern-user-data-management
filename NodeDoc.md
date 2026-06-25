@@ -173,7 +173,9 @@ Main phases:
 - idle/prepare
 - poll
 - check
-- close callbacks
+- close 
+
+https://medium.com/@kunaltandon.kt/process-nexttick-vs-setimmediate-vs-settimeout-explained-wrt-different-event-loop-phases-c0506b12921d
 
 Important queues:
 
@@ -425,6 +427,135 @@ Example:
 ```json
 "nodemon": "^3.1.10"
 ```
+
+### 20.1. What is package-lock.json?
+
+`package-lock.json` records the exact dependency versions installed in the project.
+
+Interview answer:
+
+```text
+package-lock.json makes dependency installation predictable. It locks exact versions of packages and their nested dependencies so every developer and server installs the same dependency tree.
+```
+
+Why it matters:
+
+- avoids "works on my machine" version issues
+- makes `npm install` more consistent
+- improves security auditing
+- should usually be committed to Git
+
+### 20.2. What is npx?
+
+`npx` runs npm package binaries without manually installing them globally.
+
+Example:
+
+```sh
+npx nodemon src/server.js
+```
+
+Interview answer:
+
+```text
+npx is used to execute a package command directly. It is useful for running local project binaries or one-time CLI tools without global installation.
+```
+
+### 20.3. What are npm scripts?
+
+npm scripts are shortcut commands defined in `package.json`.
+
+Example:
+
+```json
+{
+  "scripts": {
+    "dev": "nodemon",
+    "start": "node src/server.js"
+  }
+}
+```
+
+Use:
+
+```sh
+npm run dev
+npm start
+```
+
+Interview answer:
+
+```text
+npm scripts help standardize project commands like starting the server, running tests, building code, or linting.
+```
+
+### 20.4. What is semantic versioning in npm?
+
+Semantic versioning uses this format:
+
+```text
+MAJOR.MINOR.PATCH
+```
+
+Example:
+
+```text
+5.1.0
+```
+
+Meaning:
+
+- `MAJOR`: breaking changes
+- `MINOR`: new backward-compatible features
+- `PATCH`: backward-compatible bug fixes
+
+Common symbols:
+
+- `^5.1.0`: allows minor and patch updates
+- `~5.1.0`: allows patch updates
+- `5.1.0`: exact version only
+
+### 20.5. What is process in Node.js?
+
+`process` is a global Node.js object that provides information and control over the running Node process.
+
+Common uses:
+
+```js
+console.log(process.env.NODE_ENV);
+console.log(process.pid);
+console.log(process.cwd());
+```
+
+In backend apps, `process.env` is commonly used for configuration:
+
+```js
+const port = process.env.PORT || 5001;
+```
+
+### 20.6. What are environment variables?
+
+Environment variables store configuration outside the source code.
+
+Examples:
+
+```text
+PORT=5001
+MONGODB_URI=...
+JWT_SECRET=...
+```
+
+Interview answer:
+
+```text
+Environment variables keep environment-specific and sensitive values out of the codebase. They are commonly used for ports, database URLs, JWT secrets, API keys, and feature flags.
+```
+
+Benefits:
+
+- safer than hardcoding secrets
+- easy to change per environment
+- useful for local, staging, and production configs
 
 ## Express.js
 

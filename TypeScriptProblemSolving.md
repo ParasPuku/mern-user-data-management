@@ -529,6 +529,102 @@ console.log(userResponse.data.name);
 - skill response
 - paginated response
 
+```ts
+// Import stylesheets
+import './style.css';
+
+// ==========================================
+// 1. Enum Logic (From your original code)
+// ==========================================
+const enum Shape {
+  Circle,
+  Square,
+}
+
+// This will print "Square" to the browser console (F12)
+console.log(Shape['1']);
+
+// ==========================================
+// 2. Product API Logic (Strict Handling)
+// ==========================================
+
+// Enforce the strict structural typing you defined
+interface Product {
+  title: string;
+}
+
+interface ApiResponse {
+  products: Product[];
+}
+
+// Select the main container element
+const appDiv: HTMLElement | null = document.getElementById('app');
+
+async function loadProducts(): Promise<void> {
+  if (!appDiv) return;
+
+  // Set the structural container titles
+  appDiv.innerHTML = `
+    <h1>Product Titles</h1>
+    <div id="content-area">
+      <p id="loading">Loading products...</p>
+    </div>
+  `;
+
+  const contentArea = document.getElementById('content-area');
+  if (!contentArea) return;
+
+  try {
+    const response = await fetch('https://dummyjson.com/products');
+    const contentType = response.headers.get('content-type');
+
+    // Check if the response contains an HTML payload instead of actual JSON
+    if (contentType && contentType.includes('text/html')) {
+      const interceptedHtml = await response.text();
+      throw new Error(`
+        Network Blocked: The server or your local proxy returned HTML content instead of JSON data. 
+        Raw Intercepted Characters: "${interceptedHtml
+          .substring(0, 45)
+          .replace(/</g, '&lt;')}"
+      `);
+    }
+
+    if (!response.ok) {
+      throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+    }
+
+    // Parse strictly against your interface schema
+    const data: ApiResponse = await response.json();
+    contentArea.innerHTML = '';
+
+    // Generate and render the dynamic layout list items
+    const list = document.createElement('ul');
+    data.products.forEach((product: Product) => {
+      const listItem = document.createElement('li');
+      listItem.textContent = product.title;
+      list.appendChild(listItem);
+    });
+
+    contentArea.appendChild(list);
+  } catch (error: any) {
+    console.error('API Stream Exception:', error);
+
+    contentArea.innerHTML = `
+      <div style="color: #d32f2f; background: #ffebee; padding: 16px; border-radius: 4px; border: 1px solid #ffcdd2;">
+        <p style="margin-top: 0;"><strong>🚫 Request Terminated</strong></p>
+        <p style="font-family: monospace; font-size: 13px; line-height: 1.5; margin: 8px 0; white-space: pre-wrap;">
+          ${error.message || error}
+        </p>
+      </div>
+    `;
+  }
+}
+
+// Run the asynchronous processing cycle
+loadProducts();
+
+```
+
 ---
 
 ## 13. Create A Generic Paginated Response
