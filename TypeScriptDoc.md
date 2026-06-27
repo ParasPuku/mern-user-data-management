@@ -57,9 +57,11 @@ sendEmail(123); // error
 
 TypeScript checks whether `123` is allowed where a `string` is expected.
 
-### Learn To Read Syntax From Left To Right
+### Learn To Read Common TypeScript Syntax From Left To Right
 
 Most TypeScript syntax becomes easier if you translate it into English.
+
+This is not every TypeScript syntax, but it covers the patterns you will see most often while reading React + TypeScript code.
 
 | Syntax | How to read it |
 | --- | --- |
@@ -68,14 +70,36 @@ Most TypeScript syntax becomes easier if you translate it into English.
 | `string \| null` | value can be string or null |
 | `User & Timestamps` | value must have both User fields and Timestamps fields |
 | `User[]` | array of User objects |
+| `Array<User>` | array of User objects, same idea as `User[]` |
 | `[string, number]` | tuple: first string, second number |
 | `<T>` | reusable placeholder type |
+| `<T extends User>` | placeholder type, but it must match User's shape |
 | `Promise<User>` | promise that resolves to User |
 | `Record<string, User>` | object with string keys and User values |
 | `value as User` | treat value as User; compiler trust only |
+| `as const` | infer the most specific readonly literal type |
 | `keyof User` | union of User's keys |
 | `typeof value` | create/read the type of an existing value |
 | `value is User` | custom type guard result |
+| `readonly id: string` | `id` cannot be reassigned |
+| `const value = ...` | variable binding cannot be reassigned |
+| `interface Admin extends User` | Admin inherits User's fields |
+| `class Service implements Contract` | class must follow the Contract interface |
+| `T extends U ? X : Y` | if T matches U, use X; otherwise use Y |
+| `infer Result` | capture/extract a type inside a conditional type |
+| `[K in keyof T]` | loop over all keys of T at type level |
+| `Partial<User>` | make all User properties optional |
+| `Pick<User, 'id'>` | keep only selected User properties |
+| `Omit<User, 'id'>` | remove selected User properties |
+| `satisfies SomeType` | check shape without losing precise inference |
+| `inputRef.current!` | tell TypeScript this is not null or undefined |
+| `inputRef.current?.focus()` | call focus only if current exists |
+| `import type { User }` | import only the type, not runtime code |
+| `export type User = ...` | export a type only |
+| `React.ReactNode` | anything React can render as children |
+| `React.ChangeEvent<HTMLInputElement>` | input change event type |
+| `ReturnType<typeof fn>` | get the return type of a function |
+| `Parameters<typeof fn>` | get the parameter types of a function |
 
 ### Annotation, Inference, And Assertion Are Different
 
