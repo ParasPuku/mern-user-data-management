@@ -477,7 +477,26 @@ Use cleanup for:
 - event listeners
 - aborting requests
 
-### 29. What is infinite render loop?
+### 29. What is React Fiber?
+
+React Fiber is React's internal rendering architecture.
+
+It lets React split rendering work into smaller units so it can pause, resume, prioritize, or discard work when needed.
+
+Why Fiber matters:
+
+- enables interruptible rendering
+- supports prioritizing urgent updates
+- improves responsiveness for complex UIs
+- powers modern concurrent rendering features
+
+Interview answer:
+
+```text
+React Fiber is React's internal reconciliation engine. It breaks rendering work into units so React can prioritize updates and keep the UI responsive.
+```
+
+### 30. What is infinite render loop?
 
 An infinite render loop happens when state updates repeatedly during render or effect.
 
@@ -491,7 +510,7 @@ useEffect(() => {
 
 This changes `count`, effect runs again, and loop continues.
 
-### 30. What is useRef?
+### 31. What is useRef?
 
 `useRef` stores a mutable value that does not cause re-render.
 
@@ -512,7 +531,7 @@ const renderCount = useRef(0);
 renderCount.current += 1;
 ```
 
-### 31. useRef vs useState?
+### 32. useRef vs useState?
 
 `useState`:
 
@@ -524,7 +543,7 @@ renderCount.current += 1;
 - does not cause re-render
 - used for mutable values/DOM refs
 
-### 32. What is useMemo?
+### 33. What is useMemo?
 
 `useMemo` memoizes a calculated value.
 
@@ -539,7 +558,7 @@ const filteredUsers = useMemo(
 
 Use it when calculation is expensive or reference stability matters.
 
-### 33. What is useCallback?
+### 34. What is useCallback?
 
 `useCallback` memoizes a function reference.
 
@@ -555,7 +574,7 @@ const handleDelete = useCallback((id: string) => {
 
 Useful when passing callbacks to memoized child components.
 
-### 34. useMemo vs useCallback?
+### 35. useMemo vs useCallback?
 
 `useMemo` memoizes a value.
 
@@ -575,7 +594,7 @@ This is roughly:
 useCallback(fn, deps) === useMemo(() => fn, deps)
 ```
 
-### 35. What is useContext?
+### 36. What is useContext?
 
 `The useContext hook` in React is a built-in function that lets functional components read and subscribe to data from a context object without manually passing props through intermediate components. It provides an elegant solution to prop drilling, which is the tedious process of passing props down multiple levels of a component tree just to reach a deeply nested child.
 
@@ -597,7 +616,7 @@ Use Context for app-wide values like:
 
 Avoid putting frequently changing large state in Context if it causes unnecessary renders.
 
-### 36. What is useReducer?
+### 37. What is useReducer?
 
 `useReducer` manages complex local state using reducer function.
 
@@ -621,7 +640,7 @@ function reducer(state: State, action: Action): State {
 const [state, dispatch] = useReducer(reducer, { count: 0 });
 ```
 
-### 37. What is a custom hook?
+### 38. What is a custom hook?
 
 A custom hook is a reusable function that uses React hooks.
 
@@ -652,7 +671,7 @@ Custom hook name should start with `use`.
 
 ## Forms
 
-### 38. Controlled vs uncontrolled components?
+### 39. Controlled vs uncontrolled components?
 - Controlled components rely on React state to manage form data
 - Controlled input: 
 
@@ -675,7 +694,7 @@ const inputRef = useRef<HTMLInputElement | null>(null);
 
 DOM controls the value.
 
-### 39. Which is better: controlled or uncontrolled?
+### 40. Which is better: controlled or uncontrolled?
 
 Controlled is better when:
 
@@ -690,7 +709,7 @@ Uncontrolled is useful when:
 - file inputs
 - integration with non-React libraries
 
-### 40. How to handle form validation?
+### 41. How to handle form validation?
 
 Common approach:
 
@@ -709,7 +728,7 @@ For large apps:
 
 ## Component Communication
 
-### 41. How parent passes data to child?
+### 42. How parent passes data to child?
 
 Using props.
 
@@ -717,7 +736,7 @@ Using props.
 <UserCard user={user} />
 ```
 
-### 42. How child sends data to parent?
+### 43. How child sends data to parent?
 
 Using callback prop.
 
@@ -739,7 +758,7 @@ const Child = ({ onSelect }: { onSelect: (id: string) => void }) => {
 };
 ```
 
-### 43. What is prop drilling?
+### 44. What is prop drilling?
 
 Prop drilling means passing props through many levels just to reach a deeply nested component.
 
@@ -750,7 +769,7 @@ Solutions:
 - component composition
 - custom hooks
 
-### 44. What is lifting state up?
+### 45. What is lifting state up?
 
 Moving shared state to the nearest common parent.
 
@@ -765,7 +784,7 @@ Pass value/callback to both
 
 ## Routing
 
-### 45. What is React Router?
+### 46. What is React Router?
 
 React Router is a routing library for React apps.
 
@@ -780,7 +799,7 @@ Example:
 </Routes>
 ```
 
-### 46. What is protected route?
+### 47. What is protected route?
 
 Protected route allows access only when user is authenticated.
 
@@ -796,7 +815,7 @@ In this app:
 frontend/src/components/ProtectedRoute.tsx
 ```
 
-### 47. What is public route?
+### 48. What is public route?
 
 Public route is accessible without login.
 
@@ -808,7 +827,7 @@ In this app:
 frontend/src/components/PublicRoute.tsx
 ```
 
-### 48. What is Navigate?
+### 49. What is Navigate?
 
 `Navigate` redirects user to another route.
 
@@ -820,7 +839,7 @@ Example:
 
 ## State Management
 
-### 49. When to use local state?
+### 50. When to use local state?
 
 Use local state when data belongs to one component.
 
@@ -831,7 +850,7 @@ Examples:
 - selected tab
 - local loading state
 
-### 50. When to use global state?
+### 51. When to use global state?
 
 Use global state when many parts of app need same data.
 
@@ -843,7 +862,7 @@ Examples:
 - skills
 - notifications/toasts
 
-### 51. What is Redux?
+### 52. What is Redux?
 
 Redux is a predictable state management library.
 
@@ -857,7 +876,7 @@ Core ideas:
 - dispatch
 - selectors
 
-### 52. What is Redux Toolkit?
+### 53. What is Redux Toolkit?
 
 Redux Toolkit is the recommended way to write Redux.
 
@@ -887,7 +906,7 @@ export const store = configureStore({
 });
 ```
 
-### 53. What is Thunk in Redux?
+### 54. What is Thunk in Redux?
 In Redux Toolkit (RTK), a thunk is a function that contains delayed, asynchronous logic. Because a standard Redux store can only handle synchronous data flow, Redux Toolkit automatically includes the Redux Thunk middleware by default to let you perform side effects like fetching API data.
 
 - How createAsyncThunk Works
@@ -899,7 +918,7 @@ When you create an async thunk, you provide an action type prefix and a payload 
 
 - rejected: Dispatched if the Promise fails or rejects.
 
-### 53. What is reducer?
+### 55. What is reducer?
 
 Reducer is a pure function that calculates next state from current state and action.
 
@@ -909,7 +928,7 @@ Concept:
 nextState = reducer(currentState, action);
 ```
 
-### 54. What is action?
+### 56. What is action?
 
 An action is an object describing what happened.
 
@@ -922,7 +941,7 @@ Example:
 }
 ```
 
-### 55. What is dispatch?
+### 57. What is dispatch?
 
 Dispatch sends an action to Redux store.
 
@@ -932,7 +951,7 @@ Example:
 dispatch(fetchUsers());
 ```
 
-### 56. What is selector?
+### 58. What is selector?
 
 Selector reads data from Redux state.
 
@@ -948,7 +967,7 @@ Usage:
 const users = useAppSelector(selectUsers);
 ```
 
-### 57. What is createAsyncThunk?
+### 59. What is createAsyncThunk?
 
 `createAsyncThunk` handles async Redux logic.
 
@@ -966,7 +985,7 @@ It creates:
 - fulfilled action
 - rejected action
 
-### 58. What is Redux middleware?
+### 60. What is Redux middleware?
 
 Middleware runs between dispatching action and reducer.
 
@@ -983,7 +1002,7 @@ In this app:
 frontend/src/app/toastMiddleware.ts
 ```
 
-### 59. What is Immer?
+### 61. What is Immer?
 
 Immer lets us write mutable-looking reducer code while keeping state immutable internally.
 
@@ -995,7 +1014,7 @@ state.items.push(user);
 
 Redux Toolkit uses Immer behind the scenes.
 
-### 60. What is selector stability warning?
+### 62. What is selector stability warning?
 
 React Redux warns when a selector returns a new reference for same input.
 
@@ -1018,7 +1037,7 @@ This issue happened in this app in the skills selector and was fixed by using a 
 
 ## Performance Optimization
 
-### 61. How to optimize React performance?
+### 63. How to optimize React performance?
 
 Common ways:
 
@@ -1033,7 +1052,7 @@ Common ways:
 - split code with lazy loading
 - avoid unnecessary global state changes
 
-### 62. What is React.memo?
+### 64. What is React.memo?
 
 `React.memo` prevents re-render if props did not change.
 
@@ -1047,13 +1066,13 @@ const UserRow = React.memo(({ user }: { user: User }) => {
 
 Useful for expensive child components.
 
-### 63. React.memo vs useMemo?
+### 65. React.memo vs useMemo?
 
 `React.memo` memoizes a component render based on props.
 
 `useMemo` memoizes a calculated value inside a component.
 
-### 64. What causes unnecessary re-render?
+### 66. What causes unnecessary re-render?
 
 Common causes:
 
@@ -1064,7 +1083,7 @@ Common causes:
 - selector returning new array/object every time
 - unstable keys
 
-### 65. How to avoid new object prop each render?
+### 67. How to avoid new object prop each render?
 
 Bad:
 
@@ -1080,7 +1099,7 @@ const filters = useMemo(() => ({ status: 'active' }), []);
 <Table filters={filters} />;
 ```
 
-### 66. What is lazy loading in React?
+### 68. What is lazy loading in React?
 
 Lazy loading loads components only when needed.
 
@@ -1098,7 +1117,7 @@ Use with:
 </Suspense>
 ```
 
-### 67. What is code splitting?
+### 69. What is code splitting?
 
 Code splitting breaks app bundle into smaller chunks.
 
@@ -1107,7 +1126,7 @@ Benefits:
 - faster initial load
 - load feature code only when needed
 
-### 68. What is list virtualization?
+### 70. What is list virtualization?
 
 Virtualization renders only visible rows in a large list.
 
@@ -1124,7 +1143,7 @@ Libraries:
 
 ## API Calls
 
-### 69. Where should API calls be made?
+### 71. Where should API calls be made?
 
 Common places:
 
@@ -1140,7 +1159,7 @@ In this app:
 API calls are mostly handled through Redux thunks and service files.
 ```
 
-### 70. How to fetch data in useEffect?
+### 72. How to fetch data in useEffect?
 
 ```tsx
 useEffect(() => {
@@ -1162,7 +1181,7 @@ useEffect(() => {
 }, []);
 ```
 
-### 71. Why avoid directly making useEffect callback async?
+### 73. Why avoid directly making useEffect callback async?
 
 Bad:
 
@@ -1186,7 +1205,7 @@ useEffect(() => {
 }, []);
 ```
 
-### 72. How to handle loading and error state?
+### 74. How to handle loading and error state?
 
 Example:
 
@@ -1208,7 +1227,7 @@ In Redux apps, common statuses are:
 'idle' | 'loading' | 'succeeded' | 'failed'
 ```
 
-### 73. How to cancel API request?
+### 75. How to cancel API request?
 
 Use `AbortController`.
 
@@ -1230,7 +1249,7 @@ useEffect(() => {
 
 ## Authentication in React
 
-### 74. How does React know user is logged in?
+### 76. How does React know user is logged in?
 
 Usually by auth state.
 
@@ -1249,7 +1268,7 @@ dispatch(bootstrapAuth());
 
 Backend checks HTTP-only cookie and returns session/account.
 
-### 75. Can React read HTTP-only cookie?
+### 77. Can React read HTTP-only cookie?
 
 No.
 
@@ -1263,7 +1282,7 @@ Example:
 GET /api/auth/session
 ```
 
-### 76. Why use credentials: include?
+### 78. Why use credentials: include?
 
 In fetch:
 
@@ -1279,7 +1298,7 @@ In this app:
 frontend/src/services/http.ts
 ```
 
-### 77. How protected route works in this app?
+### 79. How protected route works in this app?
 
 Concept:
 
@@ -1293,7 +1312,7 @@ return children;
 
 The route guard uses Redux auth state.
 
-### 78. How role-based UI works?
+### 80. How role-based UI works?
 
 Example:
 
@@ -1309,7 +1328,7 @@ Backend must also enforce authorization.
 
 ## TypeScript With React
 
-### 79. Why use TypeScript with React?
+### 81. Why use TypeScript with React?
 
 Benefits:
 
@@ -1319,7 +1338,7 @@ Benefits:
 - better autocomplete
 - safer refactoring
 
-### 80. How to type component props?
+### 82. How to type component props?
 
 ```tsx
 type UserCardProps = {
@@ -1332,7 +1351,7 @@ const UserCard = ({ name, email }: UserCardProps) => {
 };
 ```
 
-### 81. How to type useState?
+### 83. How to type useState?
 
 ```tsx
 const [user, setUser] = useState<User | null>(null);
@@ -1344,7 +1363,7 @@ For inferred values:
 const [count, setCount] = useState(0);
 ```
 
-### 82. How to type event handlers?
+### 84. How to type event handlers?
 
 Input change:
 
@@ -1362,7 +1381,7 @@ const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
 };
 ```
 
-### 83. How to type useRef?
+### 85. How to type useRef?
 
 ```tsx
 const inputRef = useRef<HTMLInputElement | null>(null);
@@ -1376,7 +1395,7 @@ inputRef.current?.focus();
 
 ## React Patterns
 
-### 84. What is composition?
+### 86. What is composition?
 
 Composition means building components by combining smaller components.
 
@@ -1396,7 +1415,7 @@ Usage:
 </Card>
 ```
 
-### 85. Controlled modal pattern?
+### 87. Controlled modal pattern?
 
 Parent controls open/close state.
 
@@ -1406,7 +1425,7 @@ const [isOpen, setIsOpen] = useState(false);
 {isOpen ? <Modal onClose={() => setIsOpen(false)} /> : null}
 ```
 
-### 86. Container vs presentational components?
+### 88. Container vs presentational components?
 
 Container component:
 
@@ -1427,7 +1446,7 @@ UserManagementPage -> container
 UserTable -> presentational
 ```
 
-### 87. What is children prop?
+### 89. What is children prop?
 
 `children` lets component render nested content.
 
@@ -1441,7 +1460,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
 ## Error Handling
 
-### 88. What is Error Boundary?
+### 90. What is Error Boundary?
 
 Error Boundary catches rendering errors in child component tree.
 
@@ -1475,7 +1494,7 @@ Error boundaries do not catch:
 - async errors
 - server errors
 
-### 89. How to handle API errors?
+### 91. How to handle API errors?
 
 Common pattern:
 
@@ -1491,7 +1510,7 @@ In this app, toast middleware also shows success/error messages.
 
 ## React Strict Mode
 
-### 90. What is StrictMode?
+### 92. What is StrictMode?
 
 StrictMode helps find problems during development.
 
@@ -1513,13 +1532,13 @@ StrictMode is a development-only tool that helps detect unsafe side effects and 
 
 ## Common Tricky Questions
 
-### 91. Why does useEffect run twice in development?
+### 93. Why does useEffect run twice in development?
 
 Because React StrictMode intentionally mounts/unmounts/remounts components in development to detect unsafe effects.
 
 Production does not behave the same way.
 
-### 92. Why not update state directly?
+### 94. Why not update state directly?
 
 Bad:
 
@@ -1536,11 +1555,11 @@ Good:
 setUser({ ...user, name: 'New Name' });
 ```
 
-### 93. Why state should be immutable?
+### 95. Why state should be immutable?
 
 Immutability helps React detect changes and makes updates predictable.
 
-### 94. Why component names should start with capital letter?
+### 96. Why component names should start with capital letter?
 
 React treats lowercase tags as HTML elements.
 
@@ -1556,13 +1575,13 @@ Bad:
 <userCard />
 ```
 
-### 95. Why hooks cannot be conditional?
+### 97. Why hooks cannot be conditional?
 
 React relies on hook call order.
 
 If hooks are conditional, order can change between renders and React cannot match hook state correctly.
 
-### 96. What is stale closure?
+### 98. What is stale closure?
 
 Stale closure happens when a function captures old state/props.
 
@@ -1586,7 +1605,7 @@ Fix:
 - use functional update
 - use ref for latest value
 
-### 97. Why use functional state update?
+### 99. Why use functional state update?
 
 Use when new state depends on previous state.
 
@@ -1596,7 +1615,7 @@ setCount((current) => current + 1);
 
 This avoids stale state issues.
 
-### 98. Why not use array index as key?
+### 100. Why not use array index as key?
 
 Index key can break UI when list order changes.
 
@@ -1608,13 +1627,13 @@ Problems:
 
 Use stable ID instead.
 
-### 99. What is hydration?
+### 101. What is hydration?
 
 Hydration is when React attaches event handlers to server-rendered HTML.
 
 Common in SSR frameworks like Next.js.
 
-### 100. What is client-side rendering?
+### 102. What is client-side rendering?
 
 Client-side rendering means browser receives minimal HTML and JavaScript builds the UI in the browser.
 
@@ -1622,7 +1641,7 @@ Vite React apps are usually client-side rendered.
 
 ## Testing
 
-### 101. What should we test in React?
+### 103. What should we test in React?
 
 Test user behavior, not implementation details.
 
@@ -1634,7 +1653,7 @@ Examples:
 - route protection
 - role-based UI
 
-### 102. What is React Testing Library?
+### 104. What is React Testing Library?
 
 React Testing Library helps test components from user perspective.
 
@@ -1646,7 +1665,7 @@ expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
 
 ## React App Architecture
 
-### 103. How is this app structured?
+### 105. How is this app structured?
 
 This app uses feature-based structure:
 
@@ -1667,7 +1686,7 @@ Benefits:
 - easier scaling
 - easier maintenance
 
-### 104. What is feature-based folder structure?
+### 106. What is feature-based folder structure?
 
 Feature-based structure groups code by business feature instead of file type.
 
@@ -1682,7 +1701,7 @@ features/users/types.ts
 
 This is better for medium/large apps.
 
-### 105. What is reusable component?
+### 107. What is reusable component?
 
 A reusable component is generic enough to be used in many places.
 
@@ -1699,7 +1718,7 @@ PublicRoute
 
 ## Interview Questions Based on This App
 
-### 106. How does auth bootstrap work in this app?
+### 108. How does auth bootstrap work in this app?
 
 On app load:
 
@@ -1715,7 +1734,7 @@ If cookie is valid, user becomes authenticated.
 
 If not, user is unauthenticated.
 
-### 107. How does session refresh work in this app?
+### 109. How does session refresh work in this app?
 
 The app listens to user activity and periodically verifies/refreshes session.
 
@@ -1726,7 +1745,7 @@ User active -> refresh session
 No activity -> verify session without extending it
 ```
 
-### 108. How does role-based UI work in this app?
+### 110. How does role-based UI work in this app?
 
 Admin route is visible only when:
 
@@ -1742,7 +1761,7 @@ Important interview answer:
 Frontend role checks are for UX. Backend authorization is the real security.
 ```
 
-### 109. How are API calls centralized?
+### 111. How are API calls centralized?
 
 This app uses:
 
@@ -1758,7 +1777,7 @@ It centralizes:
 - `credentials: 'include'`
 - error parsing
 
-### 110. How are toasts handled?
+### 112. How are toasts handled?
 
 This app uses Redux listener middleware.
 
@@ -1768,61 +1787,61 @@ This keeps toast logic centralized instead of duplicating it in every component.
 
 ## Most Important Short Answers
 
-### 111. React in one line
+### 113. React in one line
 
 ```text
 React is a JavaScript library for building reusable, state-driven UI components.
 ```
 
-### 112. Component in one line
+### 114. Component in one line
 
 ```text
 A component is a reusable function/class that returns UI.
 ```
 
-### 113. Props in one line
+### 115. Props in one line
 
 ```text
 Props are read-only inputs passed from parent to child.
 ```
 
-### 114. State in one line
+### 116. State in one line
 
 ```text
 State is component-managed data that triggers re-render when changed.
 ```
 
-### 115. useEffect in one line
+### 117. useEffect in one line
 
 ```text
 useEffect runs side effects after render and can clean them up.
 ```
 
-### 116. Virtual DOM in one line
+### 118. Virtual DOM in one line
 
 ```text
 Virtual DOM is a lightweight representation of UI used to calculate efficient real DOM updates.
 ```
 
-### 117. Redux in one line
+### 119. Redux in one line
 
 ```text
 Redux is a centralized state management library where state changes through actions and reducers.
 ```
 
-### 118. React Router in one line
+### 120. React Router in one line
 
 ```text
 React Router maps URL paths to React components.
 ```
 
-### 119. Controlled component in one line
+### 121. Controlled component in one line
 
 ```text
 A controlled component is a form element whose value is controlled by React state.
 ```
 
-### 120. Custom hook in one line
+### 122. Custom hook in one line
 
 ```text
 A custom hook is a reusable function that uses React hooks to share stateful logic.

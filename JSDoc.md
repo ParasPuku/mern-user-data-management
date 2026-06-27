@@ -142,21 +142,31 @@ Primitive values are copied directly, while objects and arrays are copied by ref
 
 `var`:
 
-- function scoped
-- hoisted with `undefined`
-- can be redeclared
+- Scope - function scoped
+- ReDeclaration - Allowed
+- ReAssignment - Allowed
+- Initialization - Optional
+- Hoisting - hoisted with `undefined`
+- Use Case - Suitable for legacy code but avoid
+
 
 `let`:
 
-- block scoped
-- hoisted but in temporal dead zone
-- cannot be redeclared in same scope
+- Scope - block scoped
+- ReDeclaration - Not allowed in the same scope
+- ReAssignment - Allowed
+- Initialization - Optional
+- Hoisting - hoisted but not initialized [in temporal dead zone]
+- Use Case - Recommended for variables that change
 
 `const`:
 
-- block scoped
-- must be initialized
-- cannot be reassigned
+- Scope - block scoped
+- ReDeclaration - Not allowed in the same scope
+- ReAssignment - Not allowed(value must remain constant)
+- Initialization - Required at the same time of declaration
+- Hoisting - Hoisted but not initialized [in temporal dead zone]
+- Use Case - Use for values that shouldn't change
 
 Example:
 
@@ -172,7 +182,10 @@ console.log(b); // ReferenceError
 console.log(c); // ReferenceError
 ```
 
-## Does let and const gets hoisted during compilation time?
+
+
+
+### 7. Do let and const get hoisted during compilation time?
 
 Yes, let and const are hoisted during the compile phase, but unlike var, they are not initialized with undefined.
 
@@ -183,7 +196,7 @@ How hoisting works for let and const?
 2. Execution Phase (Initialization): Memory is allocated, but the variable in an uninitialized state.
 
 The Temporal Dead Zone (TDZ) -
- Because they are hoised but not initialized, let and const enter a Temporal Dead Zone (TDZ) from the top of the block untill the line where they are actually decalred and assigned a value. 
+ Because they are hoisted but not initialized, let and const enter a Temporal Dead Zone (TDZ) from the top of the block until the line where they are actually declared and assigned a value. 
  
 If you attempt to access or use the variable while it is in TDZ, JavaScript will throw a ReferenceError. 
 
@@ -197,7 +210,7 @@ Hoisted - Yes
 Initialized during Hoisting - No
 Accessing becomes declaration - Throws ReferenceError
 
-### 7. Can const object be changed?
+### 8. Can const object be changed?
 
 Yes. `const` prevents reassignment, not mutation.
 
@@ -216,7 +229,34 @@ But this is not allowed:
 user = { name: 'Rahul' }; // TypeError
 ```
 
-### 8. What is hoisting?
+### 9. Difference between Object.freeze() and Object.seal() method
+
+`Object.freeze()` prevents adding, deleting, or changing properties.
+
+`Object.seal()` prevents adding or deleting properties, but existing writable properties can still be changed.
+
+Example:
+
+```js
+const frozenUser = Object.freeze({ name: 'Paras' });
+frozenUser.name = 'Amit';
+console.log(frozenUser.name); // 'Paras' in strict-safe environments, mutation ignored or throws in strict mode
+
+const sealedUser = Object.seal({ name: 'Paras' });
+sealedUser.name = 'Amit';
+sealedUser.role = 'admin';
+
+console.log(sealedUser.name); // 'Amit'
+console.log(sealedUser.role); // undefined
+```
+
+Interview answer:
+
+```text
+freeze makes an object non-extensible and makes existing properties read-only. seal makes an object non-extensible and prevents deleting properties, but writable existing properties can still be updated.
+```
+
+### 10. What is hoisting?
 
 Hoisting means declarations are moved to the top of their scope during compilation.
 
@@ -245,7 +285,7 @@ function sayHello() {
 }
 ```
 
-### 9. What is Temporal Dead Zone?
+### 11. What is Temporal Dead Zone?
 
 Temporal Dead Zone is the time between entering a scope and the actual declaration of `let` or `const`.
 
@@ -260,7 +300,7 @@ let name = 'Paras';
 
 ## Equality and Type Conversion
 
-### 10. Difference between == and ===?
+### 12. Difference between == and ===?
 
 `==` compares after type conversion.
 
@@ -279,7 +319,7 @@ Interview answer:
 == allows type coercion, while === checks both value and type. In real code, prefer ===.
 ```
 
-### 11. What is type coercion?
+### 13. What is type coercion?
 
 Type coercion means JavaScript automatically converts one data type to another.
 
@@ -291,7 +331,7 @@ console.log('5' - 2); // 3
 console.log(true + 1); // 2
 ```
 
-### 12. What are truthy and falsy values?
+### 14. What are truthy and falsy values?
 
 Falsy values:
 
@@ -316,7 +356,7 @@ if ('hello') {
 }
 ```
 
-### 13. Difference between null and undefined?
+### 15. Difference between null and undefined?
 
 `undefined` means variable is declared but not assigned.
 
@@ -332,7 +372,7 @@ console.log(a); // undefined
 console.log(b); // null
 ```
 
-### 14. What is NaN?
+### 16. What is NaN?
 
 `NaN` means Not-a-Number.
 
@@ -351,7 +391,7 @@ console.log(Number.isNaN(NaN)); // true
 
 ## Scope and Closures
 
-### 15. What is scope?
+### 17. What is scope?
 
 Scope defines where variables are accessible.
 
@@ -373,7 +413,7 @@ function test() {
 console.log(name); // ReferenceError
 ```
 
-### 16. What is lexical scope?
+### 18. What is lexical scope?
 
 "Lexical Scope means variable access is defined by the physical location of the code structure. Inner functions have permanent access to the variables declared in their outer parent scopes, but parent scopes cannot access the inner contents of their children."
 
@@ -397,7 +437,7 @@ function outer() {
 outer(); // Paras
 ```
 
-### 17. What is closure?
+### 19. What is closure?
 
 A closure is when a function remembers variables from its outer scope even after the outer function has finished executing.
 
@@ -426,7 +466,7 @@ Interview answer:
 A closure is a function bundled with its lexical environment. It allows an inner function to access variables from an outer function even after the outer function has returned.
 ```
 
-### 18. Real use cases of closure?
+### 20. Real use cases of closure?
 
 Use cases:
 
@@ -451,9 +491,21 @@ function createUser() {
 }
 ```
 
+### 21. What are the disadvantage of closures?
+  - High Memory Usage and leaks
+  - Garbage Collection Complications
+  - Debugging Complexity
+  - Overuse can Hurt Performance
+
+### 22. What are the potential pitfalls of using closures?
+Closures can lead to memory leaks if not managed properly, especially when they capture variables that are no longer needed. They can also make debugging more difficult due to the complexity of the scope chain. Additionally, closures can cause performance issues if they are overused or used inappropriately, as they keep references to variables in their scope, which can prevent garbage collection.
+
+
+
+
 ## Functions
 
-### 19. Function declaration vs function expression?
+### 23. Function declaration vs function expression?
 
 Function declaration is hoisted.
 
@@ -475,7 +527,7 @@ const sayHi = function () {
 };
 ```
 
-### 20. What is an arrow function?
+### 24. What is an arrow function?
 
 Arrow function is a shorter syntax for writing functions, and its introduced in ES6 features. It does not create its own this context—instead, it inherits the this value from its surrounding code.
 
@@ -495,7 +547,7 @@ Important:
 
 Arrow functions do not have their own `this`.
 
-### 21. Difference between normal function and arrow function?
+### 25. Difference between normal function and arrow function?
 
 Normal function:
 
@@ -526,7 +578,7 @@ user.normal(); // Paras
 user.arrow(); // undefined
 ```
 
-### 22. What is a callback function?
+### 26. What is a callback function?
 
 A callback is a function passed as an argument to another function.
 
@@ -544,7 +596,36 @@ greet('Paras', (message) => {
 });
 ```
 
-### 23. What is a higher-order function?
+### 27. What is the typical use case for anonymous functions?
+
+Anonymous functions are commonly used when a function is needed only once.
+
+Use cases:
+
+- callbacks
+- event handlers
+- array methods
+- IIFEs
+- promise handlers
+
+Example:
+
+```js
+const numbers = [1, 2, 3];
+const doubled = numbers.map(function (number) {
+  return number * 2;
+});
+```
+
+Arrow functions are also often anonymous:
+
+```js
+button.addEventListener('click', () => {
+  console.log('Clicked');
+});
+```
+
+### 28. What is a higher-order function?
 
 A higher-order function a function that does at least one of two things: it either takes one or more functions as arguments, or it returns a new function as its output.
 
@@ -580,7 +661,221 @@ console.log(double(5)); // Output: 10
 console.log(triple(5)); // Output: 15
 ```
 
-### 24. What is an IIFE?
+### 29. Explain the concept of data binding in JavaScript?
+
+Data binding means keeping data and UI in sync.
+
+In plain JavaScript, you usually update the DOM manually when data changes.
+
+Example:
+
+```js
+let count = 0;
+const button = document.querySelector('#counter');
+
+button.textContent = count;
+
+button.addEventListener('click', () => {
+  count += 1;
+  button.textContent = count;
+});
+```
+
+Types of binding:
+
+- one-way binding: data updates UI
+- two-way binding: data updates UI and UI updates data
+
+React mostly uses one-way data flow: state changes, then UI re-renders from that state.
+
+### 30. What are iterators and generators in JavaScript and what are they used for?
+
+An iterator is an object that follows the iterator protocol and returns values using `next()`.
+
+Example:
+
+```js
+const iterator = [10, 20][Symbol.iterator]();
+
+console.log(iterator.next()); // { value: 10, done: false }
+console.log(iterator.next()); // { value: 20, done: false }
+console.log(iterator.next()); // { value: undefined, done: true }
+```
+
+A generator is a special function that can pause and resume using `yield`.
+
+Example:
+
+```js
+function* idGenerator() {
+  yield 1;
+  yield 2;
+  yield 3;
+}
+
+for (const id of idGenerator()) {
+  console.log(id);
+}
+```
+
+Use cases:
+
+- custom iteration
+- lazy sequences
+- processing large data step by step
+- generating IDs or streams of values
+
+### 31. What are Web Workers and how can they be used to improve performance?
+
+Web Workers enable JavaScript code to run in the background, separate from the main execution thread of a web application. They handle intensive computations without freezing the user interface. Here's a concise example:
+
+```js
+main.js:
+const worker = new Worker('worker.js');
+worker.postMessage('Hello, worker!');
+
+worker.onmessage = (event) => console.log('Message from worker:', event.data);
+```
+
+```js
+worker.js:
+onmessage = (event) => {
+  console.log('Message from main script:', event.data);
+  postMessage('Hello, main script!');
+};
+```
+
+There are three main types of workers in JavaScript: Web Workers / Dedicated Workers, Service Workers and Shared Workers.
+
+```js
+// Check if the browser supports workers
+if (window.Worker) {
+  // Create a new Worker
+  const myWorker = new Worker('worker.js');
+
+  // Post a message to the worker
+  myWorker.postMessage('Hello, Worker!');
+
+  // Listen for messages from the worker
+  myWorker.onmessage = function (event) {
+    console.log('Message from Worker:', event.data);
+  };
+
+  // Error handling
+  myWorker.onerror = function (error) {
+    console.error('Error from Worker:', error);
+  };
+}
+```
+
+Web Workers / Dedicated Workers
+  - Purpose: Handle CPU-intensive tasks (e.g., data processing, computations).
+  - Communication: Use postMessage() and onmessage.
+  - Security: No direct DOM access.
+  - Termination: Ends when the main script unloads or explicitly terminated.
+
+Example: Creating a Web Worker
+// Check if the browser supports workers
+main.js
+if (window.Worker) {
+  // Create a new Worker
+  const myWorker = new Worker('worker.js');
+
+  // Post a message to the worker
+  myWorker.postMessage('Hello, Worker!');
+
+  // Listen for messages from the worker
+  myWorker.onmessage = function (event) {
+    console.log('Message from Worker:', event.data);
+  };
+
+  // Error handling
+  myWorker.onerror = function (error) {
+    console.error('Error from Worker:', error);
+  };
+}
+worker.js:
+// Listen for messages from the main script
+onmessage = function (event) {
+  console.log('Message from Main Script:', event.data);
+
+  // Perform a task (e.g., some computation)
+  const result = event.data + ' - Processed by Worker';
+
+  // Post the result back to the main script
+  postMessage(result);
+};
+
+
+Service Workers
+- Purpose: Act as a network proxy, handle requests, and cache resources.
+- Capabilities: Enable offline functionality and push notifications.
+- Lifecycle: Managed by the browser (install, activate, update).
+- Security: No direct DOM access.
+
+Example: Creating a Service Worker
+
+main.js:
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker
+    .register('/service-worker.js')
+    .then((registration) => {
+      console.log('Service Worker registered:', registration);
+    })
+    .catch((err) => {
+      console.log('Service Worker registration failed:', err);
+    });
+}
+
+service-worker.js:
+
+
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
+    }),
+  );
+});
+
+
+Shared Workers
+
+Purpose: Shared across multiple scripts in different windows/tabs/iframes.
+Use Case: State sharing across multiple browser contexts.
+
+
+
+### 32. Explain the concept of memoization in JavaScript and how it can be implemented.
+
+Memoization caches the result of an expensive function call so repeated calls with the same inputs can return quickly.
+
+Example:
+
+```js
+function memoize(fn) {
+  const cache = new Map();
+
+  return function (...args) {
+    const key = JSON.stringify(args);
+
+    if (cache.has(key)) {
+      return cache.get(key);
+    }
+
+    const result = fn.apply(this, args);
+    cache.set(key, result);
+    return result;
+  };
+}
+
+const slowAdd = memoize((a, b) => a + b);
+```
+
+Use memoization for expensive pure functions. Avoid it when inputs are huge, constantly changing, or difficult to serialize safely.
+
+### 33. What is an IIFE?
 
 IIFE means Immediately Invoked Function Expression, and IIFE is a function that gets executes automatically as soon as it is defined. It requires no explicit call later in the script and is primarily used to create local lexical scopes. This isolation prevents variable name bleeding into the global namespace.
 
@@ -594,15 +889,45 @@ Example:
 
 Use cases:
 
-- avoid polluting global scope
-- create private scope
+- creating a private scope
+- avoiding global variable pollution
+- running setup code immediately
+- older module-like patterns before ES modules
 
-### 25. What is pure function?
+### 34. What is the difference between __proto__ and prototype?
+
+`prototype` is a property on constructor functions and classes. It defines methods/properties that instances can inherit.
+
+`__proto__` is the internal prototype link on an object that points to the object it inherits from.
+
+Example:
+
+```js
+function User(name) {
+  this.name = name;
+}
+
+User.prototype.greet = function () {
+  return `Hello ${this.name}`;
+};
+
+const user = new User('Paras');
+
+console.log(user.__proto__ === User.prototype); // true
+```
+
+Interview answer:
+
+```text
+prototype belongs to constructor functions and is used to define shared behavior for instances. __proto__ is an object's internal prototype reference.
+```
+
+### 35. What is pure function?
 
 In JavaScript, a pure function is a function that always returns the same output given the same input arguments and produces absolutely no side effects. It is a foundational concept in functional programming.
 
 
-### 25. What is currying?
+### 36. What is currying?
 
 Currying transforms/converts a function with multiple arguments into a sequence of functions. 
 
@@ -636,7 +961,7 @@ const add = (a) => (b) => a + b;
 
 ## this Keyword
 
-### 26. What is this in JavaScript?
+### 37. What is this in JavaScript?
 
 `this` refers to the object that is calling the function.
 
@@ -657,7 +982,7 @@ const user = {
 user.greet(); // Paras
 ```
 
-### 27. How is this decided?
+### 38. How is this decided?
 
 `this` depends on how a function is called.
 
@@ -669,7 +994,7 @@ Rules:
 - call/apply/bind -> explicitly set
 - arrow function -> lexical this
 
-### 28. What are call, apply, and bind?
+### 39. What are call, apply, and bind?
 
 In JavaScript, call, apply, and bind are built-in methods used to explicitly set the this context (the execution context) inside a function. 
 
@@ -710,7 +1035,7 @@ greet.call(user, 'Hi'); // Hi, Paras
 
 ## Objects and Prototypes
 
-### 29. What is an object?
+### 40. What is an object?
 
 An object is a collection of key-value pairs.
 
@@ -723,7 +1048,7 @@ const user = {
 };
 ```
 
-### 30. How to access object properties?
+### 41. How to access object properties?
 
 Dot notation:
 
@@ -744,7 +1069,7 @@ const key = 'name';
 console.log(user[key]);
 ```
 
-### 31. What is prototype?
+### 42. What is prototype?
 
 Every JavaScript object has an internal link to another object called prototype.
 
@@ -757,7 +1082,7 @@ const arr = [];
 console.log(arr.__proto__ === Array.prototype); // true
 ```
 
-### 32. What is prototype chain?
+### 43. What is prototype chain?
 
 When JavaScript cannot find a property on an object, it looks up the prototype chain.
 
@@ -771,7 +1096,7 @@ console.log(user.toString);
 
 `toString` is found through prototype chain.
 
-### 33. What is class in JavaScript?
+### 44. What is class in JavaScript?
 
 Class - A class is a blueprint for creating objects.
 Class is syntactic sugar over prototype-based inheritance.
@@ -793,7 +1118,7 @@ const user = new User('Paras');
 user.greet();
 ```
 
-### 34. What is inheritance?
+### 45. What is inheritance?
 
 Inheritance allows one class/object to reuse properties and methods from another.
 
@@ -809,7 +1134,7 @@ class Admin extends User {
 
 ## Arrays
 
-### 35. Difference between map, filter, and reduce?
+### 46. Difference between map, filter, and reduce?
 
 `map` transforms each item.
 
@@ -829,7 +1154,7 @@ class Admin extends User {
 [1, 2, 3].reduce((sum, n) => sum + n, 0); // 6
 ```
 
-### 36. Difference between forEach and map?
+### 47. Difference between forEach and map?
 
 `forEach` runs a function for each item and returns `undefined`.
 
@@ -847,7 +1172,7 @@ console.log(a); // undefined
 console.log(b); // [2, 4, 6]
 ```
 
-### 37. How to remove duplicates from an array?
+### 48. How to remove duplicates from an array?
 
 ```js
 const unique = [...new Set([1, 2, 2, 3])];
@@ -855,7 +1180,7 @@ const unique = [...new Set([1, 2, 2, 3])];
 console.log(unique); // [1, 2, 3]
 ```
 
-### 38. How to flatten an array?
+### 49. How to flatten an array?
 
 ```js
 const arr = [1, [2, [3]]];
@@ -874,13 +1199,13 @@ const flatten = (arr) =>
   );
 ```
 
-#### 39. Difference between Statefull and Stateless.
+### 50. Difference between Stateful and Stateless.
 
 Stateful means an application or system remembers previous interactions (its context or "state").
 
 Stateless means each request is treated as brand new, with no memory of past events.
 
-### 39. Difference between slice and splice?
+### 51. Difference between slice and splice?
 
 `slice` returns a copy and does not mutate original array.
 
@@ -900,7 +1225,7 @@ console.log(arr); // [1, 3]
 
 ## ES6+ Features
 
-### 40. What are template literals?
+### 52. What are template literals?
 
 Template literals allow string interpolation.
 
@@ -909,7 +1234,7 @@ const name = 'Paras';
 console.log(`Hello ${name}`);
 ```
 
-### 41. What is destructuring?
+### 53. What is destructuring?
 
 Destructuring extracts values from arrays or objects.
 
@@ -925,7 +1250,7 @@ Object:
 const { name, email } = user;
 ```
 
-### 42. What is spread operator?
+### 54. What is spread operator?
 
 Spread expands values.
 
@@ -943,7 +1268,7 @@ const user = { name: 'Paras' };
 const updated = { ...user, age: 25 };
 ```
 
-### 43. What is rest operator?
+### 55. What is rest operator?
 
 Rest collects remaining values.
 
@@ -961,7 +1286,7 @@ Object:
 const { name, ...rest } = user;
 ```
 
-### 44. What are default parameters?
+### 56. What are default parameters?
 
 ```js
 function greet(name = 'Guest') {
@@ -969,7 +1294,7 @@ function greet(name = 'Guest') {
 }
 ```
 
-### 45. What are modules?
+### 57. What are modules?
 
 Modules allow code to be split and reused.
 
@@ -987,7 +1312,7 @@ import { add } from './math.js';
 
 ## Copying and Immutability
 
-### 46. Shallow copy vs deep copy?
+### 58. Shallow copy vs deep copy?
 
 Shallow copy copies only the first level.
 
@@ -1011,7 +1336,7 @@ Deep copy copies nested objects also.
 const deepCopy = structuredClone(user);
 ```
 
-### 47. How to deep clone an object?
+### 59. How to deep clone an object?
 
 Modern way:
 
@@ -1048,7 +1373,7 @@ Definition:
 
 ## Asynchronous JavaScript
 
-### 48. What is asynchronous JavaScript?
+### 60. What is asynchronous JavaScript?
 
 Asynchronous JavaScript allows long-running work without blocking the main thread.
 
@@ -1071,7 +1396,7 @@ Examples:
 - Web APIs: Heavy tasks (like fetching data) are handed over to the browser environment.
 - Event Loop: This mechanism monitors and pushes completed asynchronous tasks back into the JavaScript execution thread when it becomes empty.
 
-### 49. What is event loop?
+### 61. What is event loop?
 
 Event loop coordinates execution of:
 
@@ -1086,7 +1411,7 @@ Interview answer:
 The event loop checks if the call stack is empty, then pushes queued callbacks or microtasks into the call stack for execution. Microtasks like Promise callbacks run before macrotasks like setTimeout.
 ```
 
-### 50. Output question: event loop
+### 62. Output question: event loop
 
 ```js
 console.log('A');
@@ -1115,7 +1440,7 @@ Promise microtask runs next.
 setTimeout macrotask runs after microtasks.
 ```
 
-### 51. What is a Promise?
+### 63. What is a Promise?
 
 A Promise is an object represents the eventual completion (or failure) of an asynchronous operation and its resulting value, and promise represents a future value.
 
@@ -1136,7 +1461,7 @@ const promise = new Promise((resolve, reject) => {
 });
 ```
 
-### 52. What is async/await?
+### 64. What is async/await?
 
 `async/await` is syntax built on promises.
 
@@ -1153,7 +1478,7 @@ async function fetchUser() {
 }
 ```
 
-### 53. Promise.all vs Promise.allSettled?
+### 65. Promise.all vs Promise.allSettled?
 
 `Promise.all` fails if any promise rejects.
 
@@ -1167,13 +1492,13 @@ await Promise.all([p1, p2, p3]);
 await Promise.allSettled([p1, p2, p3]);
 ```
 
-### 54. Promise.race vs Promise.any?
+### 66. Promise.race vs Promise.any?
 
 `Promise.race` returns first settled promise, success or failure.
 
 `Promise.any` returns first fulfilled promise and ignores rejections until all fail.
 
-### 55. What is callback hell?
+### 67. What is callback hell?
 
 Callback hell is nested callbacks that make code hard to read.
 
@@ -1197,7 +1522,7 @@ Solution:
 
 ## Error Handling
 
-### 56. How to handle errors in JavaScript?
+### 68. How to handle errors in JavaScript?
 
 Synchronous:
 
@@ -1219,7 +1544,7 @@ try {
 }
 ```
 
-### 57. What is finally?
+### 69. What is finally?
 
 `finally` runs whether error happens or not.
 
@@ -1235,13 +1560,13 @@ try {
 
 ## DOM and Browser
 
-### 58. What is DOM?
+### 70. What is DOM?
 
 DOM means Document Object Model.
 
 It is a tree representation of HTML that JavaScript can read and modify.
 
-### 59. Event bubbling vs capturing?
+### 71. Event bubbling vs capturing?
 
 Capturing:
 
@@ -1257,7 +1582,7 @@ child -> parent -> document
 
 By default, events bubble.
 
-### 60. What is event delegation?
+### 72. What is event delegation?
 
 Event delegation means adding one event listener to a parent instead of many children.
 
@@ -1276,7 +1601,7 @@ Benefits:
 - better performance
 - works for dynamic elements
 
-### 61. localStorage vs sessionStorage vs cookies?
+### 73. localStorage vs sessionStorage vs cookies?
 
 `localStorage`:
 
@@ -1295,7 +1620,7 @@ Cookies:
 - can be HTTP-only
 - useful for auth
 
-### 62. What is CORS?
+### 74. What is CORS?
 
 CORS means Cross-Origin Resource Sharing.
 
@@ -1312,13 +1637,13 @@ These are different origins.
 
 ## Node.js Basics
 
-### 63. What is Node.js?
+### 75. What is Node.js?
 
 Node.js is a JavaScript runtime built on Chrome V8 engine.
 
 It allows JavaScript to run outside the browser.
 
-### 64. CommonJS vs ES Modules?
+### 76. CommonJS vs ES Modules?
 
 CommonJS:
 
@@ -1340,7 +1665,7 @@ This app uses ES Modules:
 "type": "module"
 ```
 
-### 65. What is middleware?
+### 77. What is middleware?
 
 Middleware is a function that runs between request and response.
 
@@ -1361,7 +1686,7 @@ app.use(logger);
 
 ## Security Questions
 
-### 66. What is XSS?
+### 78. What is XSS?
 
 XSS means Cross-Site Scripting.
 
@@ -1374,7 +1699,7 @@ Prevention:
 - use Content Security Policy
 - avoid dangerously setting HTML
 
-### 67. What is CSRF?
+### 79. What is CSRF?
 
 CSRF means Cross-Site Request Forgery.
 
@@ -1386,7 +1711,7 @@ Prevention:
 - CSRF tokens
 - origin checks
 
-### 68. Why should JWT not be stored in localStorage?
+### 80. Why should JWT not be stored in localStorage?
 
 Because XSS can read localStorage.
 
@@ -1398,7 +1723,7 @@ HTTP-only secure cookie
 
 ## Performance Questions
 
-### 69. What is debounce?
+### 81. What is debounce?
 
 Debounce delays function execution until user stops triggering it.
 
@@ -1423,7 +1748,7 @@ function debounce(fn, delay) {
 }
 ```
 
-### 70. What is throttle?
+### 82. What is throttle?
 
 Throttle ensures function runs at most once in a given time.
 
@@ -1449,7 +1774,7 @@ function throttle(fn, delay) {
 }
 ```
 
-### 71. What is memoization?
+### 83. What is memoization?
 
 Memoization caches expensive function results.
 
@@ -1475,7 +1800,7 @@ function memoize(fn) {
 
 ## Tricky Output Questions
 
-### 72. Output question: var loop
+### 84. Output question: var loop
 
 ```js
 for (var i = 0; i < 3; i += 1) {
@@ -1495,7 +1820,7 @@ Reason:
 
 `var` is function scoped. All callbacks share same `i`.
 
-### 73. Output question: let loop
+### 85. Output question: let loop
 
 ```js
 for (let i = 0; i < 3; i += 1) {
@@ -1515,7 +1840,7 @@ Reason:
 
 `let` creates a new binding for each loop iteration.
 
-### 74. Output question: object reference
+### 86. Output question: object reference
 
 ```js
 const a = { value: 1 };
@@ -1536,7 +1861,7 @@ Reason:
 
 `a` and `b` point to same object.
 
-### 75. Output question: typeof null
+### 87. Output question: typeof null
 
 ```js
 console.log(typeof null);
@@ -1552,7 +1877,7 @@ Reason:
 
 Historical JavaScript behavior.
 
-### 76. Output question: equality
+### 88. Output question: equality
 
 ```js
 console.log([] == false);
@@ -1570,7 +1895,7 @@ Reason:
 
 `==` does coercion, `===` does not.
 
-### 77. Output question: closure
+### 89. Output question: closure
 
 ```js
 function outer() {
@@ -1601,7 +1926,7 @@ Inner function remembers outer `count`.
 
 ## Coding Questions
 
-### 78. Reverse a string
+### 90. Reverse a string
 
 ```js
 function reverseString(str) {
@@ -1611,7 +1936,7 @@ function reverseString(str) {
 console.log(reverseString('hello')); // 'olleh'
 ```
 
-### 79. Check palindrome
+### 91. Check palindrome
 
 ```js
 function isPalindrome(str) {
@@ -1620,7 +1945,7 @@ function isPalindrome(str) {
 }
 ```
 
-### 80. Find max number
+### 92. Find max number
 
 ```js
 function findMax(numbers) {
@@ -1639,7 +1964,7 @@ function findMax(numbers) {
 }
 ```
 
-### 81. Count character frequency
+### 93. Count character frequency
 
 ```js
 function countChars(str) {
@@ -1650,7 +1975,7 @@ function countChars(str) {
 }
 ```
 
-### 82. Group array by property
+### 94. Group array by property
 
 ```js
 function groupBy(items, key) {
@@ -1671,7 +1996,7 @@ const users = [
 console.log(groupBy(users, 'role'));
 ```
 
-### 83. Check anagram
+### 95. Check anagram
 
 ```js
 function sortText(text) {
@@ -1683,7 +2008,7 @@ function isAnagram(a, b) {
 }
 ```
 
-### 84. Implement once function
+### 96. Implement once function
 
 ```js
 function once(fn) {
@@ -1701,7 +2026,7 @@ function once(fn) {
 }
 ```
 
-### 85. Implement sleep
+### 97. Implement sleep
 
 ```js
 function sleep(ms) {
@@ -1711,7 +2036,7 @@ function sleep(ms) {
 await sleep(1000);
 ```
 
-### 86. Retry async function
+### 98. Retry async function
 
 ```js
 async function retry(fn, attempts = 3) {
@@ -1731,7 +2056,7 @@ async function retry(fn, attempts = 3) {
 
 ## React/Frontend JavaScript Questions
 
-### 87. What is immutability and why is it important?
+### 99. What is immutability and why is it important?
 
 Immutability means not changing existing data directly.
 
@@ -1752,7 +2077,7 @@ Why important:
 - React change detection
 - Redux best practice
 
-### 88. Why should keys be stable in React lists?
+### 100. Why should keys be stable in React lists?
 
 Stable keys help React identify which items changed.
 
@@ -1768,7 +2093,7 @@ Good:
 users.map((user) => <User key={user.id} user={user} />);
 ```
 
-### 89. What is optional chaining?
+### 101. What is optional chaining?
 
 Optional chaining safely accesses nested values.
 
@@ -1782,7 +2107,7 @@ Without optional chaining:
 const city = user && user.address && user.address.city;
 ```
 
-### 90. What is nullish coalescing?
+### 102. What is nullish coalescing?
 
 `??` returns right side only if left side is `null` or `undefined`.
 
@@ -1799,7 +2124,7 @@ console.log(0 ?? 10); // 0
 
 ## Backend JavaScript Questions
 
-### 91. What is asyncHandler in Express?
+### 103. What is asyncHandler in Express?
 
 `asyncHandler` wraps async route handlers and forwards errors to Express error middleware.
 
@@ -1819,7 +2144,7 @@ app.get('/users', asyncHandler(async (req, res) => {
 }));
 ```
 
-### 92. Why use environment variables?
+### 104. Why use environment variables?
 
 Environment variables store configuration outside code.
 
@@ -1832,7 +2157,7 @@ Examples:
 
 Never hardcode secrets in code.
 
-### 93. What is JSON?
+### 105. What is JSON?
 
 JSON means JavaScript Object Notation.
 
@@ -1847,7 +2172,7 @@ Example:
 }
 ```
 
-### 94. JSON.stringify vs JSON.parse?
+### 106. JSON.stringify vs JSON.parse?
 
 `JSON.stringify` converts object to JSON string.
 
@@ -1863,37 +2188,37 @@ JSON.parse('{"name":"Paras"}');
 
 ## Most Important Short Interview Answers
 
-### 95. Explain closure in one line.
+### 107. Explain closure in one line.
 
 ```text
 A closure is when a function remembers variables from its outer scope even after the outer function has returned.
 ```
 
-### 96. Explain event loop in one line.
+### 108. Explain event loop in one line.
 
 ```text
 The event loop moves async callbacks and microtasks into the call stack when the stack is empty.
 ```
 
-### 97. Explain promise in one line.
+### 109. Explain promise in one line.
 
 ```text
 A promise represents a future value that can be pending, fulfilled, or rejected.
 ```
 
-### 98. Explain this in one line.
+### 110. Explain this in one line.
 
 ```text
 this refers to the execution context and depends on how a function is called.
 ```
 
-### 99. Explain prototype in one line.
+### 111. Explain prototype in one line.
 
 ```text
 Prototype is JavaScript's inheritance mechanism where objects can access properties and methods from another object.
 ```
 
-### 100. Explain hoisting in one line.
+### 112. Explain hoisting in one line.
 
 ```text
 Hoisting is JavaScript's behavior of processing declarations before code execution.
