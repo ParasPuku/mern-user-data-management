@@ -684,7 +684,7 @@ Use union types when there is more than one valid option.
 
 ### 15. What is any?
 
-`any` turns off TypeScript checking for that value.
+`any` disable TypeScript checking for that value.
 
 Example:
 
@@ -874,6 +874,93 @@ This means the property exists, but its value may intentionally be empty.
 ### 21. What is type alias?
 
 A type alias gives a name to a type.
+
+- Think of a type alias as a custom nickname for a data type. It does not create new data. It just gives an existing data shape a shorter, clearer name so you can reuse it.
+
+What does it do?
+It acts as a shortcut. Instead of typing out long, complex data descriptions over and over again, you type your short custom nickname.
+
+How does it work? (Step-by-Step)
+- You define the nickname using the type keyword.
+- You use the nickname where you would normally write a type.
+- TypeScript replaces the nickname with the real definition behind the scenes when checking your code for mistakes.
+
+Example:
+
+```ts
+// 1. Define the nickname (Type Alias)
+type AgeList = number[];
+
+// 2. Use the nickname on your variables
+const studentAges: AgeList =;
+const teacherAges: AgeList =;
+```
+
+Why use them?
+- It saves time: You write the definition once and reuse it everywhere.
+- It is easy to change: If AgeList needs to allow strings later (e.g., (number | string)[]), you only change it in one place, not on every single variable.
+
+type aliases for both a user profile object and a function.
+
+User Profile Object:
+When you have complex data structures, typing them inline over and over is messy. A type alias gives the object structure a clean name.
+
+```ts
+// Step 1: Create the type alias (the blueprint)
+type UserProfile = {
+  id: number;
+  username: string;
+  isAdmin: boolean;
+};
+
+// Step 2: Use the nickname on your variables
+const adminUser: UserProfile = {
+  id: 101,
+  username: "Alice",
+  isAdmin: true
+};
+
+const regularUser: UserProfile = {
+  id: 102,
+  username: "Bob",
+  isAdmin: false
+};
+```
+
+Functions
+You can use type aliases for functions in two different ways: typing the function's arguments, or typing the entire function math signature.
+
+Approach A: Typing the Arguments
+This is the most common way. You use a type alias for the data coming into the function.
+
+```ts
+type ID = number | string; // Can be a number OR a string
+
+// The function uses the 'ID' alias for its parameter
+function deleteUser(userId: ID) {
+  console.log(`Deleting user with ID: ${userId}`);
+}
+
+deleteUser(101);     // Works!
+deleteUser("usr_25"); // Works!
+```
+
+Approach B: Typing the Whole Function Shape
+You can define a custom nickname for a complete function signature (the inputs and the output). This is incredibly useful for callbacks.
+
+```ts
+// Step 1: Define a nickname for a function that takes 2 numbers and returns a number
+type MathOperation = (a: number, b: number) => number;
+
+// Step 2: Apply that nickname to your functions
+const add: MathOperation = (x, y) => x + y;
+const multiply: MathOperation = (x, y) => x * y;
+
+console.log(add(5, 3));      // Output: 8
+console.log(multiply(5, 3)); // Output: 15
+```
+
+Notice that for add and multiply, you do not have to type (x: number, y: number): number. TypeScript already knows the types because you attached the MathOperation alias!
 
 Example:
 
