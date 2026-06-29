@@ -477,7 +477,61 @@ Use cleanup for:
 - event listeners
 - aborting requests
 
-### 29. What is React Fiber?
+### 29. Difference between Webpack and Babel?
+
+Webpack and Babel solve different problems in a React app.
+
+`Babel` is a compiler/transpiler.
+
+It converts modern JavaScript, JSX, or TypeScript syntax into JavaScript that browsers can understand.
+
+Example:
+
+```text
+JSX / modern JS -> Babel -> browser-friendly JavaScript
+```
+
+`Webpack` is a bundler.
+
+It starts from an entry file, follows all imports, processes assets through loaders, and creates bundled files for the browser.
+
+Example:
+
+```text
+React files + CSS + images + dependencies -> Webpack -> bundled output
+```
+
+Simple difference:
+
+```text
+Babel changes syntax.
+Webpack bundles files.
+```
+
+Example in React:
+
+```tsx
+const element = <h1>Hello</h1>;
+```
+
+Babel can convert JSX syntax into JavaScript.
+
+Webpack can bundle that JavaScript with other files like:
+
+- components
+- CSS
+- images
+- npm packages
+
+Interview answer:
+
+```text
+Babel transpiles modern JavaScript or JSX into browser-compatible JavaScript. Webpack bundles JavaScript, CSS, images, and dependencies into output files for the browser. In many older React setups, Webpack uses Babel through babel-loader.
+```
+
+In this project, we use Vite instead of Webpack. Vite handles development/build tooling, and the React plugin handles React/JSX transformation.
+
+### 30. What is React Fiber?
 
 React Fiber is React's internal rendering architecture.
 
@@ -496,7 +550,7 @@ Interview answer:
 React Fiber is React's internal reconciliation engine. It breaks rendering work into units so React can prioritize updates and keep the UI responsive.
 ```
 
-### 30. What is infinite render loop?
+### 31. What is infinite render loop?
 
 An infinite render loop happens when state updates repeatedly during render or effect.
 
@@ -510,7 +564,7 @@ useEffect(() => {
 
 This changes `count`, effect runs again, and loop continues.
 
-### 31. What is useRef?
+### 32. What is useRef?
 
 `useRef` stores a mutable value that does not cause re-render.
 
@@ -531,7 +585,7 @@ const renderCount = useRef(0);
 renderCount.current += 1;
 ```
 
-### 32. useRef vs useState?
+### 33. useRef vs useState?
 
 `useState`:
 
@@ -543,7 +597,7 @@ renderCount.current += 1;
 - does not cause re-render
 - used for mutable values/DOM refs
 
-### 33. What is useMemo?
+### 34. What is useMemo?
 
 `useMemo` memoizes a calculated value.
 
@@ -558,7 +612,7 @@ const filteredUsers = useMemo(
 
 Use it when calculation is expensive or reference stability matters.
 
-### 34. What is useCallback?
+### 35. What is useCallback?
 
 `useCallback` memoizes a function reference.
 
@@ -574,7 +628,7 @@ const handleDelete = useCallback((id: string) => {
 
 Useful when passing callbacks to memoized child components.
 
-### 35. useMemo vs useCallback?
+### 36. useMemo vs useCallback?
 
 `useMemo` memoizes a value.
 
@@ -594,7 +648,7 @@ This is roughly:
 useCallback(fn, deps) === useMemo(() => fn, deps)
 ```
 
-### 36. What is useContext?
+### 37. What is useContext?
 
 `The useContext hook` in React is a built-in function that lets functional components read and subscribe to data from a context object without manually passing props through intermediate components. It provides an elegant solution to prop drilling, which is the tedious process of passing props down multiple levels of a component tree just to reach a deeply nested child.
 
@@ -616,7 +670,7 @@ Use Context for app-wide values like:
 
 Avoid putting frequently changing large state in Context if it causes unnecessary renders.
 
-### 37. What is useReducer?
+### 38. What is useReducer?
 
 `useReducer` manages complex local state using reducer function.
 
@@ -640,7 +694,7 @@ function reducer(state: State, action: Action): State {
 const [state, dispatch] = useReducer(reducer, { count: 0 });
 ```
 
-### 38. What is a custom hook?
+### 39. What is a custom hook?
 
 A custom hook is a reusable function that uses React hooks.
 
@@ -671,7 +725,7 @@ Custom hook name should start with `use`.
 
 ## Forms
 
-### 39. Controlled vs uncontrolled components?
+### 40. Controlled vs uncontrolled components?
 - Controlled components rely on React state to manage form data
 - Controlled input: 
 
@@ -694,7 +748,7 @@ const inputRef = useRef<HTMLInputElement | null>(null);
 
 DOM controls the value.
 
-### 40. Which is better: controlled or uncontrolled?
+### 41. Which is better: controlled or uncontrolled?
 
 Controlled is better when:
 
@@ -709,7 +763,7 @@ Uncontrolled is useful when:
 - file inputs
 - integration with non-React libraries
 
-### 41. How to handle form validation?
+### 42. How to handle form validation?
 
 Common approach:
 
@@ -728,7 +782,7 @@ For large apps:
 
 ## Component Communication
 
-### 42. How parent passes data to child?
+### 43. How parent passes data to child?
 
 Using props.
 
@@ -736,7 +790,7 @@ Using props.
 <UserCard user={user} />
 ```
 
-### 43. How child sends data to parent?
+### 44. How child sends data to parent?
 
 Using callback prop.
 
@@ -758,7 +812,7 @@ const Child = ({ onSelect }: { onSelect: (id: string) => void }) => {
 };
 ```
 
-### 44. What is prop drilling?
+### 45. What is prop drilling?
 
 Prop drilling means passing props through many levels just to reach a deeply nested component.
 
@@ -769,7 +823,7 @@ Solutions:
 - component composition
 - custom hooks
 
-### 45. What is lifting state up?
+### 46. What is lifting state up?
 
 Moving shared state to the nearest common parent.
 
@@ -784,7 +838,7 @@ Pass value/callback to both
 
 ## Routing
 
-### 46. What is React Router?
+### 47. What is React Router?
 
 React Router is a routing library for React apps.
 
@@ -799,7 +853,7 @@ Example:
 </Routes>
 ```
 
-### 47. What is protected route?
+### 48. What is protected route?
 
 Protected route allows access only when user is authenticated.
 
@@ -815,7 +869,7 @@ In this app:
 frontend/src/components/ProtectedRoute.tsx
 ```
 
-### 48. What is public route?
+### 49. What is public route?
 
 Public route is accessible without login.
 
@@ -827,7 +881,7 @@ In this app:
 frontend/src/components/PublicRoute.tsx
 ```
 
-### 49. What is Navigate?
+### 50. What is Navigate?
 
 `Navigate` redirects user to another route.
 
@@ -839,7 +893,7 @@ Example:
 
 ## State Management
 
-### 50. When to use local state?
+### 51. When to use local state?
 
 Use local state when data belongs to one component.
 
@@ -850,7 +904,7 @@ Examples:
 - selected tab
 - local loading state
 
-### 51. When to use global state?
+### 52. When to use global state?
 
 Use global state when many parts of app need same data.
 
@@ -862,7 +916,7 @@ Examples:
 - skills
 - notifications/toasts
 
-### 52. What is Redux?
+### 53. What is Redux?
 
 Redux is a predictable state management library.
 
@@ -876,7 +930,7 @@ Core ideas:
 - dispatch
 - selectors
 
-### 53. What is Redux Toolkit?
+### 54. What is Redux Toolkit?
 
 Redux Toolkit is the recommended way to write Redux.
 
@@ -906,7 +960,7 @@ export const store = configureStore({
 });
 ```
 
-### 54. What is Thunk in Redux?
+### 55. What is Thunk in Redux?
 In Redux Toolkit (RTK), a thunk is a function that contains delayed, asynchronous logic. Because a standard Redux store can only handle synchronous data flow, Redux Toolkit automatically includes the Redux Thunk middleware by default to let you perform side effects like fetching API data.
 
 - How createAsyncThunk Works
@@ -918,7 +972,7 @@ When you create an async thunk, you provide an action type prefix and a payload 
 
 - rejected: Dispatched if the Promise fails or rejects.
 
-### 55. What is reducer?
+### 56. What is reducer?
 
 Reducer is a pure function that calculates next state from current state and action.
 
@@ -928,7 +982,7 @@ Concept:
 nextState = reducer(currentState, action);
 ```
 
-### 56. What is action?
+### 57. What is action?
 
 An action is an object describing what happened.
 
@@ -941,7 +995,7 @@ Example:
 }
 ```
 
-### 57. What is dispatch?
+### 58. What is dispatch?
 
 Dispatch sends an action to Redux store.
 
@@ -951,7 +1005,7 @@ Example:
 dispatch(fetchUsers());
 ```
 
-### 58. What is selector?
+### 59. What is selector?
 
 Selector reads data from Redux state.
 
@@ -967,7 +1021,7 @@ Usage:
 const users = useAppSelector(selectUsers);
 ```
 
-### 59. What is createAsyncThunk?
+### 60. What is createAsyncThunk?
 
 `createAsyncThunk` handles async Redux logic.
 
@@ -985,7 +1039,7 @@ It creates:
 - fulfilled action
 - rejected action
 
-### 60. What is Redux middleware?
+### 61. What is Redux middleware?
 
 Middleware runs between dispatching action and reducer.
 
@@ -1002,7 +1056,7 @@ In this app:
 frontend/src/app/toastMiddleware.ts
 ```
 
-### 61. What is Immer?
+### 62. What is Immer?
 
 Immer lets us write mutable-looking reducer code while keeping state immutable internally.
 
@@ -1014,7 +1068,7 @@ state.items.push(user);
 
 Redux Toolkit uses Immer behind the scenes.
 
-### 62. What is selector stability warning?
+### 63. What is selector stability warning?
 
 React Redux warns when a selector returns a new reference for same input.
 
@@ -1037,7 +1091,7 @@ This issue happened in this app in the skills selector and was fixed by using a 
 
 ## Performance Optimization
 
-### 63. How to optimize React performance?
+### 64. How to optimize React performance?
 
 Common ways:
 
@@ -1052,7 +1106,7 @@ Common ways:
 - split code with lazy loading
 - avoid unnecessary global state changes
 
-### 64. What is React.memo?
+### 65. What is React.memo?
 
 `React.memo` prevents re-render if props did not change.
 
@@ -1066,13 +1120,13 @@ const UserRow = React.memo(({ user }: { user: User }) => {
 
 Useful for expensive child components.
 
-### 65. React.memo vs useMemo?
+### 66. React.memo vs useMemo?
 
 `React.memo` memoizes a component render based on props.
 
 `useMemo` memoizes a calculated value inside a component.
 
-### 66. What causes unnecessary re-render?
+### 67. What causes unnecessary re-render?
 
 Common causes:
 
@@ -1083,7 +1137,158 @@ Common causes:
 - selector returning new array/object every time
 - unstable keys
 
-### 67. How to avoid new object prop each render?
+### 68. Difference between `npm create vite@latest my-react-app -- --template react` and `npx create-react-app my-react-app`?
+
+Both commands create a new React project, but they use different project setup tools.
+
+`npm create vite@latest my-react-app -- --template react` creates a React project using Vite.
+
+`npx create-react-app my-react-app` creates a React project using Create React App.
+
+Simple difference:
+
+```text
+Vite = modern, faster development tool
+Create React App = older React setup tool based on react-scripts
+```
+
+In the Vite command:
+
+```bash
+npm create vite@latest my-react-app -- --template react
+```
+
+Meaning:
+
+- `npm create` runs a project creation package
+- `vite@latest` means use the latest Vite project creator
+- `my-react-app` is the project folder name
+- `--` means pass the next options to Vite
+- `--template react` means create a React template
+
+For TypeScript with Vite, the command is usually:
+
+```bash
+npm create vite@latest my-react-app -- --template react-ts
+```
+
+In the Create React App command:
+
+```bash
+npx create-react-app my-react-app
+```
+
+Meaning:
+
+- `npx` downloads and runs a package command
+- `create-react-app` is the project creator
+- `my-react-app` is the project folder name
+
+For TypeScript with Create React App, the command is:
+
+```bash
+npx create-react-app my-react-app --template typescript
+```
+
+Important tooling difference:
+
+```text
+Vite uses native browser ES modules during development.
+Create React App uses react-scripts, which hides Webpack and Babel configuration.
+```
+
+Vite usually feels faster because it does not bundle the whole app before starting the dev server.
+
+Create React App gives a preconfigured setup, but most of the build configuration is hidden inside `react-scripts`.
+
+Interview answer:
+
+```text
+Vite and Create React App both scaffold React projects. Vite creates a lighter and faster setup using Vite's dev server and Rollup-based production build. Create React App creates a React project using react-scripts, which internally uses Webpack, Babel, ESLint, and Jest.
+```
+
+In this project, we are using Vite.
+
+You can see that from:
+
+```json
+"dev": "vite --host 0.0.0.0",
+"build": "tsc -b && vite build"
+```
+
+### 69. What happens behind the scenes when we create a React project using Vite or Create React App?
+
+When you run a project setup command, it does not magically create React by itself.
+
+It creates a folder, adds starter files, adds dependencies, and prepares scripts so you can run the app.
+
+Behind the scenes with Vite:
+
+```bash
+npm create vite@latest my-react-app -- --template react
+```
+
+Steps:
+
+1. npm runs the Vite project creator package.
+2. Vite creates a new folder named `my-react-app`.
+3. Vite copies React starter template files into that folder.
+4. It creates files like `package.json`, `index.html`, `src/main.jsx`, and `src/App.jsx`.
+5. It adds scripts like `dev`, `build`, and `preview`.
+6. After you run `npm install`, dependencies are downloaded into `node_modules`.
+7. When you run `npm run dev`, Vite starts a local development server.
+8. The browser opens the app through that dev server.
+9. Vite transforms JSX, TypeScript, CSS, and imports when the browser requests them.
+10. When you edit code, Vite updates the browser quickly using hot module replacement.
+
+Behind the scenes with Create React App:
+
+```bash
+npx create-react-app my-react-app
+```
+
+Steps:
+
+1. npx downloads and runs the Create React App package.
+2. Create React App creates a new folder named `my-react-app`.
+3. It creates starter React files.
+4. It creates `package.json`.
+5. It installs dependencies like `react`, `react-dom`, and `react-scripts`.
+6. `react-scripts` contains the hidden Webpack, Babel, ESLint, and Jest setup.
+7. When you run `npm start`, `react-scripts` starts the development server.
+8. Babel converts JSX into JavaScript.
+9. Webpack bundles modules and serves the app in development.
+10. When you run `npm run build`, Webpack creates optimized production files.
+
+Simple mental model:
+
+```text
+Project creator command
+  -> creates starter files
+  -> creates package.json
+  -> installs or prepares dependencies
+  -> gives scripts like dev/start/build
+  -> dev server runs the React app in browser
+```
+
+The actual React app starts from an entry file.
+
+In a Vite React app, it is commonly:
+
+```tsx
+createRoot(document.getElementById('root')!).render(<App />);
+```
+
+That line means:
+
+```text
+Find the HTML element with id="root"
+Mount the React App component inside that element
+```
+
+So the setup command creates the project structure, but React starts running when the browser loads the entry file and React renders `<App />`.
+
+### 70. How to avoid new object prop each render?
 
 Bad:
 
@@ -1099,7 +1304,7 @@ const filters = useMemo(() => ({ status: 'active' }), []);
 <Table filters={filters} />;
 ```
 
-### 68. What is lazy loading in React?
+### 71. What is lazy loading in React?
 
 Lazy loading loads components only when needed.
 
@@ -1117,7 +1322,7 @@ Use with:
 </Suspense>
 ```
 
-### 69. What is code splitting?
+### 72. What is code splitting?
 
 Code splitting breaks app bundle into smaller chunks.
 
@@ -1126,7 +1331,7 @@ Benefits:
 - faster initial load
 - load feature code only when needed
 
-### 70. What is list virtualization?
+### 73. What is list virtualization?
 
 Virtualization renders only visible rows in a large list.
 
@@ -1143,7 +1348,7 @@ Libraries:
 
 ## API Calls
 
-### 71. Where should API calls be made?
+### 74. Where should API calls be made?
 
 Common places:
 
@@ -1159,7 +1364,7 @@ In this app:
 API calls are mostly handled through Redux thunks and service files.
 ```
 
-### 72. How to fetch data in useEffect?
+### 75. How to fetch data in useEffect?
 
 ```tsx
 useEffect(() => {
@@ -1181,7 +1386,7 @@ useEffect(() => {
 }, []);
 ```
 
-### 73. Why avoid directly making useEffect callback async?
+### 76. Why avoid directly making useEffect callback async?
 
 Bad:
 
@@ -1205,7 +1410,7 @@ useEffect(() => {
 }, []);
 ```
 
-### 74. How to handle loading and error state?
+### 77. How to handle loading and error state?
 
 Example:
 
@@ -1227,7 +1432,7 @@ In Redux apps, common statuses are:
 'idle' | 'loading' | 'succeeded' | 'failed'
 ```
 
-### 75. How to cancel API request?
+### 78. How to cancel API request?
 
 Use `AbortController`.
 
@@ -1249,7 +1454,7 @@ useEffect(() => {
 
 ## Authentication in React
 
-### 76. How does React know user is logged in?
+### 79. How does React know user is logged in?
 
 Usually by auth state.
 
@@ -1268,7 +1473,7 @@ dispatch(bootstrapAuth());
 
 Backend checks HTTP-only cookie and returns session/account.
 
-### 77. Can React read HTTP-only cookie?
+### 80. Can React read HTTP-only cookie?
 
 No.
 
@@ -1282,7 +1487,7 @@ Example:
 GET /api/auth/session
 ```
 
-### 78. Why use credentials: include?
+### 81. Why use credentials: include?
 
 In fetch:
 
@@ -1298,7 +1503,7 @@ In this app:
 frontend/src/services/http.ts
 ```
 
-### 79. How protected route works in this app?
+### 82. How protected route works in this app?
 
 Concept:
 
@@ -1312,7 +1517,7 @@ return children;
 
 The route guard uses Redux auth state.
 
-### 80. How role-based UI works?
+### 83. How role-based UI works?
 
 Example:
 
@@ -1328,7 +1533,7 @@ Backend must also enforce authorization.
 
 ## TypeScript With React
 
-### 81. Why use TypeScript with React?
+### 84. Why use TypeScript with React?
 
 Benefits:
 
@@ -1338,7 +1543,7 @@ Benefits:
 - better autocomplete
 - safer refactoring
 
-### 82. How to type component props?
+### 85. How to type component props?
 
 ```tsx
 type UserCardProps = {
@@ -1351,7 +1556,7 @@ const UserCard = ({ name, email }: UserCardProps) => {
 };
 ```
 
-### 83. How to type useState?
+### 86. How to type useState?
 
 ```tsx
 const [user, setUser] = useState<User | null>(null);
@@ -1363,7 +1568,7 @@ For inferred values:
 const [count, setCount] = useState(0);
 ```
 
-### 84. How to type event handlers?
+### 87. How to type event handlers?
 
 Input change:
 
@@ -1381,7 +1586,7 @@ const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
 };
 ```
 
-### 85. How to type useRef?
+### 88. How to type useRef?
 
 ```tsx
 const inputRef = useRef<HTMLInputElement | null>(null);
@@ -1395,7 +1600,7 @@ inputRef.current?.focus();
 
 ## React Patterns
 
-### 86. What is composition?
+### 89. What is composition?
 
 Composition means building components by combining smaller components.
 
@@ -1415,7 +1620,7 @@ Usage:
 </Card>
 ```
 
-### 87. Controlled modal pattern?
+### 90. Controlled modal pattern?
 
 Parent controls open/close state.
 
@@ -1425,7 +1630,7 @@ const [isOpen, setIsOpen] = useState(false);
 {isOpen ? <Modal onClose={() => setIsOpen(false)} /> : null}
 ```
 
-### 88. Container vs presentational components?
+### 91. Container vs presentational components?
 
 Container component:
 
@@ -1446,7 +1651,7 @@ UserManagementPage -> container
 UserTable -> presentational
 ```
 
-### 89. What is children prop?
+### 92. What is children prop?
 
 `children` lets component render nested content.
 
@@ -1460,7 +1665,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
 ## Error Handling
 
-### 90. What is Error Boundary?
+### 93. What is Error Boundary?
 
 Error Boundary catches rendering errors in child component tree.
 
@@ -1494,7 +1699,7 @@ Error boundaries do not catch:
 - async errors
 - server errors
 
-### 91. How to handle API errors?
+### 94. How to handle API errors?
 
 Common pattern:
 
@@ -1510,7 +1715,7 @@ In this app, toast middleware also shows success/error messages.
 
 ## React Strict Mode
 
-### 92. What is StrictMode?
+### 95. What is StrictMode?
 
 StrictMode helps find problems during development.
 
@@ -1532,13 +1737,13 @@ StrictMode is a development-only tool that helps detect unsafe side effects and 
 
 ## Common Tricky Questions
 
-### 93. Why does useEffect run twice in development?
+### 96. Why does useEffect run twice in development?
 
 Because React StrictMode intentionally mounts/unmounts/remounts components in development to detect unsafe effects.
 
 Production does not behave the same way.
 
-### 94. Why not update state directly?
+### 97. Why not update state directly?
 
 Bad:
 
@@ -1555,11 +1760,11 @@ Good:
 setUser({ ...user, name: 'New Name' });
 ```
 
-### 95. Why state should be immutable?
+### 98. Why state should be immutable?
 
 Immutability helps React detect changes and makes updates predictable.
 
-### 96. Why component names should start with capital letter?
+### 99. Why component names should start with capital letter?
 
 React treats lowercase tags as HTML elements.
 
@@ -1575,13 +1780,13 @@ Bad:
 <userCard />
 ```
 
-### 97. Why hooks cannot be conditional?
+### 100. Why hooks cannot be conditional?
 
 React relies on hook call order.
 
 If hooks are conditional, order can change between renders and React cannot match hook state correctly.
 
-### 98. What is stale closure?
+### 101. What is stale closure?
 
 Stale closure happens when a function captures old state/props.
 
@@ -1605,7 +1810,7 @@ Fix:
 - use functional update
 - use ref for latest value
 
-### 99. Why use functional state update?
+### 102. Why use functional state update?
 
 Use when new state depends on previous state.
 
@@ -1615,7 +1820,7 @@ setCount((current) => current + 1);
 
 This avoids stale state issues.
 
-### 100. Why not use array index as key?
+### 103. Why not use array index as key?
 
 Index key can break UI when list order changes.
 
@@ -1627,13 +1832,13 @@ Problems:
 
 Use stable ID instead.
 
-### 101. What is hydration?
+### 104. What is hydration?
 
 Hydration is when React attaches event handlers to server-rendered HTML.
 
 Common in SSR frameworks like Next.js.
 
-### 102. What is client-side rendering?
+### 105. What is client-side rendering?
 
 Client-side rendering means browser receives minimal HTML and JavaScript builds the UI in the browser.
 
@@ -1641,7 +1846,7 @@ Vite React apps are usually client-side rendered.
 
 ## Testing
 
-### 103. What should we test in React?
+### 106. What should we test in React?
 
 Test user behavior, not implementation details.
 
@@ -1653,7 +1858,7 @@ Examples:
 - route protection
 - role-based UI
 
-### 104. What is React Testing Library?
+### 107. What is React Testing Library?
 
 React Testing Library helps test components from user perspective.
 
@@ -1665,7 +1870,7 @@ expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
 
 ## React App Architecture
 
-### 105. How is this app structured?
+### 108. How is this app structured?
 
 This app uses feature-based structure:
 
@@ -1686,7 +1891,7 @@ Benefits:
 - easier scaling
 - easier maintenance
 
-### 106. What is feature-based folder structure?
+### 109. What is feature-based folder structure?
 
 Feature-based structure groups code by business feature instead of file type.
 
@@ -1701,7 +1906,7 @@ features/users/types.ts
 
 This is better for medium/large apps.
 
-### 107. What is reusable component?
+### 110. What is reusable component?
 
 A reusable component is generic enough to be used in many places.
 
@@ -1718,7 +1923,7 @@ PublicRoute
 
 ## Interview Questions Based on This App
 
-### 108. How does auth bootstrap work in this app?
+### 111. How does auth bootstrap work in this app?
 
 On app load:
 
@@ -1734,7 +1939,7 @@ If cookie is valid, user becomes authenticated.
 
 If not, user is unauthenticated.
 
-### 109. How does session refresh work in this app?
+### 112. How does session refresh work in this app?
 
 The app listens to user activity and periodically verifies/refreshes session.
 
@@ -1745,7 +1950,7 @@ User active -> refresh session
 No activity -> verify session without extending it
 ```
 
-### 110. How does role-based UI work in this app?
+### 113. How does role-based UI work in this app?
 
 Admin route is visible only when:
 
@@ -1761,7 +1966,7 @@ Important interview answer:
 Frontend role checks are for UX. Backend authorization is the real security.
 ```
 
-### 111. How are API calls centralized?
+### 114. How are API calls centralized?
 
 This app uses:
 
@@ -1777,7 +1982,7 @@ It centralizes:
 - `credentials: 'include'`
 - error parsing
 
-### 112. How are toasts handled?
+### 115. How are toasts handled?
 
 This app uses Redux listener middleware.
 
@@ -1787,61 +1992,61 @@ This keeps toast logic centralized instead of duplicating it in every component.
 
 ## Most Important Short Answers
 
-### 113. React in one line
+### 116. React in one line
 
 ```text
 React is a JavaScript library for building reusable, state-driven UI components.
 ```
 
-### 114. Component in one line
+### 117. Component in one line
 
 ```text
 A component is a reusable function/class that returns UI.
 ```
 
-### 115. Props in one line
+### 118. Props in one line
 
 ```text
 Props are read-only inputs passed from parent to child.
 ```
 
-### 116. State in one line
+### 119. State in one line
 
 ```text
 State is component-managed data that triggers re-render when changed.
 ```
 
-### 117. useEffect in one line
+### 120. useEffect in one line
 
 ```text
 useEffect runs side effects after render and can clean them up.
 ```
 
-### 118. Virtual DOM in one line
+### 121. Virtual DOM in one line
 
 ```text
 Virtual DOM is a lightweight representation of UI used to calculate efficient real DOM updates.
 ```
 
-### 119. Redux in one line
+### 122. Redux in one line
 
 ```text
 Redux is a centralized state management library where state changes through actions and reducers.
 ```
 
-### 120. React Router in one line
+### 123. React Router in one line
 
 ```text
 React Router maps URL paths to React components.
 ```
 
-### 121. Controlled component in one line
+### 124. Controlled component in one line
 
 ```text
 A controlled component is a form element whose value is controlled by React state.
 ```
 
-### 122. Custom hook in one line
+### 125. Custom hook in one line
 
 ```text
 A custom hook is a reusable function that uses React hooks to share stateful logic.

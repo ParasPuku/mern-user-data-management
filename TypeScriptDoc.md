@@ -275,6 +275,67 @@ Benefits:
 - helps with API response shapes
 - helps teams understand code faster
 
+- Autocomplete becomes better because the editor knows the exact fields and functions available on a value. For example, if `user` is typed as `User`, the editor can suggest `user.email`, `user.name`, or `user.role`.
+
+Example:
+
+```ts
+type User = {
+  name: string;
+  email: string;
+  role: 'admin' | 'member';
+};
+
+function showUser(user: User) {
+  user.email.toLowerCase();
+}
+```
+
+Inside `showUser`, when you type `user.`, the editor can suggest `name`, `email`, and `role` because TypeScript knows the shape of `User`.
+
+- Refactoring becomes safer because TypeScript can show all places affected by a change. For example, if you rename `email` to `primaryEmail` in the `User` type, TypeScript can warn wherever the old `email` property is still used.
+
+Example:
+
+```ts
+type User = {
+  name: string;
+  primaryEmail: string;
+};
+
+function sendWelcomeEmail(user: User) {
+  sendEmail(user.email); // Error: Property 'email' does not exist on type 'User'
+}
+```
+
+TypeScript is warning you because the type now has `primaryEmail`, but the function still uses the old `email` name.
+
+- TypeScript documents what data should look like because a type works like a small contract. Anyone reading the code can understand which fields are required, which fields are optional, and what values are allowed.
+
+Example:
+
+```ts
+type CreateUserRequest = {
+  fullName: string;
+  email: string;
+  mobile?: string;
+  role: 'admin' | 'member';
+};
+
+const payload: CreateUserRequest = {
+  fullName: 'Paras Mahto',
+  email: 'paras@example.com',
+  role: 'owner' // Error: only 'admin' or 'member' is allowed
+};
+```
+
+From this type, we can understand the data shape without guessing:
+
+- `fullName` is required
+- `email` is required
+- `mobile` is optional because it has `?`
+- `role` can only be `admin` or `member`
+
 In this app, TypeScript helps with things like `Account`, `User`, `UserRole`, `RequestStatus`, API responses, Redux state, and React props.
 
 ### 5. What are disadvantages of TypeScript?
@@ -540,7 +601,88 @@ Literal types are useful when your app has known values like:
 - modes
 - API methods
 
-### 14. What is any?
+### 14. Difference between union type and literal type?
+
+Union type and literal type are connected, but they are not exactly the same thing.
+
+A literal type means one exact value is allowed.
+
+Example:
+
+```ts
+type AdminRole = 'admin';
+
+const role: AdminRole = 'admin'; // ok
+const role2: AdminRole = 'member'; // error
+```
+
+Here, `AdminRole` is a literal type because it allows only the exact string `'admin'`.
+
+A union type means a value can be one of multiple allowed types or values.
+
+Example:
+
+```ts
+type Id = string | number;
+
+const id1: Id = 'user-1'; // ok
+const id2: Id = 101; // ok
+const id3: Id = true; // error
+```
+
+Here, `Id` is a union type because it allows `string` OR `number`.
+
+The part that often confuses beginners:
+
+```ts
+type Status = 'idle' | 'loading' | 'success' | 'error';
+```
+
+This is both:
+
+- a union type, because it uses `|`
+- a union of literal types, because each option is an exact string value
+
+Read it like this:
+
+```text
+Status can be exactly 'idle'
+OR exactly 'loading'
+OR exactly 'success'
+OR exactly 'error'
+```
+
+Simple comparison:
+
+```text
+Literal type = exact value
+Union type = one of multiple allowed options
+Union of literal types = one of multiple exact values
+```
+
+Another example:
+
+```ts
+type ButtonSize = 'small' | 'medium' | 'large';
+
+function Button(size: ButtonSize) {
+  console.log(size);
+}
+
+Button('small'); // ok
+Button('extra-large'); // error
+```
+
+Here, each value like `'small'` is a literal type, and `ButtonSize` is a union type made from those literals.
+
+Beginner rule:
+
+```text
+Use literal types when only exact values are valid.
+Use union types when there is more than one valid option.
+```
+
+### 15. What is any?
 
 `any` turns off TypeScript checking for that value.
 
@@ -562,7 +704,7 @@ Do not check this. I know what I am doing.
 
 That can be useful during migration, but it removes TypeScript's safety. Prefer specific types or `unknown`.
 
-### 15. What is unknown?
+### 16. What is unknown?
 
 `unknown` means "I do not know the type yet".
 
@@ -599,7 +741,7 @@ Use unknown when data is unpredictable.
 Use type checks before using it.
 ```
 
-### 16. any vs unknown?
+### 17. any vs unknown?
 
 Both can hold any value, but they behave differently.
 
@@ -628,7 +770,7 @@ Interview answer:
 any disables type checking. unknown keeps type safety because you must narrow the value before using it.
 ```
 
-### 17. What is void?
+### 18. What is void?
 
 `void` means a function does not return a useful value.
 
@@ -655,7 +797,7 @@ Common examples:
 - dispatching actions
 - setting state
 
-### 18. What is never?
+### 19. What is never?
 
 `never` means a value should never exist or a function never finishes normally.
 
@@ -698,7 +840,7 @@ function checkRole(role: Role) {
 
 If later you add a new role and forget to handle it, TypeScript can warn you.
 
-### 19. null vs undefined in TypeScript?
+### 20. null vs undefined in TypeScript?
 
 `undefined` usually means a value was not assigned.
 
@@ -729,7 +871,7 @@ This means the property exists, but its value may intentionally be empty.
 
 ## Type Alias and Interface
 
-### 20. What is type alias?
+### 21. What is type alias?
 
 A type alias gives a name to a type.
 
@@ -765,7 +907,7 @@ Beginner idea:
 type alias = nickname for a type
 ```
 
-### 21. What is interface?
+### 22. What is interface?
 
 An interface defines the shape of an object.
 
@@ -800,7 +942,7 @@ Beginner idea:
 interface = object contract
 ```
 
-### 22. type vs interface?
+### 23. type vs interface?
 
 Both can define object shapes, so beginners often get confused.
 
@@ -837,7 +979,7 @@ Interview answer:
 interface is best for object contracts. type is more flexible because it can represent unions, primitives, tuples, intersections, and advanced type operations.
 ```
 
-### 23. Can interface extend another interface?
+### 24. Can interface extend another interface?
 
 Yes. Extending means one interface can reuse another interface.
 
@@ -860,7 +1002,7 @@ Now `AdminUser` must have:
 
 This is useful when multiple objects share common fields.
 
-### 24. What is intersection type?
+### 25. What is intersection type?
 
 An intersection combines multiple types into one type.
 
@@ -893,7 +1035,7 @@ In this app, this pattern is useful because a form may collect only some fields,
 
 ## Object Types
 
-### 25. How to type an object?
+### 26. How to type an object?
 
 To type an object, describe the properties it must have.
 
@@ -926,7 +1068,7 @@ const user: User = {
 }; // error because email is missing
 ```
 
-### 26. Optional property?
+### 27. Optional property?
 
 An optional property is a property that may or may not exist.
 
@@ -963,7 +1105,7 @@ Beginner rule:
 property?: type means the property can be missing.
 ```
 
-### 27. Readonly property?
+### 28. Readonly property?
 
 A readonly property cannot be reassigned after it is created.
 
@@ -986,7 +1128,7 @@ user.id = '2'; // error
 
 This is useful for values like IDs because they should not change after creation.
 
-### 28. What is the difference between readonly and const in TypeScript?
+### 29. What is the difference between readonly and const in TypeScript?
 
 `const` protects the variable binding.
 
@@ -1027,7 +1169,7 @@ const = cannot reassign variable
 readonly = cannot reassign property
 ```
 
-### 29. Index signature?
+### 30. Index signature?
 
 An index signature is used when an object can have dynamic keys.
 
@@ -1058,7 +1200,7 @@ Use this when you do not know all property names in advance.
 
 ## Functions
 
-### 30. How to type function parameters and return?
+### 31. How to type function parameters and return?
 
 Function parameters should have types, and the return value can also have a type.
 
@@ -1088,7 +1230,7 @@ Beginner rule:
 Type inputs first. Then type output if it helps readability.
 ```
 
-### 31. Optional function parameter?
+### 32. Optional function parameter?
 
 An optional parameter may be skipped when calling the function.
 
@@ -1111,7 +1253,7 @@ string | undefined
 
 So you should handle the missing case.
 
-### 32. Default parameter?
+### 33. Default parameter?
 
 A default parameter gives a value when the caller does not pass one.
 
@@ -1132,7 +1274,7 @@ greet(); // Hello Guest
 
 Default parameters are often cleaner than checking `undefined` manually.
 
-### 33. Rest parameter?
+### 34. Rest parameter?
 
 A rest parameter collects many arguments into an array.
 
@@ -1152,7 +1294,7 @@ sum(1, 2, 3); // 6
 Accept any number of number arguments and store them in an array.
 ```
 
-### 34. Function type?
+### 35. Function type?
 
 A function type describes the shape of a function.
 
@@ -1183,7 +1325,7 @@ type ButtonProps = {
 };
 ```
 
-### 35. What is function overload?
+### 36. What is function overload?
 
 Function overload lets one function support multiple call patterns.
 
@@ -1205,7 +1347,7 @@ Use overloads when one function behaves differently depending on input types. Do
 
 ## Type Inference
 
-### 36. What is type inference?
+### 37. What is type inference?
 
 Type inference means TypeScript guesses the type from the value.
 
@@ -1233,7 +1375,7 @@ Beginner rule:
 If the value clearly shows the type, let TypeScript infer it.
 ```
 
-### 37. What is type inference in array?
+### 38. What is type inference in array?
 
 TypeScript can infer the type of array items.
 
@@ -1269,7 +1411,7 @@ const users: User[] = [];
 
 Without the type, TypeScript may not know what items will be added later.
 
-### 38. When should we add explicit types?
+### 39. When should we add explicit types?
 
 Add explicit types when TypeScript cannot safely guess or when the type is important for readers.
 
@@ -1291,7 +1433,7 @@ const [account, setAccount] = useState<Account | null>(null);
 
 Why explicit? Because `null` alone does not tell TypeScript that later the value can become an `Account`.
 
-### 39. What is contextual typing?
+### 40. What is contextual typing?
 
 Contextual typing means TypeScript understands a type from where the code is used.
 
@@ -1311,7 +1453,7 @@ This is common in React. TypeScript uses the JSX context to infer event types.
 
 ## Type Narrowing
 
-### 40. What is type narrowing, and how do type guards work?
+### 41. What is type narrowing, and how do type guards work?
 
 Type narrowing means starting with a broad type and using checks to make it more specific.
 
@@ -1352,7 +1494,7 @@ function isString(value: unknown): value is string {
 }
 ```
 
-### 41. typeof narrowing?
+### 42. typeof narrowing?
 
 `typeof` checks primitive JavaScript types.
 
@@ -1378,7 +1520,7 @@ Use `typeof` for:
 - `symbol`
 - `bigint`
 
-### 42. instanceof narrowing?
+### 43. instanceof narrowing?
 
 `instanceof` checks whether a value was created from a class or constructor.
 
@@ -1402,7 +1544,7 @@ In this app, this pattern appears in error handling:
 error instanceof Error ? error.message : 'Something went wrong'
 ```
 
-### 43. in operator narrowing?
+### 44. in operator narrowing?
 
 The `in` operator checks whether a property exists in an object.
 
@@ -1423,7 +1565,7 @@ Inside the `if`, TypeScript knows `user` must be `Admin` because only `Admin` ha
 
 Use this when different object types have different properties.
 
-### 44. Discriminated union?
+### 45. Discriminated union?
 
 A discriminated union is a union where every option has a common literal property.
 
@@ -1457,7 +1599,7 @@ When `status` is `'success'`, TypeScript knows `data` exists. When `status` is `
 
 ## Generics
 
-### 45. What are Generics in TypeScript? Give examples in functions, classes, and type aliases.
+### 46. What are Generics in TypeScript? Give examples in functions, classes, and type aliases.
 
 Generics let you write reusable code without losing type information.
 
@@ -1507,7 +1649,7 @@ type ApiResponse<T> = {
 
 In this app, generic API response types allow the same wrapper to work with `Account`, `User`, `Team`, or other models.
 
-### 46. Generic constraint?
+### 47. Generic constraint?
 
 A generic constraint limits what type is allowed.
 
@@ -1541,7 +1683,7 @@ Constraints are useful when you want flexibility, but still need certain propert
 
 ## Utility Types
 
-### 47. What are utility types?
+### 48. What are utility types?
 
 Utility types are built-in TypeScript helpers that transform existing types.
 
@@ -1566,7 +1708,7 @@ Beginner idea:
 Utility types are type shortcuts.
 ```
 
-### 48. Partial?
+### 49. Partial?
 
 `Partial<T>` makes every property optional.
 
@@ -1605,7 +1747,7 @@ setFilters(state, action: PayloadAction<Partial<UserFilters>>) {
 
 Only the changed filter fields need to be passed.
 
-### 49. Required?
+### 50. Required?
 
 `Required<T>` makes every optional property required.
 
@@ -1631,7 +1773,7 @@ type CompleteDraftUser = Required<DraftUser>;
 
 Use it when you have a draft shape but later need the complete version.
 
-### 50. Readonly?
+### 51. Readonly?
 
 `Readonly<T>` makes every property readonly.
 
@@ -1659,7 +1801,7 @@ user.name = 'Amit'; // error
 
 Use it when a function should read data but not mutate it.
 
-### 51. Pick?
+### 52. Pick?
 
 `Pick<T, K>` selects only some properties from a type.
 
@@ -1687,7 +1829,7 @@ type UserPreview = Pick<User, 'id' | 'name'>;
 
 Use `Pick` when you only need part of a larger type.
 
-### 52. Omit?
+### 53. Omit?
 
 `Omit<T, K>` removes some properties from a type.
 
@@ -1715,7 +1857,7 @@ type CreateUser = Omit<User, 'id' | 'createdAt'>;
 
 Use `Omit` when creating data where server-generated fields should not be provided by the frontend.
 
-### 53. Record?
+### 54. Record?
 
 `Record<K, T>` creates an object type with known key types and value types.
 
@@ -1744,7 +1886,7 @@ Record<string, UserProfile | null>
 
 That means keys are strings and values are either `UserProfile` or `null`.
 
-### 54. Exclude?
+### 55. Exclude?
 
 `Exclude<T, U>` removes members from a union.
 
@@ -1763,7 +1905,7 @@ type FinishedStatus = Exclude<Status, 'idle' | 'loading'>;
 
 Use it when you already have a union but need a smaller version of it.
 
-### 55. ReturnType?
+### 56. ReturnType?
 
 `ReturnType<T>` gets the return type of a function.
 
@@ -1781,7 +1923,7 @@ TypeScript looks at what `getUser` returns and creates a type from it.
 
 Use this when you do not want to manually duplicate a function's return shape.
 
-### 56. Parameters?
+### 57. Parameters?
 
 `Parameters<T>` gets the parameter types of a function as a tuple.
 
@@ -1801,7 +1943,7 @@ type CreateUserParams = Parameters<typeof createUser>;
 
 This is useful when wrapping or reusing function signatures.
 
-### 57. Awaited?
+### 58. Awaited?
 
 `Awaited<T>` gets the resolved value type of a Promise.
 
@@ -1821,7 +1963,7 @@ This is useful when working with async functions and API calls.
 
 ## Classes and Access Modifiers
 
-### 58. Does TypeScript support classes?
+### 59. Does TypeScript support classes?
 
 Yes. TypeScript supports JavaScript classes and adds type checking.
 
@@ -1841,7 +1983,7 @@ The `public name: string` shortcut creates a property and assigns it from the co
 
 Classes are less common in React components now, but they still appear in services, models, utilities, and backend code.
 
-### 59. public, private, protected?
+### 60. public, private, protected?
 
 These control where class properties can be accessed.
 
@@ -1877,7 +2019,7 @@ private = only this class
 protected = this class and child classes
 ```
 
-### 60. What is the difference between extends and implements in TypeScript?
+### 61. What is the difference between extends and implements in TypeScript?
 
 `extends` is for inheritance.
 
@@ -1927,7 +2069,7 @@ Simple answer:
 extends reuses behavior or fields. implements checks that a class matches a required shape.
 ```
 
-### 61. readonly?
+### 62. readonly?
 
 In a class, `readonly` means a property can be assigned when created, but not changed later.
 
@@ -1959,7 +2101,7 @@ Use it for values that should stay stable, like IDs.
 
 ## Enums and Alternatives
 
-### 62. What is enum?
+### 63. What is enum?
 
 An enum defines named constants.
 
@@ -1980,7 +2122,7 @@ const role = Role.Admin;
 
 Enums are useful, but many React TypeScript projects prefer string union types because they are simpler and produce less JavaScript.
 
-### 63. enum vs union type?
+### 64. enum vs union type?
 
 Union type:
 
@@ -2017,7 +2159,7 @@ For simple fixed string choices, use union types.
 
 ## Type Assertions
 
-### 64. What is type assertion?
+### 65. What is type assertion?
 
 Type assertion tells TypeScript to treat a value as a specific type.
 
@@ -2039,7 +2181,7 @@ If you assert incorrectly, TypeScript may stop warning you but the app can still
 
 Use assertions carefully.
 
-### 65. as vs angle bracket assertion?
+### 66. as vs angle bracket assertion?
 
 Both can assert types:
 
@@ -2062,7 +2204,7 @@ So in React projects, this is the common style:
 const input = element as HTMLInputElement;
 ```
 
-### 66. What is non-null assertion?
+### 67. What is non-null assertion?
 
 The non-null assertion operator `!` tells TypeScript:
 
@@ -2092,7 +2234,7 @@ Prefer checking or optional chaining. Use ! only when you are truly sure.
 
 ## TypeScript With React
 
-### 67. How to type React component props?
+### 68. How to type React component props?
 
 Create a type for the props object.
 
@@ -2122,7 +2264,7 @@ This is invalid:
 
 Props typing helps prevent wrong component usage.
 
-### 68. How to type children?
+### 69. How to type children?
 
 `children` is the content placed inside a component.
 
@@ -2148,7 +2290,7 @@ const Card = ({ children }: CardProps) => {
 
 `React.ReactNode` allows text, elements, fragments, null, and more.
 
-### 69. How to type useState?
+### 70. How to type useState?
 
 Sometimes TypeScript can infer state:
 
@@ -2172,7 +2314,7 @@ account starts as null, but later can be an Account.
 
 Without the explicit type, TypeScript may think the state can only be `null`.
 
-### 70. How to type event handlers?
+### 71. How to type event handlers?
 
 React events have specific types.
 
@@ -2194,7 +2336,7 @@ const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
 
 Why type events? Because then TypeScript knows what properties exist on `event.target` or `event.currentTarget`.
 
-### 71. How to type useRef?
+### 72. How to type useRef?
 
 `useRef` can store a DOM element or a mutable value.
 
@@ -2220,7 +2362,7 @@ Use optional chaining to avoid crashes:
 inputRef.current?.focus();
 ```
 
-### 72. How to type button props?
+### 73. How to type button props?
 
 If you build a reusable button, you may want it to accept normal button props plus custom props.
 
@@ -2239,7 +2381,7 @@ This means the component supports:
 
 This pattern is useful for components like `LoadingButton`.
 
-### 73. React.FC vs normal function?
+### 74. React.FC vs normal function?
 
 `React.FC` is one way to type components, but many teams prefer normal functions with explicit props.
 
@@ -2261,7 +2403,7 @@ This is simple and clear.
 
 ## TypeScript With Redux Toolkit
 
-### 74. How to type RootState?
+### 75. How to type RootState?
 
 `RootState` is the type of the entire Redux state.
 
@@ -2281,7 +2423,7 @@ Then it creates the `RootState` type automatically.
 
 This is better than manually writing the whole state shape.
 
-### 75. How to type AppDispatch?
+### 76. How to type AppDispatch?
 
 `AppDispatch` is the type of the Redux dispatch function.
 
@@ -2299,7 +2441,7 @@ If you use a typed dispatch, TypeScript understands calls like:
 dispatch(fetchUsers());
 ```
 
-### 76. Why create typed Redux hooks?
+### 77. Why create typed Redux hooks?
 
 Typed hooks let React components use Redux with proper TypeScript support.
 
@@ -2319,7 +2461,7 @@ Benefits:
 
 Instead of using raw `useDispatch` and `useSelector`, components use `useAppDispatch` and `useAppSelector`.
 
-### 77. How to type createAsyncThunk?
+### 78. How to type createAsyncThunk?
 
 `createAsyncThunk` has generic type parameters.
 
@@ -2349,7 +2491,7 @@ The three generic parts mean:
 
 This makes async Redux logic much safer.
 
-### 78. How to type PayloadAction?
+### 79. How to type PayloadAction?
 
 `PayloadAction<T>` tells TypeScript what type `action.payload` has.
 
@@ -2376,7 +2518,7 @@ That prevents reducers from using the wrong payload shape.
 
 ## API Typing
 
-### 79. How to type API response?
+### 80. How to type API response?
 
 API response types describe what the backend sends.
 
@@ -2402,7 +2544,7 @@ response.data // Account
 
 This gives autocomplete and catches wrong property access.
 
-### 80. How to type list API response?
+### 81. How to type list API response?
 
 List APIs usually return an array and sometimes metadata.
 
@@ -2431,7 +2573,7 @@ response.data // User[]
 response.meta.pagination.page // number
 ```
 
-### 81. Why type API responses?
+### 82. Why type API responses?
 
 API responses are one of the most important places to use TypeScript.
 
@@ -2458,7 +2600,7 @@ TypeScript does not validate runtime API data by itself.
 
 For critical data, use runtime validation with tools like Zod.
 
-### 82. How to type fetch wrapper?
+### 83. How to type fetch wrapper?
 
 A fetch wrapper can use generics so every API call can specify its response type.
 
@@ -2481,7 +2623,7 @@ In this project, `frontend/src/services/http.ts` uses this idea. The caller says
 
 ## tsconfig and Compiler
 
-### 83. How would you migrate a JavaScript project to TypeScript?
+### 84. How would you migrate a JavaScript project to TypeScript?
 
 Do it gradually. Do not rewrite everything in one attempt.
 
@@ -2505,7 +2647,7 @@ Start with boundaries: API data, props, forms, and shared functions.
 
 That gives the most value early.
 
-### 84. What is tsconfig.json, and why is it important?
+### 85. What is tsconfig.json, and why is it important?
 
 `tsconfig.json` tells TypeScript how to check and compile the project.
 
@@ -2535,7 +2677,7 @@ Example:
 
 In this app, `frontend/tsconfig.app.json` enables `strict: true`, which helps catch hidden bugs.
 
-### 85. What is strict mode?
+### 86. What is strict mode?
 
 `strict` turns on TypeScript's strongest common safety checks.
 
@@ -2560,7 +2702,7 @@ Interview answer:
 Strict mode makes TypeScript safer by catching more possible bugs during compilation.
 ```
 
-### 86. What is noImplicitAny?
+### 87. What is noImplicitAny?
 
 `noImplicitAny` reports an error when TypeScript would silently use `any`.
 
@@ -2582,7 +2724,7 @@ function add(a: number, b: number) {
 
 This keeps type safety from silently disappearing.
 
-### 87. What is strictNullChecks?
+### 88. What is strictNullChecks?
 
 `strictNullChecks` means `null` and `undefined` are not allowed unless you explicitly include them.
 
@@ -2607,7 +2749,7 @@ account?.name.toUpperCase();
 
 ## Advanced Types
 
-### 88. What is conditional type?
+### 89. What is conditional type?
 
 A conditional type chooses one type or another based on a condition.
 
@@ -2632,7 +2774,7 @@ type B = IsString<number>; // false
 
 Conditional types are advanced. You do not need them every day, but utility types often use them internally.
 
-### 89. What is the infer keyword used for in TypeScript?
+### 90. What is the infer keyword used for in TypeScript?
 
 `infer` is used inside conditional types to extract a type.
 
@@ -2667,7 +2809,7 @@ This is advanced, but the simple idea is:
 infer lets TypeScript capture part of another type.
 ```
 
-### 90. What is mapped type?
+### 91. What is mapped type?
 
 A mapped type creates a new type by looping over keys of another type.
 
@@ -2693,7 +2835,7 @@ If this feels difficult, remember:
 Mapped type = loop over properties at type level
 ```
 
-### 91. What are keyof, typeof, and in in TypeScript?
+### 92. What are keyof, typeof, and in in TypeScript?
 
 `keyof` creates a union of object keys.
 
@@ -2729,7 +2871,7 @@ typeof = type of a value
 in = check property exists
 ```
 
-### 92. What is template literal type?
+### 93. What is template literal type?
 
 Template literal types build string types using template syntax.
 
@@ -2750,7 +2892,7 @@ POST /api/auth/login
 
 Use this when strings follow a pattern.
 
-### 93. What is satisfies operator?
+### 94. What is satisfies operator?
 
 `satisfies` checks that a value matches a type without losing the specific inferred type.
 
@@ -2771,7 +2913,7 @@ Make sure routes is a Record<string, string>, but keep the exact keys home and s
 
 It is useful when you want checking without widening too much.
 
-### 94. What is const assertion?
+### 95. What is const assertion?
 
 `as const` tells TypeScript to infer the most specific readonly type.
 
@@ -2807,7 +2949,7 @@ type Role = (typeof roles)[number];
 
 ## Common TypeScript Mistakes
 
-### 95. Overusing any
+### 96. Overusing any
 
 Using `any` too much removes TypeScript's benefit.
 
@@ -2830,7 +2972,7 @@ Now TypeScript knows the response shape.
 
 Use `any` only as a temporary escape hatch.
 
-### 96. Trusting type assertion too much
+### 97. Trusting type assertion too much
 
 Type assertions do not validate runtime data.
 
@@ -2855,7 +2997,7 @@ Better:
 - avoid unnecessary assertions
 - use runtime validation for important external data
 
-### 97. Ignoring null and undefined
+### 98. Ignoring null and undefined
 
 Many runtime crashes happen because a value is `null` or `undefined`.
 
@@ -2883,7 +3025,7 @@ if (account) {
 
 TypeScript helps only if your types honestly include `null` when it is possible.
 
-### 98. Creating too complex types
+### 99. Creating too complex types
 
 Types should make code easier to understand.
 
@@ -2902,7 +3044,7 @@ If a type becomes too complex:
 
 Good TypeScript should help the next developer.
 
-### 99. Confusing optional and nullable
+### 100. Confusing optional and nullable
 
 Optional means the property may be missing.
 
@@ -2931,7 +3073,7 @@ This distinction matters when reading API responses.
 
 ## TypeScript With This App
 
-### 100. How this app types auth status?
+### 101. How this app types auth status?
 
 This app uses literal union types for auth status.
 
@@ -2957,7 +3099,7 @@ Why it helps:
 - reducers cannot set random strings
 - UI conditions become safer
 
-### 101. How this app types roles?
+### 102. How this app types roles?
 
 Roles are typed with string unions.
 
@@ -2976,7 +3118,7 @@ const role: AccountRole = 'owner'; // error
 
 This is useful for role-based UI and access checks.
 
-### 102. How this app types form values?
+### 103. How this app types form values?
 
 Forms use object types to describe the exact fields.
 
@@ -3003,7 +3145,7 @@ values.fullname; // error
 
 TypeScript catches it.
 
-### 103. How this app types paginated users?
+### 104. How this app types paginated users?
 
 Pagination data has its own type.
 
@@ -3036,7 +3178,7 @@ This tells components:
 - `pagination.page` is a number
 - `hasNextPage` is a boolean
 
-### 104. How this app types selectors?
+### 105. How this app types selectors?
 
 Selectors read data from Redux state.
 
@@ -3062,7 +3204,7 @@ This improves autocomplete and prevents wrong state access.
 
 ## Negative Oriented TypeScript Interview Questions
 
-### 105. Can TypeScript prevent all runtime errors?
+### 106. Can TypeScript prevent all runtime errors?
 
 No. TypeScript catches many type mistakes before runtime, but it cannot guarantee runtime data is correct.
 
@@ -3077,7 +3219,7 @@ If the backend returns the wrong shape, TypeScript will not magically know.
 
 TypeScript is compile-time safety. Runtime data still needs runtime validation when it matters.
 
-### 106. Does TypeScript exist at runtime?
+### 107. Does TypeScript exist at runtime?
 
 No. TypeScript types are removed during compilation.
 
@@ -3097,7 +3239,7 @@ if (user instanceof User) {} // not valid for type aliases
 
 Types help before the code runs.
 
-### 107. Is type assertion safe?
+### 108. Is type assertion safe?
 
 Not always.
 
@@ -3118,7 +3260,7 @@ Safer approach:
 - validate critical data
 - avoid assertions when TypeScript can infer correctly
 
-### 108. Why can any be dangerous?
+### 109. Why can any be dangerous?
 
 `any` disables type checking.
 
@@ -3137,7 +3279,7 @@ Do not check this value.
 
 Use `unknown` when data is unpredictable and then narrow it safely.
 
-### 109. Can TypeScript replace backend validation?
+### 110. Can TypeScript replace backend validation?
 
 No.
 
@@ -3153,7 +3295,7 @@ Backend must validate:
 
 TypeScript improves frontend correctness, but backend validation protects the system.
 
-### 110. Can TypeScript make JavaScript faster?
+### 111. Can TypeScript make JavaScript faster?
 
 Not directly.
 
@@ -3161,7 +3303,7 @@ TypeScript compiles to JavaScript. Runtime speed depends on the JavaScript that 
 
 TypeScript can indirectly help performance by making refactors safer and preventing bugs, but it is not a performance optimizer by itself.
 
-### 111. What happens if types are wrong?
+### 112. What happens if types are wrong?
 
 Wrong types give false confidence.
 
@@ -3189,7 +3331,7 @@ Beginner warning:
 Types are only useful if they describe reality.
 ```
 
-### 112. When should we avoid complex generic types?
+### 113. When should we avoid complex generic types?
 
 Avoid complex generics when they make code harder to understand than the problem itself.
 
