@@ -338,6 +338,82 @@ From this type, we can understand the data shape without guessing:
 
 In this app, TypeScript helps with things like `Account`, `User`, `UserRole`, `RequestStatus`, API responses, Redux state, and React props.
 
+### 5. How TypeScript works?
+
+TypeScript works by checking your code before JavaScript runs.
+
+The browser and Node.js do not run TypeScript directly. TypeScript is first checked and converted into normal JavaScript.
+
+Simple flow:
+
+```text
+write TypeScript -> TypeScript checks types -> compile/transpile -> run JavaScript
+```
+
+Example TypeScript code:
+
+```ts
+function greet(name: string) {
+  return `Hello ${name}`;
+}
+
+greet('Paras'); // allowed
+greet(123); // error
+```
+
+TypeScript sees that `name` must be a `string`, so it warns when we pass `123`.
+
+After compilation, the type information is removed:
+
+```js
+function greet(name) {
+  return `Hello ${name}`;
+}
+```
+
+This is important:
+
+```text
+TypeScript checks code during development.
+JavaScript runs at runtime.
+```
+
+In this project, the frontend uses TypeScript with Vite. When you write files like `.ts` and `.tsx`, TypeScript checks whether your variables, props, API responses, Redux state, and function arguments are being used correctly.
+
+For example, if a React component expects a `User` object:
+
+```tsx
+type User = {
+  id: string;
+  name: string;
+  email: string;
+};
+
+function UserCard({ user }: { user: User }) {
+  return <p>{user.email}</p>;
+}
+```
+
+TypeScript will warn if you pass an object without `email`:
+
+```tsx
+<UserCard user={{ id: '1', name: 'Paras' }} />; // error
+```
+
+But TypeScript does not automatically validate real API data at runtime. If the backend sends wrong data, TypeScript will not magically fix it. It only checks based on the types you declared.
+
+In this project:
+
+- `npm run check` runs TypeScript validation for the frontend
+- `npm run build` checks TypeScript and creates browser-ready JavaScript
+- Vite helps convert the frontend TypeScript code into JavaScript for the browser
+
+Interview answer:
+
+```text
+TypeScript works by statically checking JavaScript code using type annotations and inference. It reports type errors during development or build time, then compiles/transpiles the code to plain JavaScript because browsers and Node.js run JavaScript, not TypeScript types.
+```
+
 ### 5. What are disadvantages of TypeScript?
 
 TypeScript is helpful, but it is not free.
@@ -995,6 +1071,8 @@ type alias = nickname for a type
 ```
 
 ### 22. What is interface?
+
+An interface in TypeScript is a powerful tool used to define the exact structural shape of an object. Unlike type aliases, interfaces are strictly designed to describe objects and classes.
 
 An interface is a TypeScript way to describe the shape of an object.
 
@@ -1732,7 +1810,15 @@ This is common in React. TypeScript uses the JSX context to infer event types.
 
 ### 41. What is type narrowing, and how do type guards work?
 
+Type narrowing is when TypeScript looks at your code and figures out a more specific type for a variable.
+
+Type narrowing is the process of refining a variable's type from a broad, general type (like a string or number) to a more specific type (like a specific string or boolean) within a specific code block. It is commonly used when handling union types.
+
 Type narrowing means starting with a broad type and using checks to make it more specific.
+
+- The Problem: Sometimes a variable can be more than one thing (like a string OR a number).
+
+- The Solution: TypeScript watches your logic. If you write code that only works for strings, TypeScript "narrows" the type to just string inside that section.
 
 Example:
 
@@ -1770,6 +1856,15 @@ function isString(value: unknown): value is string {
   return typeof value === 'string';
 }
 ```
+
+How Do Type Guards Work?
+-  A type guard is the actual test you write to check the type. It is the condition inside an if statement that filters out the wrong types.
+
+Here are the three most common ways to write a type guard:
+- Using typeof: Checks basic types like strings or numbers.
+- Using instanceof: Checks if something was made from a specific blueprint (class).
+- Using in: Checks if an object contains a specific property.
+
 
 ### 42. typeof narrowing?
 
