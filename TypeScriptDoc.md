@@ -1815,7 +1815,7 @@ This is common in React. TypeScript uses the JSX context to infer event types.
 
 ### 41. What is type narrowing, and how do type guards work?
 
-Type narrowing is when TypeScript looks at code level and figures out a more specific type for a variable.
+Type narrowing is when TypeScript looks at the code level and figures out a more specific type for a variable.
 
 Type narrowing is the process of refining a variable's type from a broad, general type (like a string or number) to a more specific type (like a specific string or boolean) within a specific code block. It is commonly used when handling union types.
 
