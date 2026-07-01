@@ -347,7 +347,12 @@ The browser and Node.js do not run TypeScript directly. TypeScript is first chec
 Simple flow:
 
 ```text
-write TypeScript -> TypeScript checks types -> compile/transpile -> run JavaScript
+write TypeScript -> TypeScript checks types[tsc(TypeScript compiler) checks types] -> Vite compile/transpile[Vite ] -> run JavaScript
+```
+
+```text
+tsc checks whether the code is type-safe.
+Vite prepares the code that the browser can actually run.
 ```
 
 Example TypeScript code:
@@ -1810,11 +1815,9 @@ This is common in React. TypeScript uses the JSX context to infer event types.
 
 ### 41. What is type narrowing, and how do type guards work?
 
-Type narrowing is when TypeScript looks at your code and figures out a more specific type for a variable.
+Type narrowing is when TypeScript looks at code level and figures out a more specific type for a variable.
 
 Type narrowing is the process of refining a variable's type from a broad, general type (like a string or number) to a more specific type (like a specific string or boolean) within a specific code block. It is commonly used when handling union types.
-
-Type narrowing means starting with a broad type and using checks to make it more specific.
 
 - The Problem: Sometimes a variable can be more than one thing (like a string OR a number).
 
