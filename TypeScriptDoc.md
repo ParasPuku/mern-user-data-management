@@ -1815,7 +1815,7 @@ This is common in React. TypeScript uses the JSX context to infer event types.
 
 ### 41. What is type narrowing, and how do type guards work?
 
-Type narrowing is when TypeScript looks at the code level and figures out a more specific type for a variable.
+Type narrowing is when TypeScript looks at the code level and figures out the more specific type for a variable.
 
 Type narrowing is the process of refining a variable's type from a broad, general type (like a string or number) to a more specific type (like a specific string or boolean) within a specific code block. It is commonly used when handling union types.
 
@@ -1976,9 +1976,11 @@ When `status` is `'success'`, TypeScript knows `data` exists. When `status` is `
 
 ### 46. What are Generics in TypeScript? Give examples in functions, classes, and type aliases.
 
-Generics let you write reusable code without losing type information.
+- A generic type in TypeScript is a tool that allows you to create reusable, flexible code components that work across multiple data types instead of a single one, all while fully preserving type safety. Think of generics as passing arguments to your types, exactly like you pass arguments to your JavaScript functions.
 
-Without generics, people often use `any`:
+- Unlike the any type, which disables type checking, generics remember the exact data structure passed into them so that your autocomplete, IDE tooltips, and compile-time checks continue working perfectly.
+
+- Without generics, people often use `any`:
 
 ```ts
 function wrapInArray(value: any): any[] {
@@ -2060,7 +2062,7 @@ Constraints are useful when you want flexibility, but still need certain propert
 
 ### 48. What are utility types?
 
-Utility types are built-in TypeScript helpers that transform existing types.
+Utility types are built-in TypeScript helpers that allows to transform or modify existing types.
 
 Instead of writing new types manually every time, you can reuse and modify existing ones.
 
@@ -2538,10 +2540,23 @@ For simple fixed string choices, use union types.
 
 Type assertion tells TypeScript to treat a value as a specific type.
 
+Type Assertion is telling TypeScript: "I know more about the data type of this variable than you do, so trust me and apply this specific type."
+
+It overrides TypeScript's automatic type inference. It does not perform any runtime data conversion or verification; it is purely a compile-time tool used to satisfy the type checker.
+
 Example:
 
 ```ts
 const input = document.querySelector('input') as HTMLInputElement;
+```
+
+```ts
+// 1. The 'as' Syntax (Recommended)
+let someValue: unknown = "hello world";
+let strLength: number = (someValue as string).length;
+
+// 2. The Angle-Bracket Syntax (Alternative)
+let strLength2: number = (<string>someValue).length;
 ```
 
 This tells TypeScript:

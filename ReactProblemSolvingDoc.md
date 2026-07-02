@@ -228,17 +228,18 @@ Each action creates a new array instead of mutating the existing state.
 
 ---
 
-## 3. Pagination Using Dummy API
+## 3. Pagination Using Dummy Users API
 
 ### Question
 
-Fetch products from an API and show pagination buttons.
+Fetch users from an API and show pagination with previous, next, current page, and limit dropdown.
 
 ### What Interviewer Checks
 
 - API query parameters
 - page state
 - loading state
+- limit dropdown
 - total pages calculation
 
 ### Code
@@ -246,52 +247,78 @@ Fetch products from an API and show pagination buttons.
 ```jsx
 import { useEffect, useState } from 'react';
 
-export const PaginationExample = () => {
-  const [products, setProducts] = useState([]);
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
+export const UsersPaginationExample = () => {
+  const [users, setUsers] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  const limit = 10;
-  const totalPages = Math.ceil(total / limit);
+  const totalPages = Math.ceil(totalUsers / limit);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchUsers = async () => {
       setLoading(true);
 
-      const skip = (page - 1) * limit;
+      const skip = (currentPage - 1) * limit;
+
       const response = await fetch(
-        `https://dummyjson.com/products?limit=${limit}&skip=${skip}`
+        `https://dummyjson.com/users?limit=${limit}&skip=${skip}`
       );
       const data = await response.json();
 
-      setProducts(data.products);
-      setTotal(data.total);
+      setUsers(data.users);
+      setTotalUsers(data.total);
       setLoading(false);
     };
 
-    fetchProducts();
-  }, [page]);
+    fetchUsers();
+  }, [currentPage, limit]);
+
+  const handlePrevious = () => {
+    setCurrentPage(currentPage - 1);
+  };
+
+  const handleNext = () => {
+    setCurrentPage(currentPage + 1);
+  };
+
+  const handleLimitChange = (event) => {
+    setLimit(Number(event.target.value));
+    setCurrentPage(1);
+  };
 
   return (
     <div>
       {loading && <p>Loading...</p>}
 
+      <label>
+        Limit:
+        <select value={limit} onChange={handleLimitChange}>
+          <option value={5}>5</option>
+          <option value={10}>10</option>
+          <option value={20}>20</option>
+          <option value={30}>30</option>
+        </select>
+      </label>
+
       <ul>
-        {products.map((product) => (
-          <li key={product.id}>{product.title}</li>
+        {users.map((user) => (
+          <li key={user.id}>
+            {user.firstName} {user.lastName}
+          </li>
         ))}
       </ul>
 
-      <button disabled={page === 1} onClick={() => setPage(page - 1)}>
+      <button disabled={currentPage === 1} onClick={handlePrevious}>
         Previous
       </button>
 
       <span>
-        Page {page} of {totalPages}
+        Page {currentPage} of {totalPages}
       </span>
 
-      <button disabled={page === totalPages} onClick={() => setPage(page + 1)}>
+      <button disabled={currentPage >= totalPages} onClick={handleNext}>
         Next
       </button>
     </div>
@@ -301,13 +328,23 @@ export const PaginationExample = () => {
 
 ### Interview Explanation
 
-For page 1, `skip` is `0`.
+API endpoint:
 
-For page 2, `skip` is `10`.
+`https://dummyjson.com/users?limit=10&skip=0`
 
-For page 3, `skip` is `20`.
+For page 1 with limit 10, `skip` is `0`.
 
-This is how backend pagination commonly works.
+For page 2 with limit 10, `skip` is `10`.
+
+For page 3 with limit 10, `skip` is `20`.
+
+Formula:
+
+```js
+const skip = (currentPage - 1) * limit;
+```
+
+When the limit dropdown changes, page is reset to `1`.
 
 ---
 
