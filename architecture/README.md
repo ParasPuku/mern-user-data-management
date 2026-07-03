@@ -24,6 +24,7 @@ How I monitored/debugged it
 - [ExpressArchitecture.md](./ExpressArchitecture.md)
 - [MongoDBArchitecture.md](./MongoDBArchitecture.md)
 - [RedisArchitecture.md](./RedisArchitecture.md)
+- [SystemDesignArchitecture.md](./SystemDesignArchitecture.md)
 - [AgenticAIArchitecture.md](./AgenticAIArchitecture.md)
 - [CICDPipelinesArchitecture.md](./CICDPipelinesArchitecture.md)
 - [DockerKubernetesArchitecture.md](./DockerKubernetesArchitecture.md)
