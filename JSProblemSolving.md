@@ -509,6 +509,443 @@ Compare both values and add the smaller value into result.
 
 ---
 
+## 11. Find Duplicate Values In An Array
+
+### Question
+
+Find all values that appear more than once in an array.
+
+### Code
+
+```js
+function findDuplicates(arr) {
+  var seen = {};
+  var duplicates = [];
+
+  for (var i = 0; i < arr.length; i++) {
+    var item = arr[i];
+
+    if (seen[item]) {
+      if (!duplicates.includes(item)) {
+        duplicates.push(item);
+      }
+    } else {
+      seen[item] = true;
+    }
+  }
+
+  return duplicates;
+}
+
+console.log(findDuplicates([1, 2, 3, 2, 4, 5, 1, 3]));
+```
+
+### Output
+
+```js
+[2, 1, 3]
+```
+
+### Explanation
+
+Use one object to remember which values are already seen.
+
+If the value comes again, add it to the duplicate array.
+
+---
+
+## 12. Find Intersection Of Two Arrays
+
+### Question
+
+Find common values between two arrays.
+
+### Code
+
+```js
+function findIntersection(arr1, arr2) {
+  var result = [];
+
+  for (var i = 0; i < arr1.length; i++) {
+    if (arr2.includes(arr1[i]) && !result.includes(arr1[i])) {
+      result.push(arr1[i]);
+    }
+  }
+
+  return result;
+}
+
+console.log(findIntersection([1, 2, 3, 4], [3, 4, 5, 6]));
+```
+
+### Output
+
+```js
+[3, 4]
+```
+
+### Explanation
+
+Loop through the first array and check whether the same value exists in the second array.
+
+Also check `result` so duplicate common values are not added again.
+
+---
+
+## 13. Find Union Of Two Arrays
+
+### Question
+
+Merge two arrays and keep only unique values.
+
+### Code
+
+```js
+function findUnion(arr1, arr2) {
+  var combined = arr1.concat(arr2);
+  var result = [];
+
+  for (var i = 0; i < combined.length; i++) {
+    if (!result.includes(combined[i])) {
+      result.push(combined[i]);
+    }
+  }
+
+  return result;
+}
+
+console.log(findUnion([1, 2, 3], [3, 4, 5]));
+```
+
+### Output
+
+```js
+[1, 2, 3, 4, 5]
+```
+
+### Explanation
+
+First combine both arrays.
+
+Then push only those values which are not already present in the result.
+
+---
+
+## 14. Rotate Array By K Positions
+
+### Question
+
+Rotate an array to the right by `k` positions.
+
+### Code
+
+```js
+function rotateArray(arr, k) {
+  var result = [];
+  var n = arr.length;
+
+  k = k % n;
+
+  for (var i = n - k; i < n; i++) {
+    result.push(arr[i]);
+  }
+
+  for (var j = 0; j < n - k; j++) {
+    result.push(arr[j]);
+  }
+
+  return result;
+}
+
+console.log(rotateArray([1, 2, 3, 4, 5], 2));
+```
+
+### Output
+
+```js
+[4, 5, 1, 2, 3]
+```
+
+### Explanation
+
+For right rotation by `2`, the last two values come to the front.
+
+Then the remaining values are added after them.
+
+---
+
+## 15. Find Pair With Given Sum
+
+### Question
+
+Find two values from an array whose sum is equal to the target.
+
+### Code
+
+```js
+function findPairWithSum(arr, target) {
+  var seen = {};
+
+  for (var i = 0; i < arr.length; i++) {
+    var current = arr[i];
+    var needed = target - current;
+
+    if (seen[needed]) {
+      return [needed, current];
+    }
+
+    seen[current] = true;
+  }
+
+  return [];
+}
+
+console.log(findPairWithSum([2, 4, 7, 11, 15], 9));
+```
+
+### Output
+
+```js
+[2, 7]
+```
+
+### Explanation
+
+For every number, calculate the number needed to make the target.
+
+If that needed number is already seen, return the pair.
+
+---
+
+## 16. Remove Falsy Values From An Array
+
+### Question
+
+Remove falsy values like `false`, `0`, `''`, `null`, `undefined`, and `NaN` from an array.
+
+### Code
+
+```js
+function removeFalsyValues(arr) {
+  var result = [];
+
+  for (var i = 0; i < arr.length; i++) {
+    if (arr[i]) {
+      result.push(arr[i]);
+    }
+  }
+
+  return result;
+}
+
+console.log(removeFalsyValues([0, 1, false, 2, '', 3, null, 'hello']));
+```
+
+### Output
+
+```js
+[1, 2, 3, 'hello']
+```
+
+### Explanation
+
+In JavaScript, values like `0`, `false`, empty string, `null`, and `undefined` behave as false in conditions.
+
+So only truthy values are pushed into the result.
+
+---
+
+## 17. Chunk An Array
+
+### Question
+
+Split an array into smaller arrays of a given size.
+
+### Code
+
+```js
+function chunkArray(arr, size) {
+  var result = [];
+
+  for (var i = 0; i < arr.length; i = i + size) {
+    var chunk = [];
+
+    for (var j = i; j < i + size && j < arr.length; j++) {
+      chunk.push(arr[j]);
+    }
+
+    result.push(chunk);
+  }
+
+  return result;
+}
+
+console.log(chunkArray([1, 2, 3, 4, 5, 6, 7], 3));
+```
+
+### Output
+
+```js
+[[1, 2, 3], [4, 5, 6], [7]]
+```
+
+### Explanation
+
+Outer loop jumps by the given size.
+
+Inner loop collects values for one chunk.
+
+---
+
+## 18. Find Maximum Sum Subarray
+
+### Question
+
+Find the maximum sum of a continuous subarray.
+
+### Code
+
+```js
+function maxSubarraySum(arr) {
+  var currentSum = arr[0];
+  var maxSum = arr[0];
+
+  for (var i = 1; i < arr.length; i++) {
+    if (currentSum + arr[i] < arr[i]) {
+      currentSum = arr[i];
+    } else {
+      currentSum = currentSum + arr[i];
+    }
+
+    if (currentSum > maxSum) {
+      maxSum = currentSum;
+    }
+  }
+
+  return maxSum;
+}
+
+console.log(maxSubarraySum([-2, 1, -3, 4, -1, 2, 1, -5, 4]));
+```
+
+### Output
+
+```js
+6
+```
+
+### Explanation
+
+The maximum sum subarray is:
+
+```js
+[4, -1, 2, 1]
+```
+
+Its sum is `6`.
+
+At each step, decide whether to continue the previous sum or start fresh from the current number.
+
+---
+
+## 19. Sort Array Without Using sort()
+
+### Question
+
+Sort an array in ascending order without using the built-in `sort()` method.
+
+### Code
+
+```js
+function sortArray(arr) {
+  var result = [];
+
+  for (var i = 0; i < arr.length; i++) {
+    result.push(arr[i]);
+  }
+
+  for (var j = 0; j < result.length; j++) {
+    for (var k = 0; k < result.length - 1; k++) {
+      if (result[k] > result[k + 1]) {
+        var temp = result[k];
+        result[k] = result[k + 1];
+        result[k + 1] = temp;
+      }
+    }
+  }
+
+  return result;
+}
+
+console.log(sortArray([5, 2, 8, 1, 3]));
+```
+
+### Output
+
+```js
+[1, 2, 3, 5, 8]
+```
+
+### Explanation
+
+This uses bubble sort.
+
+Compare two nearby values and swap them if they are in the wrong order.
+
+---
+
+## 20. Group Array Of Objects By Property
+
+### Question
+
+Group users by their role.
+
+### Code
+
+```js
+function groupUsersByRole(users) {
+  var result = {};
+
+  for (var i = 0; i < users.length; i++) {
+    var role = users[i].role;
+
+    if (!result[role]) {
+      result[role] = [];
+    }
+
+    result[role].push(users[i].name);
+  }
+
+  return result;
+}
+
+var users = [
+  { name: 'Amit', role: 'admin' },
+  { name: 'Priya', role: 'user' },
+  { name: 'Rahul', role: 'admin' },
+  { name: 'Neha', role: 'user' }
+];
+
+console.log(groupUsersByRole(users));
+```
+
+### Output
+
+```js
+{
+  admin: ['Amit', 'Rahul'],
+  user: ['Priya', 'Neha']
+}
+```
+
+### Explanation
+
+Use the role as a key in the result object.
+
+For every user, push the name into the matching role array.
+
+---
+
 # String Problem Solving Questions
 
 ## 1. Reverse A String
@@ -906,6 +1343,442 @@ Push each word into a new array and join them again.
 
 ---
 
+## 11. Check If String Has All Unique Characters
+
+### Question
+
+Check whether every character in a string appears only once.
+
+### Code
+
+```js
+function hasUniqueCharacters(str) {
+  var seen = {};
+
+  for (var i = 0; i < str.length; i++) {
+    var char = str[i];
+
+    if (seen[char]) {
+      return false;
+    }
+
+    seen[char] = true;
+  }
+
+  return true;
+}
+
+console.log(hasUniqueCharacters('abcde'));
+console.log(hasUniqueCharacters('hello'));
+```
+
+### Output
+
+```js
+true
+false
+```
+
+### Explanation
+
+Use an object to remember characters.
+
+If a character is already present in the object, it means the string does not have all unique characters.
+
+---
+
+## 12. Find Longest Substring Without Repeating Characters
+
+### Question
+
+Find the longest part of a string where no character is repeated.
+
+### Code
+
+```js
+function longestUniqueSubstring(str) {
+  var seen = {};
+  var start = 0;
+  var maxLength = 0;
+  var longest = '';
+
+  for (var end = 0; end < str.length; end++) {
+    var char = str[end];
+
+    if (seen[char] !== undefined && seen[char] >= start) {
+      start = seen[char] + 1;
+    }
+
+    seen[char] = end;
+
+    var currentLength = end - start + 1;
+
+    if (currentLength > maxLength) {
+      maxLength = currentLength;
+      longest = str.slice(start, end + 1);
+    }
+  }
+
+  return longest;
+}
+
+console.log(longestUniqueSubstring('abcabcbb'));
+```
+
+### Output
+
+```js
+'abc'
+```
+
+### Explanation
+
+Use two positions:
+
+- `start` marks where the current substring starts
+- `end` moves character by character
+
+If a repeated character is found, move `start` after the previous same character.
+
+---
+
+## 13. Compress A String
+
+### Question
+
+Compress a string by counting repeated continuous characters.
+
+### Code
+
+```js
+function compressString(str) {
+  var result = '';
+  var count = 1;
+
+  for (var i = 1; i <= str.length; i++) {
+    if (str[i] === str[i - 1]) {
+      count++;
+    } else {
+      result = result + str[i - 1] + count;
+      count = 1;
+    }
+  }
+
+  return result;
+}
+
+console.log(compressString('aaabbc'));
+```
+
+### Output
+
+```js
+'a3b2c1'
+```
+
+### Explanation
+
+Count continuous same characters.
+
+When the character changes, add the previous character and its count to the result.
+
+---
+
+## 14. Count Words In A Sentence
+
+### Question
+
+Count how many words are present in a sentence.
+
+### Code
+
+```js
+function countWords(sentence) {
+  var words = sentence.trim().split(' ');
+  var count = 0;
+
+  for (var i = 0; i < words.length; i++) {
+    if (words[i] !== '') {
+      count++;
+    }
+  }
+
+  return count;
+}
+
+console.log(countWords('JavaScript is very powerful'));
+```
+
+### Output
+
+```js
+4
+```
+
+### Explanation
+
+First trim extra spaces from the beginning and end.
+
+Then split by space and count valid words.
+
+---
+
+## 15. Remove Spaces From A String
+
+### Question
+
+Remove all spaces from a string.
+
+### Code
+
+```js
+function removeSpaces(str) {
+  var result = '';
+
+  for (var i = 0; i < str.length; i++) {
+    if (str[i] !== ' ') {
+      result = result + str[i];
+    }
+  }
+
+  return result;
+}
+
+console.log(removeSpaces('I love JavaScript'));
+```
+
+### Output
+
+```js
+'IloveJavaScript'
+```
+
+### Explanation
+
+Loop through each character.
+
+Add only non-space characters into the result.
+
+---
+
+## 16. Check If String Contains Only Digits
+
+### Question
+
+Check whether a string contains only numbers.
+
+### Code
+
+```js
+function containsOnlyDigits(str) {
+  if (str.length === 0) {
+    return false;
+  }
+
+  for (var i = 0; i < str.length; i++) {
+    if (str[i] < '0' || str[i] > '9') {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+console.log(containsOnlyDigits('12345'));
+console.log(containsOnlyDigits('123a5'));
+```
+
+### Output
+
+```js
+true
+false
+```
+
+### Explanation
+
+Every character should be between `'0'` and `'9'`.
+
+If any character is outside this range, return `false`.
+
+---
+
+## 17. Find Most Frequent Character
+
+### Question
+
+Find the character that appears the most in a string.
+
+### Code
+
+```js
+function mostFrequentCharacter(str) {
+  var frequency = {};
+  var maxChar = '';
+  var maxCount = 0;
+
+  for (var i = 0; i < str.length; i++) {
+    var char = str[i];
+
+    if (char === ' ') {
+      continue;
+    }
+
+    frequency[char] = (frequency[char] || 0) + 1;
+
+    if (frequency[char] > maxCount) {
+      maxCount = frequency[char];
+      maxChar = char;
+    }
+  }
+
+  return maxChar;
+}
+
+console.log(mostFrequentCharacter('javascript'));
+```
+
+### Output
+
+```js
+'a'
+```
+
+### Explanation
+
+Count each character using an object.
+
+While counting, keep track of the character with the highest count.
+
+---
+
+## 18. Replace Spaces With Hyphen
+
+### Question
+
+Replace spaces in a sentence with hyphens.
+
+### Code
+
+```js
+function replaceSpacesWithHyphen(str) {
+  var result = '';
+
+  for (var i = 0; i < str.length; i++) {
+    if (str[i] === ' ') {
+      result = result + '-';
+    } else {
+      result = result + str[i];
+    }
+  }
+
+  return result;
+}
+
+console.log(replaceSpacesWithHyphen('learn javascript daily'));
+```
+
+### Output
+
+```js
+'learn-javascript-daily'
+```
+
+### Explanation
+
+Loop through the string.
+
+When a space is found, add `-`; otherwise add the same character.
+
+---
+
+## 19. Toggle Character Case
+
+### Question
+
+Convert uppercase letters to lowercase and lowercase letters to uppercase.
+
+### Code
+
+```js
+function toggleCase(str) {
+  var result = '';
+
+  for (var i = 0; i < str.length; i++) {
+    var char = str[i];
+
+    if (char.toLowerCase() === char.toUpperCase()) {
+      result = result + char;
+    } else if (char === char.toUpperCase()) {
+      result = result + char.toLowerCase();
+    } else {
+      result = result + char.toUpperCase();
+    }
+  }
+
+  return result;
+}
+
+console.log(toggleCase('JavaScript 123'));
+```
+
+### Output
+
+```js
+'jAVAsCRIPT 123'
+```
+
+### Explanation
+
+For letters:
+
+- uppercase becomes lowercase
+- lowercase becomes uppercase
+
+Numbers and spaces stay the same.
+
+---
+
+## 20. Count Occurrence Of A Word
+
+### Question
+
+Count how many times a specific word appears in a sentence.
+
+### Code
+
+```js
+function countWordOccurrence(sentence, word) {
+  var words = sentence.toLowerCase().split(' ');
+  var target = word.toLowerCase();
+  var count = 0;
+
+  for (var i = 0; i < words.length; i++) {
+    if (words[i] === target) {
+      count++;
+    }
+  }
+
+  return count;
+}
+
+console.log(countWordOccurrence('React is easy and react is popular', 'react'));
+```
+
+### Output
+
+```js
+2
+```
+
+### Explanation
+
+Convert the sentence and target word to lowercase.
+
+Then compare each word with the target word and count matches.
+
+---
+
 # Object Problem Solving Questions
 
 ## 1. Count Number Of Keys In An Object
@@ -1147,6 +2020,7 @@ If a bigger value is found, update both:
 - `toUpperCase()`
 - `includes()`
 - `slice()`
+- `trim()`
 - `sort()`
 
 ## Object Methods Used
@@ -1196,6 +2070,16 @@ Practice these without looking at the solution:
 - move zeros
 - two sum
 - merge sorted arrays
+- find duplicates
+- intersection of arrays
+- union of arrays
+- rotate array
+- pair with given sum
+- remove falsy values
+- chunk array
+- maximum subarray sum
+- sort array without sort
+- group array of objects
 - reverse string
 - palindrome
 - count vowels
@@ -1206,6 +2090,16 @@ Practice these without looking at the solution:
 - character frequency
 - capitalize words
 - reverse words
+- unique characters
+- longest substring without repeating characters
+- compress string
+- count words
+- remove spaces
+- digits only string
+- most frequent character
+- replace spaces with hyphen
+- toggle case
+- count word occurrence
 - count object keys
 - check object property
 - convert object to array

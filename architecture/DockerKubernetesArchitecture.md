@@ -449,3 +449,475 @@ Weak namespace RBAC can allow teams to access resources they should not manage.
 ### How I monitored/debugged it
 
 I review RBAC, quotas, resource usage, network policies, and namespace-level alerts.
+
+## 16. How Docker works step by step in simple terms?
+
+### Simple idea
+
+Docker packages an application with everything it needs to run, then runs that package as an isolated container.
+
+Think of Docker like this:
+
+- **Dockerfile** tells Docker how to prepare the app.
+- **Docker image** is the final packaged app.
+- **Docker container** is the running version of that image.
+
+### Step by step
+
+1. **Developer writes application code**
+
+   Example: React app, Node.js API, Express server, or any backend service.
+
+2. **Developer creates a Dockerfile**
+
+   The Dockerfile contains instructions like:
+
+   - Which base image to use
+   - Which dependencies to install
+   - Which files to copy
+   - Which command should start the app
+
+   Example:
+
+   ```dockerfile
+   FROM node:20
+   WORKDIR /app
+   COPY package*.json ./
+   RUN npm install
+   COPY . .
+   EXPOSE 3000
+   CMD ["npm", "start"]
+   ```
+
+3. **Docker builds an image**
+
+   Command:
+
+   ```bash
+   docker build -t my-node-app .
+   ```
+
+   Docker reads the Dockerfile line by line and creates an image.
+
+4. **The image contains app code and dependencies**
+
+   The image contains:
+
+   - Application code
+   - Runtime like Node.js
+   - Installed packages
+   - Startup command
+   - Required OS-level files from the base image
+
+5. **Docker runs a container from the image**
+
+   Command:
+
+   ```bash
+   docker run -p 3000:3000 my-node-app
+   ```
+
+   This creates a running container.
+
+6. **The container runs as an isolated process**
+
+   The app runs separately from the host machine and other containers.
+
+   It has its own:
+
+   - File system
+   - Environment variables
+   - Network space
+   - Running process
+
+7. **Port mapping exposes the app**
+
+   If the app runs on port `3000` inside the container, we map it to the host machine:
+
+   ```bash
+   -p 3000:3000
+   ```
+
+   This means:
+
+   - Left side `3000` is host machine port.
+   - Right side `3000` is container port.
+
+8. **Environment variables configure the app**
+
+   Instead of hardcoding values, we pass config from outside:
+
+   ```bash
+   docker run -e MONGO_URL=mongodb://mongo:27017/app my-node-app
+   ```
+
+9. **Volumes store persistent data**
+
+   Containers are temporary. If the container is removed, its internal data can be lost.
+
+   For databases or uploaded files, we use volumes so data stays safe outside the container lifecycle.
+
+10. **Logs come from the container**
+
+   Apps usually write logs to console.
+
+   Docker captures them:
+
+   ```bash
+   docker logs container_id
+   ```
+
+11. **Container can be stopped and recreated**
+
+   If we stop a container, the image is still available.
+
+   We can run a new container again from the same image.
+
+### Interview answer
+
+Docker works by creating an image from a Dockerfile. The image contains the application, runtime, dependencies, and startup command. When we run the image, Docker creates a container, which is an isolated running process. We expose ports, pass environment variables, use volumes for persistent data, and collect logs from the container. This makes the app run the same way on every machine.
+
+### Common failure cases
+
+- Dockerfile copies wrong files.
+- Port is not exposed or mapped correctly.
+- Environment variables are missing.
+- Container starts and exits because the startup command fails.
+- Image works locally but fails in production due to missing config.
+- Large images slow down builds and deployments.
+
+### How I debug it
+
+- Check container logs using `docker logs`.
+- Check running containers using `docker ps`.
+- Check stopped containers using `docker ps -a`.
+- Enter the container using `docker exec`.
+- Rebuild the image when Dockerfile changes.
+- Verify ports, env variables, and startup command.
+
+## 17. How Kubernetes works step by step in simple terms?
+
+### Simple idea
+
+Kubernetes runs and manages containers across many machines.
+
+Docker runs containers. Kubernetes decides:
+
+- Where containers should run
+- How many copies should run
+- What to do if one crashes
+- How to expose the app
+- How to roll out new versions
+
+### Step by step
+
+1. **Developer builds a Docker image**
+
+   First, we package the app as a Docker image.
+
+   Example:
+
+   ```bash
+   docker build -t my-node-api .
+   ```
+
+2. **Image is pushed to a registry**
+
+   Kubernetes needs to pull the image from somewhere.
+
+   Common registries:
+
+   - Docker Hub
+   - AWS ECR
+   - Azure Container Registry
+   - Google Artifact Registry
+
+3. **Developer creates Kubernetes YAML files**
+
+   Common files are:
+
+   - Deployment
+   - Service
+   - ConfigMap
+   - Secret
+   - Ingress
+
+4. **Deployment defines the desired app state**
+
+   A Deployment says:
+
+   - Which image to run
+   - How many replicas are needed
+   - Which port the container uses
+   - What health checks are required
+
+   Example:
+
+   ```yaml
+   apiVersion: apps/v1
+   kind: Deployment
+   metadata:
+     name: user-api
+   spec:
+     replicas: 3
+     selector:
+       matchLabels:
+         app: user-api
+     template:
+       metadata:
+         labels:
+           app: user-api
+       spec:
+         containers:
+           - name: user-api
+             image: my-node-api:latest
+             ports:
+               - containerPort: 3000
+   ```
+
+5. **Developer applies YAML to Kubernetes**
+
+   Command:
+
+   ```bash
+   kubectl apply -f deployment.yaml
+   ```
+
+6. **Kubernetes API Server receives the request**
+
+   The API Server is the entry point of Kubernetes.
+
+   It stores the desired state, for example:
+
+   "I want 3 pods running for this app."
+
+7. **Scheduler chooses the best node**
+
+   Kubernetes checks available worker machines and decides where pods should run.
+
+   It considers:
+
+   - CPU
+   - Memory
+   - Node availability
+   - Scheduling rules
+
+8. **Kubelet starts the pod on the selected node**
+
+   Kubelet runs on every worker node.
+
+   It pulls the Docker image and starts the container inside a pod.
+
+9. **Pod runs the container**
+
+   A pod is the smallest deployable unit in Kubernetes.
+
+   Usually one pod runs one main application container.
+
+10. **ReplicaSet keeps the desired number of pods**
+
+   If the Deployment says `replicas: 3`, Kubernetes tries to keep 3 pods running.
+
+   If one pod crashes, Kubernetes creates a new one.
+
+11. **Service gives a stable internal address**
+
+   Pods are temporary and their IPs can change.
+
+   A Service gives a stable name and IP for accessing pods.
+
+   Example:
+
+   - Pods may change.
+   - Service name remains `user-api-service`.
+
+12. **Ingress exposes the app outside the cluster**
+
+   Service is mostly for internal traffic.
+
+   Ingress helps external users access the app through domain and path rules.
+
+13. **Health checks keep traffic away from broken pods**
+
+   Kubernetes uses:
+
+   - Readiness probe: Is the pod ready to receive traffic?
+   - Liveness probe: Is the pod still alive?
+
+14. **Rolling deployment updates the app safely**
+
+   When a new image version is deployed, Kubernetes does not stop everything at once.
+
+   It gradually:
+
+   - Starts new pods
+   - Checks if they are healthy
+   - Removes old pods
+
+15. **Auto-scaling can increase or decrease pods**
+
+   Horizontal Pod Autoscaler can increase pod count when CPU, memory, or custom metrics are high.
+
+### Interview answer
+
+Kubernetes works by accepting a desired state through YAML files. We tell Kubernetes which container image to run, how many replicas are needed, and how to expose the app. The API Server stores this desired state, the Scheduler selects worker nodes, and Kubelet starts pods on those nodes. If a pod crashes, Kubernetes recreates it. Services provide stable internal access, Ingress exposes apps externally, and rolling deployments update the app safely.
+
+### Common failure cases
+
+- Image pull fails because image name or registry credentials are wrong.
+- Pods crash due to missing environment variables.
+- Service selector does not match pod labels.
+- App is running but readiness probe is failing.
+- Pods are pending because CPU or memory is not available.
+- Ingress is configured but DNS or controller is missing.
+
+### How I debug it
+
+- Check pods using `kubectl get pods`.
+- Describe pod using `kubectl describe pod pod_name`.
+- Check logs using `kubectl logs pod_name`.
+- Check services using `kubectl get svc`.
+- Check endpoints using `kubectl get endpoints`.
+- Check deployment rollout using `kubectl rollout status deployment/name`.
+- Check events because Kubernetes usually explains failures there.
+
+## 18. How Ingress works step by step in simple terms?
+
+### Simple idea
+
+Ingress controls how external traffic enters a Kubernetes cluster.
+
+It usually handles:
+
+- Domain-based routing
+- Path-based routing
+- HTTPS/TLS termination
+- Sending requests to the correct service
+
+Important difference:
+
+- **Ingress Resource** is the rule file.
+- **Ingress Controller** is the actual component that reads those rules and routes traffic.
+- **Service** sends traffic to the correct pods.
+
+### Step by step
+
+1. **User opens a website or API URL**
+
+   Example:
+
+   ```text
+   https://example.com/api/users
+   ```
+
+2. **DNS sends the request to a load balancer**
+
+   The domain `example.com` points to a load balancer created for the Ingress Controller.
+
+3. **Load balancer sends traffic to the Ingress Controller**
+
+   The Ingress Controller is usually NGINX Ingress, AWS ALB Controller, Traefik, or another controller.
+
+4. **Ingress Controller checks Ingress rules**
+
+   The Ingress Resource may say:
+
+   ```text
+   /api    -> backend-service
+   /       -> frontend-service
+   ```
+
+5. **Controller matches host and path**
+
+   For this request:
+
+   ```text
+   https://example.com/api/users
+   ```
+
+   It matches:
+
+   - Host: `example.com`
+   - Path: `/api`
+
+6. **Controller forwards request to the correct Service**
+
+   Since `/api` points to `backend-service`, traffic goes to that Service.
+
+7. **Service forwards traffic to a healthy pod**
+
+   The Service checks matching pods using labels and forwards traffic to one healthy backend pod.
+
+8. **Pod handles the request**
+
+   The backend application receives the request and returns the response.
+
+9. **Response goes back through the same path**
+
+   Response flow:
+
+   ```text
+   Pod -> Service -> Ingress Controller -> Load Balancer -> User
+   ```
+
+10. **TLS can be handled at Ingress**
+
+   Ingress can terminate HTTPS.
+
+   This means:
+
+   - User talks to Ingress using HTTPS.
+   - Ingress forwards traffic inside the cluster.
+   - Certificates can be managed using tools like cert-manager.
+
+### Simple example
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+spec:
+  rules:
+    - host: example.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 3000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80
+```
+
+### Interview answer
+
+Ingress works as the entry point for external HTTP or HTTPS traffic in Kubernetes. The user request reaches a load balancer, then the Ingress Controller. The controller reads Ingress rules and decides which Service should receive the request based on host and path. The Service then forwards traffic to a healthy pod. Ingress is commonly used for routing, HTTPS, and exposing multiple services under one domain.
+
+### Common failure cases
+
+- Ingress Controller is not installed.
+- DNS does not point to the load balancer.
+- Host or path rule is wrong.
+- Service name or port is incorrect.
+- Service selector does not match pod labels.
+- TLS certificate is missing or expired.
+- Backend pod is not ready, so traffic has nowhere to go.
+
+### How I debug it
+
+- Check Ingress using `kubectl get ingress`.
+- Describe Ingress using `kubectl describe ingress ingress_name`.
+- Check Ingress Controller pods and logs.
+- Verify DNS points to the correct load balancer.
+- Check Service name and port.
+- Check Service endpoints using `kubectl get endpoints`.
+- Check backend pod readiness and application logs.
