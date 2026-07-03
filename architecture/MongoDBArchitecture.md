@@ -10,6 +10,10 @@ An index is a data structure MongoDB uses to find documents faster without scann
 
 I used indexes on login identifiers, owner ids, status filters, search fields, created dates, and unique business keys.
 
+### How I implemented it
+
+I create indexes based on real query patterns, usually compound indexes for filters plus sort fields. For example, `{ owner: 1, status: 1, createdAt: -1 }` for tenant-scoped filtered lists.
+
 ### Why I chose it
 
 Indexes reduce query latency and make filtering, sorting, and uniqueness checks efficient.
@@ -35,6 +39,10 @@ Debugging slow queries means finding whether MongoDB is scanning too many docume
 ### Where I used it
 
 I used it for admin tables, filtered user lists, reports, and search endpoints.
+
+### How I implemented it
+
+I run `explain("executionStats")`, check docs examined vs returned, inspect sort stages, review indexes, reduce payload with projection, and rewrite queries that scan too much data.
 
 ### Why I chose it
 
@@ -62,6 +70,10 @@ MongoDB horizontal scaling is done through sharding, where data is distributed a
 
 I considered sharding for high-volume collections like events, logs, analytics, and large multi-tenant data.
 
+### How I implemented it
+
+I first confirm one replica set cannot handle the workload, then choose a high-cardinality shard key aligned with query patterns, test distribution, and monitor hot shards before full rollout.
+
 ### Why I chose it
 
 It allows storage and write/read workload to scale beyond a single replica set.
@@ -87,6 +99,10 @@ A shard key determines how MongoDB distributes documents across shards.
 ### Where I used it
 
 I evaluate tenant id, account id, date buckets, and high-cardinality fields depending on access patterns.
+
+### How I implemented it
+
+I analyze read/write patterns, cardinality, and range queries. I avoid low-cardinality fields, test distribution with sample data, and choose a key that prevents one shard from receiving most traffic.
 
 ### Why I chose it
 
@@ -114,6 +130,10 @@ Database migration changes schema, data shape, indexes, or constraints in a cont
 
 I used migrations for adding fields, backfilling data, creating indexes, renaming fields, and changing references.
 
+### How I implemented it
+
+I use backward-compatible deployments, create indexes in the background where supported, backfill in batches, record migration progress, take backups, and keep rollback or fix-forward steps ready.
+
 ### Why I chose it
 
 Controlled migration avoids breaking running applications and keeps data consistent.
@@ -139,6 +159,10 @@ Embedding stores related data inside one document. Referencing stores related da
 ### Where I used it
 
 I embedded small profile-like data and referenced users, teams, skills, and memberships when relationships grew.
+
+### How I implemented it
+
+I embed data that is small and read together, like profile details. I reference data that grows, changes independently, or is shared, like team memberships or skill assignments.
 
 ### Why I chose it
 
@@ -166,6 +190,10 @@ MongoDB transactions allow multiple operations to commit or roll back together.
 
 I used transactions for multi-document operations like creating related records or updating balances.
 
+### How I implemented it
+
+I start a session, run related writes inside a transaction, commit on success, abort on failure, and keep transaction duration short to reduce conflicts.
+
 ### Why I chose it
 
 They protect consistency when multiple writes must succeed together.
@@ -191,6 +219,10 @@ Aggregation pipelines transform and analyze documents through stages like match,
 ### Where I used it
 
 I used aggregations for dashboards, counts, reports, joins, and analytics.
+
+### How I implemented it
+
+I place `$match` early, project only required fields, ensure sort/group fields are indexed where possible, avoid heavy `$lookup` on large unbounded data, and test pipelines with explain plans.
 
 ### Why I chose it
 
@@ -218,6 +250,10 @@ Skip pagination uses `skip` and `limit`. Cursor pagination uses a stable field l
 
 I used skip for small admin pages and cursor pagination for large feeds, logs, and infinite scroll.
 
+### How I implemented it
+
+For small lists I use `skip` and `limit`. For large or infinite lists, I use a cursor based on indexed fields like `createdAt` and `_id`, then fetch records after the last cursor.
+
 ### Why I chose it
 
 Cursor pagination performs better for deep pages and changing datasets.
@@ -243,6 +279,10 @@ Unique indexes prevent duplicate values for one or more fields.
 ### Where I used it
 
 I used unique indexes for email, mobile, username, account identifiers, and relation pairs.
+
+### How I implemented it
+
+I create unique indexes at the database level and handle duplicate key errors in the API with user-friendly messages. For scoped uniqueness, I use compound unique indexes.
 
 ### Why I chose it
 
@@ -270,6 +310,10 @@ TTL indexes automatically delete documents after a configured time.
 
 I used TTL indexes for OTP tokens, temporary sessions, password reset tokens, and short-lived logs.
 
+### How I implemented it
+
+I store an expiry date field and create a TTL index on that field. I keep expiry rules explicit and test that documents disappear after the expected window.
+
 ### Why I chose it
 
 It avoids manual cleanup jobs for temporary data.
@@ -295,6 +339,10 @@ Multi-tenant design separates data by tenant, account, or organization.
 ### Where I used it
 
 I used `owner`, `accountId`, or `tenantId` fields on user-owned collections.
+
+### How I implemented it
+
+I add tenant/account fields to every tenant-owned document, include that field in every query, create compound indexes starting with tenant id, and test cross-tenant access denial.
 
 ### Why I chose it
 
@@ -322,6 +370,10 @@ Backup and restore processes protect data from accidental deletion, corruption, 
 
 I used managed snapshots, scheduled backups, export jobs, and restore drills.
 
+### How I implemented it
+
+I schedule automated backups, define retention, test restores in a non-production environment, document RPO/RTO, and restrict backup access with least privilege.
+
 ### Why I chose it
 
 Backups are only useful if restore is tested and recovery targets are known.
@@ -348,6 +400,10 @@ Schema changes update document shape, required fields, indexes, or validation ru
 
 I used backward-compatible changes, optional fields, backfills, and phased deployments.
 
+### How I implemented it
+
+I deploy code that supports both old and new schema, backfill old documents in batches, then enforce stricter validation only after data is migrated.
+
 ### Why I chose it
 
 MongoDB is flexible, but applications still need predictable data contracts.
@@ -373,6 +429,10 @@ Change streams let applications listen to MongoDB insert, update, delete, and re
 ### Where I used it
 
 I used them for audit logs, notifications, cache invalidation, and event-driven workflows.
+
+### How I implemented it
+
+I open a change stream with resume tokens, process events idempotently, store last processed token, and reconnect with retry when the stream disconnects.
 
 ### Why I chose it
 

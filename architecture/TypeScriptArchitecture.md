@@ -10,6 +10,10 @@ TypeScript adds static typing on top of JavaScript so many mistakes are caught b
 
 I used it in React apps, Node services, shared API contracts, Redux state, validation layers, and reusable libraries.
 
+### How I implemented it
+
+I enable strict compiler settings, define DTOs for API contracts, type Redux/app state, avoid `any`, validate external data at runtime, and run `tsc --noEmit` in CI before deployment.
+
 ### Why I chose it
 
 It improves maintainability, refactoring safety, onboarding, and API contract clarity in large teams.
@@ -35,6 +39,10 @@ Typing API responses means defining expected response shapes and validating that
 ### Where I used it
 
 I used it for REST APIs, paginated lists, auth responses, error responses, and shared frontend-backend DTOs.
+
+### How I implemented it
+
+I define response types like `ApiListResponse<T>` and `ApiItemResponse<T>`, use typed API client functions, keep backend DTOs separate from database models, and validate critical external responses before using them.
 
 ### Why I chose it
 
@@ -62,6 +70,10 @@ Avoiding `any` means keeping unknown data explicit and narrowing it safely befor
 
 I used this in API clients, form handling, error handling, external library wrappers, and migration from JavaScript to TypeScript.
 
+### How I implemented it
+
+I replace `any` with `unknown`, narrow values with type guards, add explicit return types for public functions, enable lint rules against `any`, and wrap weak third-party libraries with typed adapters.
+
 ### Why I chose it
 
 `any` disables type safety and allows errors to move deep into the application.
@@ -87,6 +99,10 @@ Both define shapes in TypeScript. Interfaces are often used for object contracts
 ### Where I used it
 
 I use interfaces for domain models and public object contracts, and types for API unions, utility types, and state variants.
+
+### How I implemented it
+
+I use `interface` for object-like domain contracts and `type` for unions, mapped types, utility types, and function aliases. I document this convention so the team stays consistent.
 
 ### Why I chose it
 
@@ -114,6 +130,10 @@ Shared types define common contracts for API payloads, response shapes, and doma
 
 I used shared packages in monorepos and generated types from OpenAPI or schema definitions.
 
+### How I implemented it
+
+I create public DTO types in a shared package or generate them from an API schema. I version the package, run contract tests, and avoid exporting database model types directly to the frontend.
+
 ### Why I chose it
 
 It reduces mismatch between frontend expectations and backend responses.
@@ -139,6 +159,10 @@ Generics allow functions, components, and types to work with different data shap
 ### Where I used it
 
 I used generics in API clients, table components, form utilities, repository functions, and reusable hooks.
+
+### How I implemented it
+
+I use generics when the behavior is the same but the data type changes. For example, `getList<T>()`, `ApiResponse<T>`, reusable table rows, and repository helpers. I keep constraints simple so inferred types stay readable.
 
 ### Why I chose it
 
@@ -166,6 +190,10 @@ A discriminated union represents multiple possible shapes using a common field l
 
 I used it for async states, form steps, payment states, notification events, and reducer actions.
 
+### How I implemented it
+
+I add a common discriminator field like `status` or `type`, then model each valid state separately. I use exhaustive `switch` checks so TypeScript warns when a new state is not handled.
+
 ### Why I chose it
 
 It makes impossible states harder to represent and improves exhaustive handling.
@@ -191,6 +219,10 @@ TypeScript treats caught errors as `unknown` in strict mode because anything can
 ### Where I used it
 
 I used safe error narrowing in API clients, Express middleware, background jobs, and frontend error handlers.
+
+### How I implemented it
+
+I normalize errors with a helper function. It checks `error instanceof Error`, handles strings or objects, and returns a safe message plus optional metadata for logging.
 
 ### Why I chose it
 
@@ -218,6 +250,10 @@ Runtime validation checks actual data at runtime, while TypeScript only checks c
 
 I used runtime validation for API payloads, environment variables, webhooks, file imports, and external service responses.
 
+### How I implemented it
+
+I validate request bodies on the backend, validate environment variables during startup, and use schema validation for webhooks or third-party responses. TypeScript handles compile-time safety; validation handles runtime safety.
+
 ### Why I chose it
 
 External data cannot be trusted just because the code has types.
@@ -243,6 +279,10 @@ Compiler settings control how strict TypeScript is and how safely code is checke
 ### Where I used it
 
 I used `strict`, `noImplicitAny`, `strictNullChecks`, and `noUncheckedIndexedAccess` in mature codebases.
+
+### How I implemented it
+
+I start with `strict: true` for new projects. For existing projects, I enable strictness gradually, fix the highest-risk modules first, and enforce type checks in CI.
 
 ### Why I chose it
 
@@ -270,6 +310,10 @@ Utility types like `Pick`, `Omit`, `Partial`, `Required`, and `Record` transform
 
 I used them for create/update DTOs, form state, API payloads, and role-permission maps.
 
+### How I implemented it
+
+I derive types like `CreateUserInput`, `UpdateUserInput`, and `UserSummary` from base types only when it improves consistency. For public API contracts, I prefer explicit DTOs when clarity matters more.
+
 ### Why I chose it
 
 They reduce duplication and keep related types consistent.
@@ -295,6 +339,10 @@ Migration means gradually adding TypeScript to existing JavaScript while keeping
 ### Where I used it
 
 I used incremental migration by enabling TypeScript, converting core modules, then feature areas.
+
+### How I implemented it
+
+I add TypeScript config, allow JS temporarily, convert shared utilities first, then API clients and high-risk modules. I avoid mass `any`, add tests around migrated areas, and tighten compiler settings over time.
 
 ### Why I chose it
 
@@ -322,6 +370,10 @@ Typing global state means defining root state, actions, selectors, thunks, and A
 
 I used typed Redux Toolkit slices, selectors, async thunks, and app-level hooks.
 
+### How I implemented it
+
+I define `RootState`, `AppDispatch`, typed hooks like `useAppSelector`, typed slice state, typed async thunk payloads, and typed selectors so components do not guess state shape.
+
 ### Why I chose it
 
 It prevents components from reading wrong state shapes or dispatching invalid actions.
@@ -348,6 +400,10 @@ Typing environment variables means defining required config keys and validating 
 
 I used it for API URLs, database connection strings, JWT secrets, Redis URLs, and feature flags.
 
+### How I implemented it
+
+I create a config module that reads env vars once, validates required values, converts strings to booleans/numbers where needed, and fails startup if critical values are missing.
+
 ### Why I chose it
 
 Missing or invalid environment variables should fail fast, not fail during user traffic.
@@ -373,6 +429,10 @@ Public types define the API contract that package consumers depend on.
 ### Where I used it
 
 I used public types for shared UI libraries, API clients, validation packages, and domain SDKs.
+
+### How I implemented it
+
+I expose only stable public types, keep internal implementation types private, add examples, write type tests, and follow semantic versioning for breaking type changes.
 
 ### Why I chose it
 

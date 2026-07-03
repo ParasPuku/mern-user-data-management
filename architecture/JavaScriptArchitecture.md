@@ -10,6 +10,10 @@ The event loop is the mechanism that allows JavaScript to run non-blocking async
 
 I used this understanding while debugging delayed UI updates, promise execution order, timer behavior, and Node.js API latency under load.
 
+### How I implemented it
+
+I keep CPU-heavy work away from the main thread, avoid long synchronous loops, and split large work into smaller chunks. In browser apps, I move heavy processing to Web Workers when needed. In Node.js, I monitor event loop lag and move CPU-heavy tasks to worker threads, queues, or separate services.
+
 ### Why I chose it
 
 Understanding the event loop helps design async flows that do not block rendering in the browser or request handling in Node.js.
@@ -35,6 +39,10 @@ A race condition happens when multiple async operations complete in an unexpecte
 ### Where I used it
 
 I handled it in search autocomplete, React API calls, payment callbacks, and duplicate form submissions.
+
+### How I implemented it
+
+I use request ids, `AbortController`, idempotency keys, and latest-request checks. For example, in search I cancel the old request or ignore stale responses. In backend flows, I store idempotency keys so retries do not create duplicate records.
 
 ### Why I chose it
 
@@ -62,6 +70,10 @@ JavaScript performance optimization means reducing blocking work, bundle size, u
 
 I used it in dashboards, admin tables, large forms, search pages, and pages with heavy client-side data transformation.
 
+### How I implemented it
+
+I first measure with profiling tools, then optimize the bottleneck. I reduce bundle size, lazy-load routes, debounce expensive handlers, virtualize large lists, memoize expensive calculations only where needed, and avoid blocking the main thread with large synchronous operations.
+
 ### Why I chose it
 
 It improves page load, interaction speed, API responsiveness, and overall user experience.
@@ -87,6 +99,10 @@ XSS is an attack where malicious JavaScript is injected into a page and executed
 ### Where I used it
 
 I handled XSS prevention in forms, rich text display, user-generated content, admin dashboards, and third-party script usage.
+
+### How I implemented it
+
+I avoid rendering raw HTML by default, sanitize trusted rich text, escape user content, use secure cookies for auth, apply Content Security Policy, validate inputs on backend, and review any use of `dangerouslySetInnerHTML` carefully.
 
 ### Why I chose it
 
@@ -114,6 +130,10 @@ Reusable modules are small, focused pieces of logic that can be shared without d
 
 I used reusable modules for API clients, validators, date helpers, error formatters, permission checks, and shared business rules.
 
+### How I implemented it
+
+I keep modules small, pure where possible, and focused on one responsibility. I expose clear function signatures, avoid hidden global state, add unit tests, and version shared modules when other apps depend on them.
+
 ### Why I chose it
 
 It reduces duplication and keeps behavior consistent across frontend, backend, and tests.
@@ -139,6 +159,10 @@ A memory leak happens when objects are no longer needed but are still referenced
 ### Where I used it
 
 I debugged leaks in long-running dashboards, event listeners, timers, cached data, and Node.js services.
+
+### How I implemented it
+
+I remove event listeners during cleanup, clear intervals and timeouts, cap cache sizes, avoid unbounded global arrays, and inspect heap snapshots to find retained objects. In React, I clean up effects. In Node.js, I watch memory growth across requests.
 
 ### Why I chose it
 
@@ -166,6 +190,10 @@ Request cancellation stops an in-flight async operation when it is no longer nee
 
 I used it in search pages, route changes, modal data loading, and React components that unmount during API calls.
 
+### How I implemented it
+
+I create an `AbortController` for each request, pass its signal to `fetch`, and call `abort()` when the component unmounts or a newer request replaces the older one. I also handle abort errors separately from real failures.
+
 ### Why I chose it
 
 It avoids stale updates, wasted network calls, and race conditions.
@@ -191,6 +219,10 @@ Concurrency limiting means allowing only a fixed number of async tasks to run at
 ### Where I used it
 
 I used it for bulk uploads, batch API calls, report generation, and background processing.
+
+### How I implemented it
+
+I use a small queue that runs only a fixed number of promises at a time, such as 5 or 10. For backend jobs, I use worker queues with concurrency settings and rate limits for external APIs.
 
 ### Why I chose it
 
@@ -218,6 +250,10 @@ Web Workers run JavaScript on a background thread so CPU-heavy work does not blo
 
 I used workers for large data parsing, client-side exports, image processing, and expensive calculations.
 
+### How I implemented it
+
+I move the heavy function into a worker file, send input through `postMessage`, and return the result back to the UI thread. I keep messages small and avoid passing very large objects repeatedly.
+
 ### Why I chose it
 
 It keeps the UI responsive while heavy work runs separately.
@@ -243,6 +279,10 @@ Prototype pollution is a vulnerability where an attacker modifies JavaScript obj
 ### Where I used it
 
 I handled it while reviewing request parsing, deep merge utilities, and dependency vulnerabilities.
+
+### How I implemented it
+
+I block dangerous keys like `__proto__`, `constructor`, and `prototype`, avoid unsafe deep merge utilities, validate request bodies, create objects with safe prototypes when needed, and keep dependency scanners active.
 
 ### Why I chose it
 
@@ -270,6 +310,10 @@ Supply-chain risk comes from third-party packages, compromised maintainers, mali
 
 I handled it through lockfiles, dependency scanning, approved packages, and review of critical libraries.
 
+### How I implemented it
+
+I pin dependency versions with lockfiles, review new packages before adoption, avoid unnecessary dependencies, run vulnerability scans in CI, block critical vulnerabilities, and update packages through controlled pull requests.
+
 ### Why I chose it
 
 JavaScript projects rely heavily on npm packages, so dependency risk is production risk.
@@ -295,6 +339,10 @@ Debounce waits until events stop firing. Throttle runs at most once in a fixed t
 ### Where I used it
 
 I used debounce for search inputs and throttle for scroll, resize, and analytics events.
+
+### How I implemented it
+
+For debounce, I reset a timer on every event and run the function only after the user stops triggering it. For throttle, I run the function at most once per interval. I keep the delay configurable and clean timers on unmount.
 
 ### Why I chose it
 
@@ -322,6 +370,10 @@ These are browser storage options: localStorage persists simple strings, session
 
 I used localStorage for preferences, sessionStorage for temporary state, and IndexedDB for offline or large client data.
 
+### How I implemented it
+
+I store only non-sensitive preferences in localStorage, short-lived tab state in sessionStorage, and structured offline data in IndexedDB. I never store passwords or high-risk tokens in browser storage.
+
 ### Why I chose it
 
 The choice depends on data size, lifetime, structure, and security sensitivity.
@@ -348,6 +400,10 @@ A Service Worker is a browser script that can intercept network requests, cache 
 
 I used it for PWA caching, offline fallback, static asset caching, and background sync patterns.
 
+### How I implemented it
+
+I cache versioned static assets, use a network-first or cache-first strategy based on the resource type, provide offline fallback, and force cache invalidation when a new app version is deployed.
+
 ### Why I chose it
 
 It improves reliability and performance for repeat visits.
@@ -373,6 +429,10 @@ Large data processing means handling big arrays, files, or responses without blo
 ### Where I used it
 
 I used batching, pagination, streaming, workers, and server-side processing for exports and dashboards.
+
+### How I implemented it
+
+I avoid loading everything at once. I fetch data page by page, process arrays in chunks, use Web Workers for browser-heavy work, stream files where possible, and push very large processing to the backend.
 
 ### Why I chose it
 

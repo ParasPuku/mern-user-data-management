@@ -10,6 +10,10 @@ An Express app is usually structured into routes, controllers, services, models,
 
 I used this structure in user management, auth, admin, teams, and skills APIs.
 
+### How I implemented it
+
+I keep routes thin, controllers focused on HTTP, services focused on business logic, repositories focused on database access, and middleware for auth, validation, upload, and error handling.
+
 ### Why I chose it
 
 It keeps HTTP concerns separate from business logic and database access.
@@ -35,6 +39,10 @@ Validation checks request body, params, query, headers, and files before busines
 ### Where I used it
 
 I used validation for signup, login, user creation, profile updates, filters, pagination, and file uploads.
+
+### How I implemented it
+
+I validate body, params, query, and files before controllers run. I reject invalid requests with a 400 response and pass only normalized input to service functions.
 
 ### Why I chose it
 
@@ -62,6 +70,10 @@ Securing Express includes authentication, authorization, input validation, rate 
 
 I used JWT/cookie auth, role checks, owner checks, rate limits, helmet-style headers, and upload restrictions.
 
+### How I implemented it
+
+I use auth middleware, role/permission middleware, owner checks in services, secure headers, CORS allowlists, rate limiting, input validation, and safe error responses.
+
 ### Why I chose it
 
 APIs must not trust frontend checks because requests can be sent directly.
@@ -87,6 +99,10 @@ Centralized error handling sends all thrown or rejected errors to one middleware
 ### Where I used it
 
 I used async wrappers, custom error classes, and final error middleware in REST APIs.
+
+### How I implemented it
+
+I wrap async controllers, throw custom HTTP errors with status codes, pass errors to one final error middleware, log internal details, and return safe client messages.
 
 ### Why I chose it
 
@@ -114,6 +130,10 @@ Rate limiting restricts how many requests a user, IP, or account can make in a t
 
 I used it for login, OTP, password reset, public APIs, and expensive search endpoints.
 
+### How I implemented it
+
+I rate-limit by IP, account, or identifier using Redis for shared counters across instances. Sensitive endpoints like login and OTP get stricter limits than normal APIs.
+
 ### Why I chose it
 
 It protects the system from brute-force attacks, spam, and accidental overload.
@@ -139,6 +159,10 @@ Authentication middleware verifies the user's identity before protected routes e
 ### Where I used it
 
 I used JWT or session-cookie middleware to attach the current account to the request.
+
+### How I implemented it
+
+I read the token/cookie, verify signature and expiry, load the account if needed, attach it to `req`, and reject invalid or expired sessions with 401.
 
 ### Why I chose it
 
@@ -166,6 +190,10 @@ Authorization checks whether the authenticated user is allowed to perform an act
 
 I used role checks, permission checks, and owner checks for users, teams, admin routes, and skills.
 
+### How I implemented it
+
+I use middleware for broad role checks and service-level checks for ownership. For example, users can access only records where `owner` or `accountId` matches their account.
+
 ### Why I chose it
 
 It prevents users from accessing or changing data they do not own.
@@ -191,6 +219,10 @@ CORS controls which browser origins can call your API.
 ### Where I used it
 
 I configured CORS for local development, staging, production domains, and cookie-based auth.
+
+### How I implemented it
+
+I keep an allowlist of trusted origins per environment, enable credentials only when needed, handle preflight requests, and avoid wildcard origins for authenticated APIs.
 
 ### Why I chose it
 
@@ -218,6 +250,10 @@ These query features let clients request a subset of data with filters and order
 
 I used it in admin tables, user lists, audit logs, and search pages.
 
+### How I implemented it
+
+I parse and validate `page`, `limit`, `sortBy`, `order`, and filters, allow only supported sort fields, apply indexed filters, and return pagination metadata with the response.
+
 ### Why I chose it
 
 Backend pagination avoids sending too much data and works better with large collections.
@@ -243,6 +279,10 @@ API versioning allows changes without breaking existing clients.
 ### Where I used it
 
 I used path-based versioning like `/api/v1` for public or mobile-facing APIs.
+
+### How I implemented it
+
+I keep versioned route groups, avoid breaking old response shapes, document deprecation timelines, and track client usage before removing older versions.
 
 ### Why I chose it
 
@@ -270,6 +310,10 @@ Idempotency ensures repeating the same request does not repeat the side effect.
 
 I used it for payment, signup, webhook, and retryable create operations.
 
+### How I implemented it
+
+I accept an idempotency key, store request hash and result, enforce uniqueness, and return the same result for repeated keys instead of running side effects again.
+
 ### Why I chose it
 
 Network retries and double-clicks are common.
@@ -295,6 +339,10 @@ API documentation describes endpoints, inputs, responses, errors, and authentica
 ### Where I used it
 
 I used OpenAPI-style docs, README examples, Postman collections, and typed API contracts.
+
+### How I implemented it
+
+I document endpoints, request schemas, response examples, error codes, auth requirements, and pagination/filtering rules. I update docs in the same PR as API changes.
 
 ### Why I chose it
 
@@ -322,6 +370,10 @@ Secure upload handling validates file size, type, path, storage location, and sc
 
 I used it for avatar uploads and document imports.
 
+### How I implemented it
+
+I use upload middleware with size limits, validate MIME type, sanitize filenames, store in object storage, and reject unsafe file types before they reach business logic.
+
 ### Why I chose it
 
 Uploads are a common attack surface and can consume server resources.
@@ -348,6 +400,10 @@ Request correlation assigns an id to each request so logs and traces can be conn
 
 I used correlation ids across APIs, database logs, queue jobs, and downstream service calls.
 
+### How I implemented it
+
+I create or read an incoming `x-request-id`, attach it to `req`, include it in every log line, pass it to downstream services, and return it in response headers.
+
 ### Why I chose it
 
 It makes production debugging much faster.
@@ -373,6 +429,10 @@ Health checks are endpoints used by load balancers and orchestration systems to 
 ### Where I used it
 
 I used `/health` and readiness endpoints for containerized APIs.
+
+### How I implemented it
+
+I expose `/health` for liveness and `/ready` for dependency readiness. Readiness checks database/Redis connectivity and returns non-200 when the instance should not receive traffic.
 
 ### Why I chose it
 

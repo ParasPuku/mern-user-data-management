@@ -9,6 +9,7 @@ Use this answer structure in interviews:
 ```txt
 What it is
 Where I used it
+How I implemented it
 Why I chose it
 Trade-offs
 Failure cases

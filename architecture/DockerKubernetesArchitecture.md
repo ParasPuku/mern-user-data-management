@@ -10,6 +10,10 @@ Docker packages an application with its runtime, dependencies, and configuration
 
 I used Docker for Node APIs, frontend builds, local development, CI builds, and production deployments.
 
+### How I implemented it
+
+I write Dockerfiles with pinned base images, copy only required files, install production dependencies, expose the app port, run as non-root, and build images in CI with version tags.
+
 ### Why I chose it
 
 It makes environments consistent across local, CI, staging, and production.
@@ -35,6 +39,10 @@ Reducing image size means removing unnecessary files, using smaller base images,
 ### Where I used it
 
 I used multi-stage builds for frontend apps and Node services.
+
+### How I implemented it
+
+I use a builder stage for installing dependencies and compiling code, then copy only built assets and production dependencies into a smaller runtime image.
 
 ### Why I chose it
 
@@ -62,6 +70,10 @@ Kubernetes orchestrates containers by scheduling pods, managing deployments, ser
 
 I used Kubernetes for running APIs, frontend services, workers, cron jobs, and internal services.
 
+### How I implemented it
+
+I define Deployments for apps, Services for stable networking, Ingress for external traffic, ConfigMaps/Secrets for config, probes for health, and HPA for autoscaling.
+
 ### Why I chose it
 
 It provides self-healing, scaling, service discovery, and deployment control.
@@ -87,6 +99,10 @@ Kubernetes can scale pods based on CPU, memory, or custom metrics using Horizont
 ### Where I used it
 
 I used autoscaling for APIs, workers, and services with traffic spikes.
+
+### How I implemented it
+
+I set CPU/memory requests, configure HPA with CPU or custom metrics, define min/max replicas, and monitor whether scaling keeps latency and queue depth under control.
 
 ### Why I chose it
 
@@ -114,6 +130,10 @@ Debugging a pod means checking why a container is not starting, not ready, crash
 
 I debugged crash loops, config issues, image pull errors, failing probes, and resource limits.
 
+### How I implemented it
+
+I run `kubectl describe pod`, check events, inspect logs including previous container logs, verify env/secrets, check probes, and review resource limits and image pull status.
+
 ### Why I chose it
 
 Pod-level debugging is the fastest way to resolve Kubernetes production issues.
@@ -139,6 +159,10 @@ Dockerfile best practices create secure, small, repeatable, and efficient images
 ### Where I used it
 
 I used multi-stage builds, non-root users, `.dockerignore`, pinned base images, and minimal runtime layers.
+
+### How I implemented it
+
+I add `.dockerignore`, avoid copying secrets, use multi-stage builds, install only production dependencies, run as non-root, and scan images in CI.
 
 ### Why I chose it
 
@@ -166,6 +190,10 @@ ConfigMaps store non-sensitive configuration. Secrets store sensitive values lik
 
 I used ConfigMaps for feature config and Secrets for database URLs, API keys, and JWT secrets.
 
+### How I implemented it
+
+I mount ConfigMaps for non-sensitive config and Secrets for sensitive values. For production, I restrict RBAC and often sync secrets from a cloud secret manager.
+
 ### Why I chose it
 
 It separates configuration from container images and supports environment-specific deployment.
@@ -191,6 +219,10 @@ Liveness checks whether a container should be restarted. Readiness checks whethe
 ### Where I used it
 
 I used probes for Node APIs, workers, and services with database dependencies.
+
+### How I implemented it
+
+I use liveness for process health and readiness for traffic eligibility. Readiness checks critical dependencies so pods do not receive traffic before they are ready.
 
 ### Why I chose it
 
@@ -218,6 +250,10 @@ A Service provides stable networking for pods. Ingress routes external HTTP traf
 
 I used services for internal communication and ingress for public APIs and frontend routes.
 
+### How I implemented it
+
+I create Services that select pods by labels, expose stable DNS names, and configure Ingress rules to route host/path traffic to the correct service.
+
 ### Why I chose it
 
 Pods are temporary, so stable routing needs Kubernetes abstractions.
@@ -243,6 +279,10 @@ Requests reserve CPU/memory for scheduling. Limits cap the maximum resources a c
 ### Where I used it
 
 I set requests and limits for APIs, workers, and frontend containers.
+
+### How I implemented it
+
+I start with observed baseline CPU/memory, set requests for normal usage, limits for safety, and adjust based on throttling, OOM kills, and production metrics.
 
 ### Why I chose it
 
@@ -270,6 +310,10 @@ Rolling deployment gradually replaces old pods with new pods.
 
 I used rolling updates for APIs and workers with readiness probes.
 
+### How I implemented it
+
+I configure rolling update strategy, readiness probes, max unavailable/surge, and watch rollout status. The new pod must become ready before old pods are removed.
+
 ### Why I chose it
 
 It allows deployment without downtime when the app is backward compatible.
@@ -295,6 +339,10 @@ Kubernetes logs are written to stdout/stderr and collected by logging agents.
 ### Where I used it
 
 I used centralized logging for APIs, workers, ingress, and system components.
+
+### How I implemented it
+
+I write app logs to stdout/stderr, collect them with a logging agent, add service/version/request id fields, and search them in a centralized logging platform.
 
 ### Why I chose it
 
@@ -322,6 +370,10 @@ Secret management controls how sensitive values are stored, encrypted, mounted, 
 
 I used Kubernetes Secrets, cloud secret managers, and external secret operators.
 
+### How I implemented it
+
+I keep secrets out of Git, restrict RBAC, encrypt secrets at rest, rotate credentials, and use external secret operators to sync from cloud secret stores.
+
 ### Why I chose it
 
 Secrets should not be baked into images or committed to Git.
@@ -348,6 +400,10 @@ Networking debugging checks DNS, services, endpoints, network policies, ingress,
 
 I debugged API-to-database connectivity, service routing, ingress failures, and DNS issues.
 
+### How I implemented it
+
+I check DNS resolution, service endpoints, pod labels, ports, network policies, ingress rules, and run temporary debug pods for connectivity tests.
+
 ### Why I chose it
 
 Networking problems often look like application failures.
@@ -373,6 +429,10 @@ Namespaces logically separate resources in a Kubernetes cluster.
 ### Where I used it
 
 I used namespaces for environments, teams, applications, and shared infrastructure.
+
+### How I implemented it
+
+I separate workloads by environment or team, apply RBAC and quotas per namespace, add network policies where needed, and standardize naming/labels.
 
 ### Why I chose it
 
