@@ -352,6 +352,63 @@ useEffect(() => {
 }, [isLoggedIn]);
 ```
 
+### [{}], [[]], [true], [1], ["hello"], [{id: 1}], [0], [4354] - How it checks behind the scene and render and re-render?
+
+- Behind the scenes, React uses a standard JavaScript mechanism called Object.is() to compare dependencies.
+- Every time your component renders, React loops through your dependency array and compares each item from the current render to the same item from the previous render. If even one item fails the Object.is() check, React re-runs your useEffect.
+
+```tsx
+//  Standard, clean way to run code exactly once
+useEffect(() => { 
+  console.log("Running now!!!"); 
+}, []); 
+```
+
+
+1. Primitive Values (Booleans, Numbers, Strings)
+For primitives, Object.is() compares the actual value. Since these literal values never change between renders, the comparison returns true, and React will NOT re-run the effect. They run exactly once (on mount).
+
+[true]
+- Behind the scenes: Object.is(true, true) → true
+- Result: Runs once.
+
+[1]
+- Behind the scenes: Object.is(1, 1) → true
+- Result: Runs once.
+
+["hello"]
+- Behind the scenes: Object.is("hello", "hello") → true
+- Result: Runs once.
+
+[0]
+- Behind the scenes: Object.is(0, 0) → true
+Result: Runs once.
+
+[4354]
+Behind the scenes: Object.is(4354, 4354) → true
+Result: Runs once.
+
+2. Reference Values (Objects and Arrays)
+For objects and arrays, Object.is() compares the memory address (reference), not the content inside them.
+
+Because you declared these inline inside the dependency array, JavaScript allocates a brand new slot in your computer's memory on every single render. To React, a new memory address means a brand new value, so the comparison returns false. React will re-run the effect on EVERY re-render.
+
+[{}]
+- Behind the scenes: Object.is(NewObjectA, NewObjectB) → false
+- Result: Re-runs every render ❌.
+
+[[]]
+- Behind the scenes: Object.is(NewArrayA, NewArrayB) → false
+- Result: Re-runs every render ❌.
+
+[{id: 1}]
+- Behind the scenes: Even though the data id: 1 looks identical, the container object has a new memory address. Object.is(NewObjectA, NewObjectB) → false
+- Result: Re-runs every render ❌.
+
+Summary Checklist
+- Primitives are compared by Value. Same value = No re-run.
+- Objects/Arrays are compared by Reference. New reference = Re-runs every time.
+
 ### 23. What is useState?
 
 `useState` stores local component state.

@@ -946,6 +946,38 @@ For every user, push the name into the matching role array.
 
 ---
 
+## 21. how to make short url link with code?
+The easiest way to generate a short link programmatically is by calling a free API like TinyURL or Bitly.
+
+```js
+async function shortenUrl(longUrl) {
+    const response = await fetch(`https://tinyurl.com{encodeURIComponent(longUrl)}`);
+    const shortUrl = await response.text();
+    return shortUrl;
+}
+
+// Example usage:
+shortenUrl("https://google.com").then(url => console.log(url));
+```
+
+## 22. How can we pass multiple arguments in currying function?
+
+```js
+function add(...a){
+    let addedValue = 0;
+    for(let i=0;i<a.length; i++){
+     addedValue = Number(addedValue + a[i]);
+    }
+    return function(b) {
+        return function(c) {
+            return addedValue * b * c;
+        }
+    }
+}
+```
+
+console.log(add(5,5,5)(5)(5));
+
 # String Problem Solving Questions
 
 ## 1. Reverse A String

@@ -501,7 +501,44 @@ function createUser() {
 Closures can lead to memory leaks if not managed properly, especially when they capture variables that are no longer needed. They can also make debugging more difficult due to the complexity of the scope chain. Additionally, closures can cause performance issues if they are overused or used inappropriately, as they keep references to variables in their scope, which can prevent garbage collection.
 
 
+### 22. Garbage collection in Javascript?
+JavaScript automatically allocates memory when objects are created and frees it when they are not used anymore (garbage collection). This automaticity is a potential source of confusion: it can give developers the false impression that they don't need to worry about memory management.
 
+Memory Life Cycle - 
+Regardless of the programming language, the memory life cycle is pretty much always the same:
+- Allocate the memory you need
+- Use the allocated memory (read, write)
+- Release the allocated memory when it is not needed anymore
+
+The second part is explicit in all languages. The first and last parts are explicit in low-level languages but are mostly implicit in high-level languages like JavaScript.
+
+Allocation in JavaScript - 
+Value initialization
+- In order to not bother the programmer with allocations, JavaScript will automatically allocate memory when values are initially declared.
+
+```js
+const n = 123; // allocates memory for a number
+const s = "string"; // allocates memory for a string
+
+const o = {
+  a: 1,
+  b: null,
+}; // allocates memory for an object and contained values
+
+// (like object) allocates memory for the array and
+// contained values
+const a = [1, null, "str2"];
+
+function f(a) {
+  return a + 2;
+} // allocates a function (which is a callable object)
+
+// function expressions also allocate an object
+someElement.addEventListener("click", () => {
+  someElement.style.backgroundColor = "blue";
+});
+
+```
 
 ## Functions
 
