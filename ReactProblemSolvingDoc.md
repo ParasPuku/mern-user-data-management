@@ -1414,6 +1414,95 @@ Explain:
 
 ---
 
+### 11. Please say the output - 
+```jsx
+import React, {useState, useEffect} from "react";
+import Child from "./Child";
+function Parent() {
+    const [count, setCount] = useState(0);
+    console.log("Parent clicked");
+    useEffect(() => {
+      console.log("Parent Mounted");
+    }, [])
+    return (
+        <>
+            <button onClick={() => setCount(count + 1)}>
+                Increment
+            </button>
+            <Child />
+        </>
+    );
+}
+export default Parent;
+```
+
+```jsx
+import React, {useState, useEffect} from "react";
+import GrandChild from "./GrandChild";
+function Child() {
+  const [cont, setCont] = useState(0);
+  console.log("Child Rendered");
+  useEffect(() => {
+    console.log("Child Mounted");
+  }, []);
+  return <>
+    <button onClick={() => { 
+      setCont(cont + 1);
+      console.log("Child Clicked") 
+    }}>
+      Child Btnssssssssssssss
+    </button>
+    <h2>Child</h2>
+    <GrandChild />
+  </>
+}
+export default Child;
+
+```
+```jsx
+import React, { useEffect, useState } from "react";
+function GrandChild() {
+  const [contt, setContt] = useState(0);
+  console.log("Grand Child Rendered");
+  useEffect(() => {
+    console.log("Grand Child Mounted");
+  }, []);
+  return <>
+    <button onClick={() => {
+      setContt(contt + 1);
+      console.log("Child Clicked")
+    }}>
+      Grand Child Increment
+    </button>
+    <h2>Grand Child</h2>
+  </>
+}
+export default GrandChild;
+```
+
+Output - 
+On Mount - 
+Parent clicked
+Child Rendered
+Grand Child Rendered
+Grand Child Mounted
+Child Mounted
+Parent Mounted
+
+On Parent Increment -
+Parent clicked
+Child Rendered
+Grand Child Rendered
+
+On Child Increment - 
+Child Clicked
+Child Rendered
+Grand Child Rendered
+
+On Grand Chile Increment -
+Child Clicked
+Grand Child Rendered
+
 ## Final Checklist
 
 Before an interview, practice these:

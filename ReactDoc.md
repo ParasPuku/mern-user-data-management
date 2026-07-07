@@ -903,6 +903,307 @@ The key difference is:
 - useMemo returns a memoized value.
 - useCallback returns a memoized function.
 
+### What is React.memo?
+React.memo is a function that takes a functional component and returns a new memoized component.
+
+const MemoizedComponent = React.memo(MyComponent);
+
+or
+
+export default React.memo(MyComponent);
+
+It works only with functional components.
+
+Syntax
+```jsx
+const MyComponent = () => {
+    return <h1>Hello</h1>;
+}
+
+export default React.memo(MyComponent);
+```
+
+Here,
+
+```jsx
+React.memo() wraps MyComponent.
+```
+
+How does it work?
+
+Suppose you have
+
+```jsx
+function Parent() {
+    const [count, setCount] = useState(0);
+
+    return (
+        <>
+            <button onClick={() => setCount(count + 1)}>
+                Increment
+            </button>
+
+            <Child />
+        </>
+    );
+}
+```
+
+Child
+
+```jsx
+function Child() {
+    console.log("Child Rendered");
+
+    return <h2>Child</h2>;
+}
+```
+
+Without React.memo
+
+Every time Parent renders,
+
+Parent Render
+      ↓
+Child Render
+
+Even though Child has no props.
+
+Console
+
+Child Rendered
+Child Rendered
+Child Rendered
+
+With React.memo
+```jsx
+const Child = React.memo(() => {
+
+    console.log("Child Rendered");
+
+    return <h2>Child</h2>;
+});
+```
+
+Now
+
+Parent Render
+      ↓
+React.memo checks props
+      ↓
+Props changed?
+      ↓
+No
+      ↓
+Don't render Child
+
+Console
+
+Child Rendered
+
+Only once.
+
+Why?
+
+React.memo compares
+
+Old props
+
+vs
+
+New props
+
+If they are equal,
+
+it skips rendering.
+
+Example
+
+First render
+
+```jsx
+<Child name="Paras" />
+```
+
+Second render
+
+```jsx
+<Child name="Paras" />
+```
+
+React compares
+
+Old
+```jsx
+{
+   name: "Paras"
+}
+```
+New
+```jsx
+{
+   name: "Paras"
+}
+```
+Same value
+
+↓
+
+Skip render.
+
+Now
+```jsx
+<Child name="Rahul" />
+```
+Comparison
+
+Old
+```jsx
+{
+   name: "Paras"
+}
+```
+New
+```jsx
+{
+   name: "Rahul"
+}
+```
+Different
+
+↓
+
+Render Child again.
+
+Why do we use useCallback with React.memo?
+
+Consider
+```jsx
+const Child = React.memo(({ onClick }) => {
+
+    console.log("Child");
+
+    return <button onClick={onClick}>Click</button>;
+});
+```
+Parent
+```jsx
+function Parent() {
+
+    const [count, setCount] = useState(0);
+
+    const handleClick = () => {
+        console.log("Clicked");
+    };
+
+    return (
+        <>
+            <button onClick={() => setCount(count + 1)}>
+                Count
+            </button>
+
+            <Child onClick={handleClick} />
+        </>
+    );
+}
+```
+
+Looks okay.
+
+But every render creates
+```jsx
+const handleClick = () => {};
+```
+A new function object.
+
+Old
+
+handleClick → Address 100
+
+New
+
+handleClick → Address 200
+
+React.memo compares props.
+
+Old prop
+```jsx
+{
+    onClick : Address100
+}
+```
+New prop
+```jsx
+{
+    onClick : Address200
+}
+```
+
+Different reference
+
+↓
+
+Child renders again.
+
+Now use
+```jsx
+const handleClick = useCallback(() => {
+
+    console.log("Clicked");
+
+}, []);
+```
+Now
+
+Address100
+
+remains
+
+Address100
+
+React.memo sees
+
+Old
+
+Address100
+
+New
+
+Address100
+
+Same reference
+
+↓
+
+Child doesn't render.
+
+This is why useCallback and React.memo are often used together.
+
+Does React.memo work with class components?
+
+No.
+
+For class components, React provides a similar optimization through:
+
+PureComponent
+
+Example:
+```jsx
+class Child extends React.PureComponent {
+    render() {
+        console.log("Rendered");
+        return <h1>Hello</h1>;
+    }
+}
+```
+PureComponent automatically performs a shallow comparison of props and state before re-rendering.
+
+Easy way to remember
+- React.memo → Memoize the entire component (skip re-render if props haven't changed).
+- useMemo → Memoize a calculated value.
+- useCallback → Memoize a function.
+- PureComponent → Class component equivalent of React.memo with shallow prop and state comparison.
+
 ### 37. What is useContext?
 
 `The useContext hook` in React is a built-in function that lets functional components read and subscribe to data from a context object without manually passing props through intermediate components. It provides an elegant solution to prop drilling, which is the tedious process of passing props down multiple levels of a component tree just to reach a deeply nested child.
