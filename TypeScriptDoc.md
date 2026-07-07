@@ -561,6 +561,20 @@ const users: User[] = [];
 
 This means `users` is an array where every item must match the `User` type.
 
+### 10. do we need typescript in dependencies or devdependencies while deploying in prod?
+- TypeScript should be saved under devDependencies
+- Because browsers and Node.js cannot execute TypeScript directly, your code must be compiled (transpiled) into plain JavaScript before or during deployment. At production runtime, TypeScript is no longer used.
+
+### 11. Does typescript gets completely ignored while pushing to production?
+Yes, TypeScript is completely ignored at runtime in production, but it plays a strict "gatekeeper" role right before your code gets pushed.
+
+If you build your project using standard tools like tsc, Webpack, Vite, or Esbuild, TypeScript is completely erased before pushing to production. 
+
+- What happens: The compiler takes your .ts files, strips away every single type annotation, interface, and type alias, and outputs a pure .js folder (usually called dist/ or build/).
+-What happens: The compiler takes your .ts files, strips away every single type annotation, interface, and type alias, and outputs a pure .js folder (usually called dist/ or build/).
+
+Note - During CI/CD pipelines, both things happen, but they are split into two completely separate actions. The type checking is ignored by the bundler to speed up build times, while your code is transpiled into JavaScript.
+
 ### 10. What is tuple?
 
 A tuple is an array with a fixed number of positions, and each position has a known type.
@@ -1393,6 +1407,51 @@ This means `User` has:
 
 In this app, this pattern is useful because a form may collect only some fields, while the server returns those fields plus database fields like `id`.
 
+## How do you migrate a React app to Typescript application?
+Migrating a React app from JavaScript to TypeScript is best done incrementally using a permissive initial configuration so your project continues to build and run throughout the process.
+
+1. Install Dependencies - Install the TypeScript compiler along with type definitions for Node, React, and React DOM as development dependencies. 
+
+```ts
+npm install --save-dev typescript @types/node @types/react @types/react-dom
+```
+
+2. Configure TypeScript (tsconfig.json) - Initialize your configuration file using the TypeScript CLI tool: npx tsc --init
+```ts
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,           // Crucial: Allows JS and TS files to coexist
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": false,           // Start loose; flip to true later
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,            // Vite, Next.js, or Webpack handles final bundling
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx"         // Support modern React JSX transform
+  },
+  "include": ["src"]
+}
+```
+
+3. Update Build Tools (If Applicable) - Depending on your project bundler, ensure it knows to read TypeScript: Vite: Ensure @vitejs/plugin-react is up to date and add a vite-env.d.ts inside your src folder. Webpack: Install ts-loader and append .ts and .tsx to your resolve.extensions array.
+
+4. Migrate Code Incrementally - Do not rename all your files at once. Start from your bottom-level leaf components (like buttons, badges, or inputs) and work your way up to higher-level containers and contexts. 
+  - File Extensions: Use .tsx for components containing HTML/JSX tags. Use .ts for pure JavaScript logic like utility functions, state management helpers, or custom hooks that output raw data.
+  - Component Props: Replace PropTypes with a TypeScript interface or type block.
+  - State & Hooks: Explicitly declare types when the compiler cannot infer them from default values.
+
+5. Tighten Up Type Safety - Once every file is successfully renamed and compiling without issues, begin enabling structural guardrails inside your tsconfig.json one by one:
+  - Set "noImplicitAny": true to force typing variables instead of letting them fall back to an accidental any.
+  - Set "strictNullChecks": true to prevent unhandled null or undefined runtime application crashes.
+  - Finally, toggle "strict": true to get the full protection benefits of the language ecosystem.
+
+  
 ## Object Types
 
 ### 26. How to type an object?
@@ -2025,6 +2084,18 @@ type ApiResponse<T> = {
 ```
 
 In this app, generic API response types allow the same wrapper to work with `Account`, `User`, `Team`, or other models.
+
+## What is a Generics?
+A Generic is a tool in TypeScript that allows you to create reusable code templates. Instead of locking a function, interface, or class into one specific data type (like string or User), generics let you pass the data type as a flexible parameter—just like passing an argument to a function.
+
+Think of it like a label maker: instead of building separate boxes for "Socks" and "Shirts", you build a generic box and apply the label (<Type>) when you use it.
+
+## Where do we use Generics?
+
+You use generics whenever you write code that needs to work with multiple data types while still keeping strict type safety. Common use cases include:
+- API Fetching: Handling network responses that return completely different data structures.
+- UI Components: Building reusable elements (like dropdowns, tables, or lists) that render different types of data arrays.
+- Utility Functions: Writing helper methods (like arrays sorters, local storage wrappers, or object cloner utilities).
 
 ### 47. Generic constraint?
 

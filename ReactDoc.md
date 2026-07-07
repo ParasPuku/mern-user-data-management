@@ -682,8 +682,15 @@ const handleDelete = useCallback((id: string) => {
   dispatch(deleteUser(id));
 }, [dispatch]);
 ```
-
 Useful when passing callbacks to memoized child components.
+
+- Why use useCallback?
+
+useCallback memoizes the function, meaning React returns the same function instance between renders (unless its dependencies change). This is useful when:
+
+- Passing the function to child components wrapped with React.memo.
+- Including the function in dependency arrays of useEffect or other hooks.
+- Avoiding unnecessary re-renders caused by changing function references.
 
 ### 36. useMemo vs useCallback?
 

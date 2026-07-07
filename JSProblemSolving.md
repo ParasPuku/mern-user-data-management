@@ -946,6 +946,29 @@ For every user, push the name into the matching role array.
 
 ---
 
+## 21. flatten an array - const nestedArray = [[1, 2], [3, 4], [5, 6], [7,8]];
+Output - [1,2,3,4,5,6,7,8];
+
+```js
+const nestedArray = [[1, 2], [3, 4], [5, 6]];
+const res = nestedArray.reduce((acc, cur) => {
+    return acc.concat(cur);
+}, []);
+console.log(res) //[1,2,3,4,5,6,7,8];   Accumulator always check the what type its defined based on this array, object, or string function gets decided
+```
+
+## 22. flatten an array - const nestedArray = [[1, 2], [3, 4], [5, 6], [7,8],];
+Output - 1,23,45,67,8
+
+```js
+const nestedArray = [[1, 2], [3, 4], [5, 6], [7,8]];
+
+const res = nestedArray.reduce((acc, cur) => {
+    return acc.concat(cur);
+}, "");
+console.log(res); // 1,23,45,67,8
+```
+
 ## 21. how to make short url link with code?
 The easiest way to generate a short link programmatically is by calling a free API like TinyURL or Bitly.
 

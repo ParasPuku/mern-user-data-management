@@ -490,6 +490,102 @@ New products are added to the old products using spread syntax.
 
 ---
 
+## 6. Write a custom hook that uses useCallback to multiply two numbers in React.
+### Code 
+
+```jsx
+
+import { useCallback } from "react";
+
+const useMultiply = () => {
+  const multiply = useCallback((num1, num2) => {
+    return num1 * num2;
+  }, []);
+
+  return multiply;
+};
+
+export default useMultiply;
+
+----------------------------------
+
+import React from "react";
+import useMultiply from "./useMultiply";
+
+function App() {
+  const multiply = useMultiply();
+
+  const result = multiply(10, 20);
+
+  return (
+    <div>
+      <h2>Result: {result}</h2>
+    </div>
+  );
+}
+
+export default App;
+
+```
+If you don't need a custom hook
+If the callback is only used in one component, you can use useCallback directly:
+
+```jsx
+import { useCallback } from "react";
+function App() {
+  const multiply = useCallback((a, b) => a * b, []);
+
+  return <h2>{multiply(5, 8)}</h2>;
+}
+```
+
+## 7. Custom hooks of useMemo to calculate the addition two number in react?
+### Code
+useMemo is used to memoize a computed value, not a function. If you want a custom hook that calculates the addition of two numbers and only recalculates when either number changes, you can do this:
+
+```jsx
+// Custom Hook (useAddition.js)
+import { useMemo } from "react";
+const useAddition = (num1, num2) => {
+  const sum = useMemo(() => {
+    console.log("Calculating...");
+    return num1 + num2;
+  }, [num1, num2]);
+
+  return sum;
+};
+export default useAddition;
+
+// Using the Custom Hook
+import React, { useState } from "react";
+import useAddition from "./useAddition";
+function App() {
+  const [num1, setNum1] = useState(10);
+  const [num2, setNum2] = useState(20);
+
+  const sum = useAddition(num1, num2);
+
+  return (
+    <div>
+      <h2>Number 1: {num1}</h2>
+      <h2>Number 2: {num2}</h2>
+      <h2>Sum: {sum}</h2>
+
+      <button onClick={() => setNum1(num1 + 1)}>
+        Increase Number 1
+      </button>
+
+      <button onClick={() => setNum2(num2 + 1)}>
+        Increase Number 2
+      </button>
+    </div>
+  );
+}
+
+export default App;
+
+```
+
 ## 6. Fetch Data From An API
 
 ### Question
