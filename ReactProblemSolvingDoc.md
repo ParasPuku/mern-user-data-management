@@ -506,7 +506,7 @@ const useMultiply = () => {
 };
 
 export default useMultiply;
-
+Note - Both hooks should include a dependency array. Without it, the memoization is ineffective because React treats it as needing to recompute every render.
 ----------------------------------
 
 import React from "react";

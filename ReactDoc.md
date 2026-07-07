@@ -712,6 +712,197 @@ This is roughly:
 useCallback(fn, deps) === useMemo(() => fn, deps)
 ```
 
+### 37. How useMemo and useCallback works behind the scene?
+The reason they look different is because useCallback and useMemo are designed for different purposes, even though they're closely related.
+
+In fact, useCallback is essentially a special case of useMemo.
+
+1. useCallback memoizes a function
+```jsx
+const result = useCallback((num1, num2) => {
+  return num1 * num2;
+}, []);
+```
+What are you passing to useCallback?
+You're passing the function itself.
+
+```jsx
+(num1, num2) => {
+  return num1 * num2;
+}
+```
+React stores this function and returns the same function reference on every render (until dependencies change).
+
+So result becomes:
+```jsx
+(num1, num2) => {
+  return num1 * num2;
+}
+```
+
+Later you call it:
+```jsx
+result(10, 20);
+```
+
+Output: 200
+
+2. useMemo memoizes the result of a calculation
+```jsx
+const result = useMemo(() => {
+  return num1 + num2;
+}, [num1, num2]);
+```
+
+Here you're not passing the calculation directly.
+
+You're passing a function with no parameters:
+```jsx
+() => {
+   return num1 + num2;
+}
+```
+
+Why?
+Because num1 and num2 are already available from the outer scope (the custom hook's parameters). This is called a closure in JavaScript.
+
+```jsx
+const useAddition = (num1, num2) => {
+  useMemo(() => {
+      return num1 + num2;
+  }, [num1, num2])
+}
+```
+When you call:
+
+```jsx
+useAddition(10, 20);
+```
+React already knows:
+
+```jsx
+num1 = 10
+num2 = 20
+```
+
+It simply executes:
+```jsx
+10 + 20
+```
+and stores the value.
+
+Therefore the callback doesn't need parameters.
+
+Why doesn't useMemo accept parameters like useCallback?
+
+Imagine it did:
+```jsx
+useMemo((num1, num2) => {
+   return num1 + num2;
+}, []);
+```
+React would ask:
+
+- "Where am I supposed to get num1 and num2 from?"
+
+Nobody is calling that callback with arguments.
+
+With useMemo, React internally does something like:
+
+```jsx
+callback();
+```
+
+not
+
+```jsx
+callback(10,20);
+```
+So parameters would always be undefined.
+
+Why does useCallback allow parameters?
+
+Because React is not executing that function. React simply stores it. Later you execute it.
+
+Example:
+```jsx
+const multiply = useCallback((a, b) => {
+   return a * b;
+}, []);
+```
+React stores:
+
+```jsx
+(a, b) => a * b
+```
+Later:
+
+```jsx
+multiply(5, 6);
+```
+Now you supply the parameters.
+
+Think of it like this
+
+useMemo
+
+You ask React: "Please calculate this value for me."
+```jsx
+const sum = useMemo(() => 10 + 20, []);
+```
+
+React immediately executes:
+```jsx
+() => 10 + 20
+```
+and stores
+
+30
+
+
+useCallback
+
+You ask React: "Please remember this function."
+```jsx
+const multiply = useCallback((a,b)=>a*b, []);
+```
+
+React stores
+```jsx
+(a,b)=>a*b
+```
+It doesn't execute it.
+
+Later you do:
+```jsx
+multiply(10,20);
+```
+
+Now it runs.
+
+Under the hood
+
+useCallback is essentially implemented like this:
+```jsx
+function useCallback(callback, deps) {
+    return useMemo(() => callback, deps);
+}
+```
+
+Notice what useMemo returns here:
+```jsx
+() => callback
+```
+It returns the function itself, not the result of calling it.
+
+One more important point about your code
+
+Both hooks should include a dependency array. Without it, the memoization is ineffective because React treats it as needing to recompute every render.
+
+The key difference is:
+- useMemo returns a memoized value.
+- useCallback returns a memoized function.
+
 ### 37. What is useContext?
 
 `The useContext hook` in React is a built-in function that lets functional components read and subscribe to data from a context object without manually passing props through intermediate components. It provides an elegant solution to prop drilling, which is the tedious process of passing props down multiple levels of a component tree just to reach a deeply nested child.

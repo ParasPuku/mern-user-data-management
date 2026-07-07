@@ -946,6 +946,36 @@ For every user, push the name into the matching role array.
 
 ---
 
+## 21. In a page, there is a single div only
+1. click on div - don't alert
+2. click on body - alert("Hello");
+```js
+import React, { useEffect } from "react";
+
+const App = () => {
+  useEffect(() => {
+    const handleClick = () => {
+      alert("Hello");
+    };
+    window.addEventListener("click", handleClick);
+    return () => {
+      window.removeEventListener("click", handleClick);
+    };
+  }, []); 
+
+  const handleOnClick = (event) => {
+    event.stopPropagation();
+    console.log("Hello");
+  };
+
+  return (
+    <button onClick={handleOnClick}>Button</button>
+  );
+};
+
+export default App;
+```
+
 ## 21. flatten an array - const nestedArray = [[1, 2], [3, 4], [5, 6], [7,8]];
 Output - [1,2,3,4,5,6,7,8];
 
