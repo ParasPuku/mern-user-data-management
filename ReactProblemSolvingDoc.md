@@ -1,6 +1,6 @@
 # React Problem Solving Interview Questions and Answers
 
-This document covers 15 commonly asked React problem-solving interview questions.
+This document covers 19 commonly asked React problem-solving interview questions.
 
 The examples are intentionally simple so the logic is easy to understand and explain in interviews.
 
@@ -490,7 +490,324 @@ New products are added to the old products using spread syntax.
 
 ---
 
-## 6. Write a custom hook that uses useCallback to multiply two numbers in React.
+## 6. Custom Hook For Fetch API Call
+
+### Question
+
+Write a reusable custom hook that uses the `fetch` method to make API calls.
+
+The hook should handle:
+
+- data
+- loading
+- error
+- re-fetching
+- request cleanup
+
+### What Interviewer Checks
+
+- custom hook creation
+- `useEffect`
+- `useRef`
+- `fetch`
+- loading and error states
+- cleanup using `AbortController`
+- reusable API logic
+
+### Simple Answer
+
+A custom fetch hook keeps API calling logic in one place.
+
+Instead of writing `useEffect`, `loading`, `error`, and `fetch` logic in every component, we create one hook and reuse it wherever data is needed.
+
+### Code
+
+```jsx
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+const useFetch = (url) => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const controllerRef = useRef(null);
+
+  const fetchData = useCallback(async () => {
+    if (!url) return;
+
+    if (controllerRef.current) {
+      controllerRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    controllerRef.current = controller;
+
+    try {
+      setLoading(true);
+      setError('');
+
+      const response = await fetch(url, {
+        signal: controller.signal
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch data');
+      }
+
+      const result = await response.json();
+      setData(result);
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        return;
+      }
+
+      setError(err.message || 'Something went wrong');
+    } finally {
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
+    }
+  }, [url]);
+
+  useEffect(() => {
+    fetchData();
+
+    return () => {
+      if (controllerRef.current) {
+        controllerRef.current.abort();
+      }
+    };
+  }, [fetchData]);
+
+  return {
+    data,
+    loading,
+    error,
+    refetch: fetchData
+  };
+};
+
+export default useFetch;
+```
+
+### Using The Custom Hook
+
+```jsx
+import useFetch from './useFetch';
+
+export const ProductsExample = () => {
+  const { data, loading, error, refetch } = useFetch(
+    'https://dummyjson.com/products'
+  );
+
+  if (loading) return <p>Loading products...</p>;
+  if (error) return <p>{error}</p>;
+
+  return (
+    <div>
+      <button onClick={() => refetch()}>Refresh</button>
+
+      <ul>
+        {data?.products?.map((product) => (
+          <li key={product.id}>{product.title}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+```
+
+### Interview Explanation
+
+`useFetch` is a custom hook because its name starts with `use` and it uses React hooks internally.
+
+The component only cares about `data`, `loading`, `error`, and `refetch`.
+
+The hook handles the repeated logic:
+
+- starting the loader
+- making the API call
+- converting response to JSON
+- storing successful data
+- storing error message
+- aborting the request during cleanup
+- exposing `refetch` when the component wants to call the API again
+
+`AbortController` is important because if the component unmounts before the API finishes, React should not try to update state from an old request.
+
+Common interview point:
+
+```text
+Custom hooks share reusable logic, not shared state. If two components call useFetch, both get their own data, loading, and error state.
+```
+
+---
+
+## 7. API Call Using AbortController With Retry
+
+### Question
+
+Call an API using the `AbortController` concept.
+
+If the API fails, retry after 2 seconds.
+
+Try maximum 3 times.
+
+If it still fails after 3 attempts, log:
+
+```text
+api got failed
+```
+
+### What Interviewer Checks
+
+- `AbortController`
+- API cleanup on component unmount
+- retry logic
+- delay using `setTimeout`
+- `try/catch`
+- avoiding state update after unmount
+- clear explanation of maximum attempts
+
+### Simple Answer
+
+Use `AbortController` to cancel the API request when the component unmounts.
+
+For retry, use a loop. If the request fails, wait for 2 seconds and try again. If all 3 attempts fail, log `api got failed`.
+
+### Code
+
+```jsx
+import { useEffect, useState } from 'react';
+
+const wait = (milliseconds, signal) => {
+  return new Promise((resolve) => {
+    const timerId = window.setTimeout(resolve, milliseconds);
+
+    signal.addEventListener(
+      'abort',
+      () => {
+        window.clearTimeout(timerId);
+        resolve();
+      },
+      { once: true }
+    );
+  });
+};
+
+export const AbortControllerRetryExample = () => {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const maxAttempts = 3;
+    const retryDelay = 2000;
+
+    const fetchProducts = async () => {
+      setLoading(true);
+      setError('');
+
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          const response = await fetch('https://dummyjson.com/products', {
+            signal: controller.signal
+          });
+
+          if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          setProducts(data.products);
+          setLoading(false);
+          return;
+        } catch (err) {
+          if (err.name === 'AbortError') {
+            return;
+          }
+
+          if (attempt === maxAttempts) {
+            console.log('api got failed');
+            setError('api got failed');
+            setLoading(false);
+            return;
+          }
+
+          await wait(retryDelay, controller.signal);
+
+          if (controller.signal.aborted) {
+            return;
+          }
+        }
+      }
+    };
+
+    fetchProducts();
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>{error}</p>;
+
+  return (
+    <ul>
+      {products.map((product) => (
+        <li key={product.id}>{product.title}</li>
+      ))}
+    </ul>
+  );
+};
+```
+
+### Interview Explanation
+
+`AbortController` creates a `signal`.
+
+That signal is passed to `fetch`.
+
+```jsx
+fetch(url, { signal: controller.signal });
+```
+
+When the component unmounts, cleanup runs:
+
+```jsx
+controller.abort();
+```
+
+This cancels the in-progress request.
+
+The retry logic works like this:
+
+```text
+attempt 1 fails
+  -> wait 2 seconds
+attempt 2 fails
+  -> wait 2 seconds
+attempt 3 fails
+  -> log "api got failed"
+```
+
+Important point:
+
+```text
+Abort is not treated as an API failure. If the component unmounts, we simply stop the request and return.
+```
+
+Common mistake:
+
+```text
+Do not retry forever. Always keep a maximum retry count.
+```
+
+---
+
+## 8. Write a custom hook that uses useCallback to multiply two numbers in React.
 ### Code 
 
 ```jsx
@@ -539,7 +856,7 @@ function App() {
 }
 ```
 
-## 7. Custom hooks of useMemo to calculate the addition two number in react?
+## 9. Custom hooks of useMemo to calculate the addition two number in react?
 ### Code
 useMemo is used to memoize a computed value, not a function. If you want a custom hook that calculates the addition of two numbers and only recalculates when either number changes, you can do this:
 
@@ -586,7 +903,7 @@ export default App;
 
 ```
 
-## 6. Fetch Data From An API
+## 10. Fetch Data From An API
 
 ### Question
 
@@ -655,7 +972,7 @@ The API is called once because dependency array is empty.
 
 ---
 
-## 7. Simple Multi Step Form
+## 11. Simple Multi Step Form
 
 ### Question
 
@@ -764,7 +1081,7 @@ This makes final submission simple.
 
 ---
 
-## 8. Simple Form Validation
+## 12. Simple Form Validation
 
 ### Question
 
@@ -836,7 +1153,7 @@ After submit, error messages are shown.
 
 ---
 
-## 9. Filter List By Dropdown
+## 13. Filter List By Dropdown
 
 ### Question
 
@@ -895,7 +1212,7 @@ The original users array is not changed.
 
 ---
 
-## 10. Modal Open And Close
+## 14. Modal Open And Close
 
 ### Question
 
@@ -959,7 +1276,7 @@ When `isOpen` is false, modal is removed from the DOM.
 
 ---
 
-## 11. Shopping Cart Quantity And Total
+## 15. Shopping Cart Quantity And Total
 
 ### Question
 
@@ -1028,7 +1345,7 @@ Total is calculated using `reduce`.
 
 ---
 
-## 12. Tabs Component
+## 16. Tabs Component
 
 ### Question
 
@@ -1078,7 +1395,7 @@ The selected tab content is found from the tabs array.
 
 ---
 
-## 13. Counter Using useReducer
+## 17. Counter Using useReducer
 
 ### Question
 
@@ -1132,7 +1449,7 @@ The reducer receives current state and action, then returns new state.
 
 ---
 
-## 14. Parent To Child And Child To Parent Communication
+## 18. Parent To Child And Child To Parent Communication
 
 ### Question
 
@@ -1190,7 +1507,7 @@ Parent stores selected user in state.
 
 ---
 
-## 15. Search And Sort A List
+## 19. Search And Sort A List
 
 ### Question
 

@@ -20,25 +20,68 @@ You can run these examples in:
 
 ## Array Problem Solving Questions
 
-## 0. Find missing number without using buil-in method
+## 0. Find Missing Numbers Without Using Built-In Method
+
+### Question
+
+Find missing numbers from `1` to the maximum number in the given array.
+
+Example:
+
+```js
+[1, 2, 3, 4, 6, 8, 10]
+```
+
+Missing numbers:
+
+```js
+[5, 7, 9]
+```
+
 ### Code
 
 ```js
-function missingNumber(arr){
-    var missingFlag = 0;
-    var missingValue = 0;
-    for(var i=0; i<arr.length; i++){
-        missingFlag++;
-        if(arr[i] > missingValue && arr[i] > missingFlag) {
-            missingValue=arr[i];
-        }
+function missingNumber(arr) {
+  const numSet = new Set(arr);
+  const foundValue = [];
+  const missedValue = [];
+  const end = arr[arr.length - 1] || 0;
+  for (let i = 1; i <= end; i++) {
+    if (numSet.has(i)) {
+      foundValue.push(i);
+    } else {
+      missedValue.push(i);
     }
-    return missingFlag;
+  }
+
+  return { foundValue, missedValue };
 }
-const result = missingNumber([1,2,3,4,6]);
-console.log("___missing value: ", result);
-console.log(reverseArray([1, 2, 3, 4, 5]));
+
+const result = missingNumber([1, 2, 3, 4, 6, 8, 10]);
+console.log(result);
+
 ```
+
+### Output
+
+```js
+{
+  foundValue: [1, 2, 3, 4, 6, 8, 10],
+  missedValue: [5, 7, 9]
+}
+```
+
+### Explanation
+
+Here we assume the array is sorted and starts from `1`.
+
+First, take the last value of the array as the ending number.
+
+Then loop from `1` to that ending number.
+
+For every number, check whether it exists in the original array using another simple loop.
+
+If it exists, add it to `foundValue`. Otherwise, add it to `missedValue`.
 
 ## 1. Reverse An Array Without Using reverse()
 
@@ -567,15 +610,14 @@ function findIntersection(arr1, arr2) {
   var result = [];
 
   for (var i = 0; i < arr1.length; i++) {
-    if (arr2.includes(arr1[i]) && !result.includes(arr1[i])) {
+    if (arr2.includes(arr1[i])){
       result.push(arr1[i]);
     }
   }
-
   return result;
 }
 
-console.log(findIntersection([1, 2, 3, 4], [3, 4, 5, 6]));
+console.log(findIntersection([1, 2, 3, 4], [3, 4, 5, 6, 3]));
 ```
 
 ### Output
@@ -589,6 +631,35 @@ console.log(findIntersection([1, 2, 3, 4], [3, 4, 5, 6]));
 Loop through the first array and check whether the same value exists in the second array.
 
 Also check `result` so duplicate common values are not added again.
+
+## 13. Please remove leading and trailing 0 from the given String.
+
+```js
+function removeZeros(strValue) {
+    var newStr = strValue.split("");
+    var startIndex = 0;
+    var endIndex = newStr.length - 1;
+    var endValueIndex = 0;
+    // Find the first non-zero index
+    for (var i = 0; i < newStr.length; i++) {
+        if (newStr[i] > 0) {
+            startIndex = i;
+            break;
+        }
+    }
+    // CORRECTED: Fixed the condition (i >= 0) and the loop step
+    for (var i = endIndex; i >= 0; i--) {
+        if (newStr[i] > 0) {
+            endValueIndex = i; // Save the exact last non-zero index
+            break;
+        }
+    }
+    // CORRECTED: Use slice() with a join() instead of mutating with splice()
+    return newStr.slice(startIndex, endValueIndex + 1).join("");
+}
+
+console.log(removeZeros("003030405000")); // "3030405"
+```
 
 ---
 

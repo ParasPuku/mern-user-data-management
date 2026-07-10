@@ -128,7 +128,314 @@ app.listen(env.port, () => {
 });
 ```
 
-### 8. What is app.disable('x-powered-by')?
+### 8. What is Helmet(Security)?
+- What it does: Secures your Express apps by automatically setting various HTTP response headers.
+- Primary Use Cases: Prevents common vulnerabilities like cross-site scripting (XSS) attacks, clickjacking, and unauthorized data leakage.
+- How it works: It acts on HTTP responses sent from your server to the client.
+
+### 9. What is Morgan (Logging)?
+- What it does: Logs incoming HTTP requests to your terminal or server console.
+- Primary Use Cases: Helps you debug APIs, monitor server activity, and track route status. It prints details like the HTTP method, route, response status code, and response time.
+- How it works: It acts on HTTP requests as they come into your server.
+
+### 10. What are ways to secure an API or backend?
+
+Securing an API or backend is not one single thing. It is a layered approach.
+
+Interview answer:
+
+```text
+To secure an API, I would use HTTPS, authentication, authorization, input validation, rate limiting, secure headers, strict CORS, secure cookies, proper error handling, logging, and database-level protections. I would also never trust the frontend because API calls can be made directly from Postman, curl, scripts, or another client.
+```
+
+Most important backend security practices:
+
+- use HTTPS in production
+- store secrets in environment variables
+- use authentication for protected routes
+- use authorization for role-based access
+- use rate limiting for login, OTP, and public APIs
+- use Helmet for secure HTTP headers
+- configure CORS with allowed origins only
+- use secure HTTP-only cookies for sensitive tokens
+- protect against CSRF when using cookies
+- keep JWT/access tokens short-lived
+- use refresh token rotation for long sessions
+- validate and sanitize request body, params, and query
+- hash passwords using bcrypt or argon2
+- use database indexes and constraints
+- log suspicious activity
+
+
+#### 1. Authentication
+
+Authentication checks who the user is.
+
+Example:
+
+```text
+Login user
+Verify JWT/session
+Attach user/account to req
+```
+
+In Express:
+
+```js
+app.use('/api/users', requireAuth, userRoutes);
+```
+
+#### 2. Authorization
+
+Authorization checks what the user is allowed to do.
+
+Example:
+
+```js
+app.delete('/api/users/:id', requireAuth, requireAdmin, deleteUser);
+```
+
+Important interview point:
+
+```text
+Frontend role checks are only for UX. Backend authorization is the real security.
+```
+
+#### 3. Validate inputs
+
+Never trust `req.body`, `req.params`, or `req.query`.
+
+Bad:
+
+```js
+await User.findByIdAndUpdate(req.params.id, req.body);
+```
+
+Better:
+
+```js
+const { name, email } = req.body;
+
+if (!name || !email) {
+  throw httpError(400, 'Name and email are required');
+}
+```
+
+Validation helps prevent:
+
+- invalid data
+- injection attacks
+- unexpected server errors
+- mass assignment bugs
+
+#### 4. Rate limiting
+
+Rate limiting protects APIs from brute-force and abuse.
+
+Common routes to rate limit:
+
+- login
+- signup
+- OTP request
+- password reset
+- public search APIs
+
+Example:
+
+```js
+import rateLimit from 'express-rate-limit';
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: 'Too many login attempts. Try again later.'
+});
+
+app.use('/api/auth/login', loginLimiter);
+```
+
+#### 5. Helmet security headers
+
+Helmet sets secure HTTP headers.
+
+Example:
+
+```js
+import helmet from 'helmet';
+
+app.use(helmet());
+```
+
+It helps reduce risks like:
+
+- clickjacking
+- MIME sniffing
+- some XSS-related browser issues
+- technology fingerprinting
+
+#### 6. Strict CORS
+
+Do not allow every origin in production.
+
+Bad:
+
+```js
+app.use(cors());
+```
+
+Better:
+
+```js
+app.use(
+  cors({
+    origin: ['https://myfrontend.com'],
+    credentials: true
+  })
+);
+```
+
+#### 7. Secure cookies and tokens
+
+For browser apps, store sensitive auth tokens in HTTP-only cookies.
+
+Example:
+
+```js
+res.cookie('auth_token', token, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  maxAge: 15 * 60 * 1000
+});
+```
+
+Important:
+
+```text
+HTTP-only cookie protects token from JavaScript access, but you still need CSRF protection for sensitive cookie-based requests.
+```
+
+#### 8. Safe error handling
+
+Do not expose stack trace in production.
+
+Bad:
+
+```js
+res.status(500).json({ error: error.stack });
+```
+
+Better:
+
+```js
+res.status(500).json({ message: 'Internal server error' });
+```
+
+#### 9. File upload security
+
+For uploads, validate:
+
+- file type
+- file size
+- file extension
+- storage location
+- generated filename
+
+Never blindly trust uploaded files.
+
+#### 10. Strong final interview answer
+
+```text
+I secure an API in layers. First, I use HTTPS, authentication, and authorization. Then I validate all input, add rate limiting, configure CORS strictly, use Helmet headers, secure cookies, safe JWT expiry, and CSRF protection where needed. I also hide production stack traces, validate file uploads, store secrets in env variables, log suspicious activity, and enforce database constraints. Most importantly, I never trust the frontend as the security boundary.
+```
+
+### 11. What is Multer (File Uploads)?
+- What it does: Handles multipart/form-data, which is the format used when users upload files.
+- Primary Use Cases: Uploading profile pictures, PDFs, resumes, or any other media to your server.
+- How it works: It processes the incoming request body, parses the file, and makes it accessible in your controller (e.g., via req.file or req.files) so you can save it to disk or a storage service.
+
+### 12. What is CORS? 
+the easiest and most production-ready way to handle CORS is by using the official cors middleware package from npm.
+
+By default, Express blocks cross-origin requests. 
+Implementing the cors package configures the necessary HTTP headers (like Access-Control-Allow-Origin) so your frontend can communicate with your API.
+
+Step 1: Install the Package - npm install cors
+Step 2: Step 2: Implement CORS in Your Code
+Depending on your application's security needs, you can configure CORS globally, restrict it to specific origins, or apply it to a single route.
+
+Option A: Allow Everything (Development Only)
+This opens your API to any website on the internet. It is fine for quick testing but dangerous for production.
+```js
+const express = require('express');
+const cors = require('cors');
+
+const app = express();
+
+// Enable all CORS requests
+app.use(cors()); 
+
+app.get('/api/data', (req, res) => {
+  res.json({ message: 'Accessible from any domain!' });
+});
+```
+
+
+Option B: Restrict to Specific Domains (Production Recommended)
+This limits API access strictly to your trusted frontend application
+
+```js
+const express = require('express');
+const cors = require('cors');
+
+const app = express();
+
+const corsOptions = {
+  origin: 'https://myfrontendapp.com', // Only allow this domain
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
+  optionsSuccessStatus: 200 // For legacy browser compatibility (IE11)
+};
+
+// Apply CORS with options globally
+app.use(cors(corsOptions));
+```
+
+Option C: Dynamic Whitelist (Multiple Domains)
+If you have a development frontend (like localhost:3000) and a production frontend, use an array or a function validator.
+```js
+const whitelist = ['http://localhost:3000', 'https://myfrontendapp.com'];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // !origin allows server-to-server requests (like Postman or curl)
+    if (!origin || whitelist.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Blocked by CORS policy'));
+    }
+  }
+};
+
+app.use(cors(corsOptions));
+```
+
+Option D: Enable CORS for a Single Route
+If only one specific endpoint needs to be shared publicly, apply the middleware to that route directly instead of using app.use().
+
+```js
+// Public endpoint
+app.get('/api/public-stats', cors(), (req, res) => {
+  res.json({ stats: 'public info' });
+});
+
+// Private endpoint (Still blocked for cross-origin requests)
+app.get('/api/private-dashboard', (req, res) => {
+  res.json({ data: 'secure info' });
+});
+```
+
+
+### 13. What is app.disable('x-powered-by')?
 
 It removes the `X-Powered-By: Express` header.
 
@@ -146,7 +453,7 @@ It reduces technology fingerprinting and avoids exposing that the app uses Expre
 
 ## Middleware
 
-### 9. What is middleware in Express?
+### 14. What is middleware in Express?
 
 Middleware is a function that runs between request and response.
 
@@ -164,7 +471,7 @@ Middleware can:
 - end response
 - call next middleware
 
-### 10. What is next()?
+### 15. What is next()?
 
 `next()` passes control to the next middleware or route handler.
 
@@ -179,7 +486,7 @@ const logger = (req, res, next) => {
 
 If `next()` is not called and response is not sent, request can hang.
 
-### 11. Types of middleware?
+### 16. Types of middleware?
 
 Common types:
 
@@ -189,7 +496,7 @@ Common types:
 - built-in middleware
 - third-party middleware
 
-### 12. Application-level middleware example?
+### 17. Application-level middleware example?
 
 In this app:
 
@@ -202,7 +509,7 @@ app.use(cookieParser());
 
 These apply globally.
 
-### 13. Router-level middleware example?
+### 18. Router-level middleware example?
 
 In this app:
 
@@ -212,7 +519,7 @@ userRoutes.use(requireAuth);
 
 This means all `/api/users` routes require authentication.
 
-### 14. Error-handling middleware signature?
+### 19. Error-handling middleware signature?
 
 Error middleware has four parameters:
 
@@ -230,7 +537,7 @@ export const errorHandler = (error, req, res, next) => {
 };
 ```
 
-### 15. Built-in Express middleware?
+### 20. Built-in Express middleware?
 
 Examples:
 
@@ -248,7 +555,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(uploadsDir));
 ```
 
-### 16. Third-party middleware examples?
+### 21. Third-party middleware examples?
 
 This app uses:
 
@@ -261,7 +568,7 @@ This app uses:
 
 ## Request and Response
 
-### 17. What is req?
+### 22. What is req?
 
 `req` is the request object.
 
@@ -275,7 +582,7 @@ It contains:
 - `req.file`
 - custom fields like `req.account`
 
-### 18. What is res?
+### 23. What is res?
 
 `res` is the response object.
 
@@ -290,7 +597,7 @@ res.clearCookie()
 res.redirect()
 ```
 
-### 19. What is req.body?
+### 24. What is req.body?
 
 `req.body` contains parsed request body.
 
@@ -306,7 +613,7 @@ Requires:
 app.use(express.json());
 ```
 
-### 20. What is req.params?
+### 25. What is req.params?
 
 Route params are dynamic parts of URL.
 
@@ -322,7 +629,7 @@ Access:
 req.params.id
 ```
 
-### 21. What is req.query?
+### 26. What is req.query?
 
 Query params come after `?`.
 
@@ -340,7 +647,7 @@ req.query.limit
 req.query.status
 ```
 
-### 22. What is res.json?
+### 27. What is res.json?
 
 `res.json()` sends JSON response.
 
@@ -354,7 +661,7 @@ res.json({
 
 It also sets content type to JSON.
 
-### 23. What is res.status?
+### 28. What is res.status?
 
 It sets HTTP status code.
 
@@ -366,7 +673,7 @@ res.status(201).json({
 });
 ```
 
-### 24. What is res.cookie?
+### 29. What is res.cookie?
 
 It sets cookie in response.
 
@@ -385,7 +692,7 @@ This sends a `Set-Cookie` response header.
 
 ## Routing
 
-### 25. What is routing in Express?
+### 30. What is routing in Express?
 
 Routing maps HTTP method and URL path to handler function.
 
@@ -396,7 +703,7 @@ app.get('/api/health', handler);
 app.post('/api/auth/signup', signUp);
 ```
 
-### 26. What is Express Router?
+### 31. What is Express Router?
 
 `Router` creates modular route handlers.
 
@@ -410,7 +717,7 @@ export const authRoutes = Router();
 authRoutes.post('/signup', signUp);
 ```
 
-### 27. Why use Router?
+### 32. Why use Router?
 
 Benefits:
 
@@ -429,7 +736,7 @@ skillRoutes
 adminRoutes
 ```
 
-### 28. What is route chaining?
+### 33. What is route chaining?
 
 Express supports chaining multiple handlers on same path.
 
@@ -443,7 +750,7 @@ userRoutes
   .delete(requireRole('admin'), deleteUser);
 ```
 
-### 29. Can one route have multiple middleware?
+### 34. Can one route have multiple middleware?
 
 Yes.
 
@@ -464,7 +771,7 @@ Order:
 requireAuth -> uploadAvatar.single -> uploadProfileAvatar
 ```
 
-### 30. Why middleware order matters?
+### 35. Why middleware order matters?
 
 Express executes middleware in registration order.
 
@@ -479,7 +786,7 @@ app.use('/api/users', userRoutes);
 
 ## REST API
 
-### 31. What is REST API?
+### 36. What is REST API?
 
 REST API exposes resources using HTTP methods.
 
@@ -493,7 +800,7 @@ PATCH /api/users/:id
 DELETE /api/users/:id
 ```
 
-### 32. HTTP methods in REST?
+### 37. HTTP methods in REST?
 
 - `GET`: read
 - `POST`: create/action
@@ -501,7 +808,7 @@ DELETE /api/users/:id
 - `PATCH`: partial update
 - `DELETE`: remove
 
-### 33. Common HTTP status codes?
+### 38. Common HTTP status codes?
 
 - `200`: OK
 - `201`: Created
@@ -514,7 +821,7 @@ DELETE /api/users/:id
 - `429`: Too Many Requests
 - `500`: Internal Server Error
 
-### 34. Difference between PUT and PATCH?
+### 39. Difference between PUT and PATCH?
 
 `PUT` usually replaces the entire resource.
 
@@ -527,7 +834,7 @@ PUT /api/users/:id/profile
 PATCH /api/users/:id
 ```
 
-### 35. Difference between 401 and 403?
+### 40. Difference between 401 and 403?
 
 `401` means user is not authenticated.
 
@@ -542,7 +849,7 @@ Logged in member deleting user -> 403
 
 ## Controllers
 
-### 36. What is controller in Express?
+### 41. What is controller in Express?
 
 Controller handles request logic.
 
@@ -555,7 +862,7 @@ export const getUsers = asyncHandler(async (req, res) => {
 });
 ```
 
-### 37. Why separate routes and controllers?
+### 42. Why separate routes and controllers?
 
 Routes should define URL structure.
 
@@ -570,7 +877,7 @@ routes/userRoutes.js -> route definitions
 controllers/userController.js -> business/request logic
 ```
 
-### 38. What is service layer?
+### 43. What is service layer?
 
 Service layer contains reusable business logic outside controller.
 
@@ -584,7 +891,7 @@ OTP generation/storage/verification is not inside route file.
 
 ## Async Error Handling
 
-### 39. Problem with async errors in Express?
+### 44. Problem with async errors in Express?
 
 If async route throws/rejects, Express must receive the error.
 
@@ -598,7 +905,7 @@ app.get('/users', async (req, res) => {
 
 Depending on Express version and setup, errors may become unhandled or need forwarding.
 
-### 40. What is asyncHandler?
+### 45. What is asyncHandler?
 
 `asyncHandler` wraps async functions and sends errors to `next`.
 
@@ -618,7 +925,7 @@ export const getUsers = asyncHandler(async (req, res) => {
 });
 ```
 
-### 41. Why use asyncHandler?
+### 46. Why use asyncHandler?
 
 Benefits:
 
@@ -628,7 +935,7 @@ Benefits:
 
 ## Error Handling
 
-### 42. How error handling works in this app?
+### 47. How error handling works in this app?
 
 Flow:
 
@@ -640,7 +947,7 @@ errorHandler builds response
 client receives JSON error
 ```
 
-### 43. What is notFound middleware?
+### 48. What is notFound middleware?
 
 It handles unknown routes.
 
@@ -654,7 +961,7 @@ export const notFound = (req, _res, next) => {
 };
 ```
 
-### 44. Why notFound comes before errorHandler?
+### 49. Why notFound comes before errorHandler?
 
 Unknown routes are converted into 404 errors first.
 
@@ -665,7 +972,7 @@ app.use(notFound);
 app.use(errorHandler);
 ```
 
-### 45. How does errorHandler handle Mongoose errors?
+### 50. How does errorHandler handle Mongoose errors?
 
 In this app:
 
@@ -674,7 +981,7 @@ In this app:
 - duplicate key `11000` -> 409
 - Multer errors -> 400
 
-### 46. Why hide stack trace in production?
+### 51. Why hide stack trace in production?
 
 Stack traces can reveal:
 
@@ -693,7 +1000,7 @@ if (env.nodeEnv !== 'production') {
 
 ## Authentication Middleware
 
-### 47. How authentication middleware works?
+### 52. How authentication middleware works?
 
 In this app:
 
@@ -712,7 +1019,7 @@ attach req.account
 call next()
 ```
 
-### 48. Why attach req.account?
+### 53. Why attach req.account?
 
 So downstream controllers can access logged-in account.
 
@@ -724,7 +1031,7 @@ User.find({ owner: req.account._id });
 
 This supports per-account data isolation.
 
-### 49. What is router-level auth?
+### 54. What is router-level auth?
 
 Router-level auth applies middleware to all routes in a router.
 
@@ -736,7 +1043,7 @@ userRoutes.use(requireAuth);
 
 All `/api/users` routes require authentication.
 
-### 50. What is role middleware?
+### 55. What is role middleware?
 
 Role middleware checks authorization.
 
@@ -750,7 +1057,7 @@ Only admin can delete user.
 
 ## Cookies in Express
 
-### 51. What is cookie-parser?
+### 56. What is cookie-parser?
 
 `cookie-parser` parses cookies from request headers.
 
@@ -766,7 +1073,7 @@ Then:
 req.cookies?.[env.authCookieName]
 ```
 
-### 52. How Express sets cookie?
+### 57. How Express sets cookie?
 
 Using `res.cookie`.
 
@@ -779,7 +1086,7 @@ res.cookie('umd_auth', token, {
 });
 ```
 
-### 53. How Express clears cookie?
+### 58. How Express clears cookie?
 
 Using `res.clearCookie`.
 
@@ -793,7 +1100,7 @@ res.clearCookie('umd_auth', {
 });
 ```
 
-### 54. Why path must match when clearing cookie?
+### 59. Why path must match when clearing cookie?
 
 Cookie clearing works by sending an expired cookie with matching options.
 
@@ -801,7 +1108,7 @@ If `path`, `domain`, or other relevant options do not match, browser may keep or
 
 ## Security Middleware
 
-### 55. What is CORS middleware?
+### 60. What is CORS middleware?
 
 CORS controls which frontend origins can call backend from browser.
 
@@ -816,7 +1123,7 @@ app.use(
 );
 ```
 
-### 56. Why credentials true?
+### 61. Why credentials true?
 
 Because this app uses cookie-based auth.
 
@@ -832,7 +1139,7 @@ Backend must allow credentials:
 credentials: true
 ```
 
-### 57. What is Helmet?
+### 62. What is Helmet?
 
 Helmet sets security-related HTTP headers.
 
@@ -844,7 +1151,7 @@ app.use(helmet());
 
 It helps reduce common security risks.
 
-### 58. What is rate limiting?
+### 63. What is rate limiting?
 
 Rate limiting restricts number of requests within a time window.
 
@@ -861,7 +1168,7 @@ app.use(
 );
 ```
 
-### 59. Why use rate limiting?
+### 64. Why use rate limiting?
 
 To reduce:
 
@@ -870,7 +1177,7 @@ To reduce:
 - API spam
 - accidental high traffic
 
-### 60. What is morgan?
+### 65. What is morgan?
 
 Morgan logs HTTP requests.
 
@@ -890,7 +1197,7 @@ request monitoring
 
 ## Body Parsing and Static Files
 
-### 61. Why use express.json limit?
+### 66. Why use express.json limit?
 
 This app uses:
 
@@ -904,7 +1211,7 @@ Why?
 To prevent very large JSON payloads from consuming memory.
 ```
 
-### 62. What is express.urlencoded?
+### 67. What is express.urlencoded?
 
 It parses URL-encoded form data.
 
@@ -914,7 +1221,7 @@ Example:
 app.use(express.urlencoded({ extended: true }));
 ```
 
-### 63. What is express.static?
+### 68. What is express.static?
 
 It serves static files.
 
@@ -928,13 +1235,13 @@ Uploaded avatar files are accessible through `/uploads`.
 
 ## File Upload With Multer
 
-### 64. What is Multer?
+### 69. What is Multer?
 
 Multer is Express middleware for handling `multipart/form-data`.
 
 Used for file uploads.
 
-### 65. How upload route works in this app?
+### 70. How upload route works in this app?
 
 ```js
 authRoutes.post(
@@ -953,7 +1260,7 @@ multer parses/stores avatar file
 controller saves avatarUrl
 ```
 
-### 66. Why validate uploads?
+### 71. Why validate uploads?
 
 Risks without validation:
 
@@ -971,7 +1278,7 @@ Validate:
 
 ## CORS and Frontend Integration
 
-### 67. Why frontend needs credentials include?
+### 72. Why frontend needs credentials include?
 
 Because auth JWT is stored in HTTP-only cookie.
 
@@ -983,7 +1290,7 @@ So browser must send it automatically:
 credentials: 'include'
 ```
 
-### 68. What happens if CORS credentials are missing?
+### 73. What happens if CORS credentials are missing?
 
 Cookie may not be sent or accepted.
 
@@ -993,7 +1300,7 @@ Result:
 User appears unauthenticated even after login.
 ```
 
-### 69. What is preflight request?
+### 74. What is preflight request?
 
 Browser sends OPTIONS request before some cross-origin requests.
 
@@ -1006,7 +1313,7 @@ Preflight checks:
 
 ## Express With MongoDB
 
-### 70. How Express connects to MongoDB?
+### 75. How Express connects to MongoDB?
 
 In this app, MongoDB connection happens in `server.js`, before listening:
 
@@ -1017,13 +1324,13 @@ await connectDB(env.mongoUri, {
 });
 ```
 
-### 71. Why connect DB before app.listen?
+### 76. Why connect DB before app.listen?
 
 If DB is required, server should not accept requests before DB is ready.
 
 Otherwise, requests may fail unexpectedly.
 
-### 72. How controllers use Mongoose?
+### 77. How controllers use Mongoose?
 
 Example:
 
@@ -1035,7 +1342,7 @@ Controllers and middleware use Mongoose models to read/write MongoDB.
 
 ## Express With Redis
 
-### 73. How Express uses Redis in this app?
+### 78. How Express uses Redis in this app?
 
 Express controllers call OTP service.
 
@@ -1047,7 +1354,7 @@ Flow:
 auth route -> authController -> otpService -> Redis
 ```
 
-### 74. Should Redis logic be in route file?
+### 79. Should Redis logic be in route file?
 
 Usually no.
 
@@ -1065,7 +1372,7 @@ otpService.js handles Redis OTP logic
 
 ## Environment Variables
 
-### 75. Why use env variables in Express app?
+### 80. Why use env variables in Express app?
 
 Use env variables for config:
 
@@ -1082,7 +1389,7 @@ In this app:
 backend/src/config/env.js
 ```
 
-### 76. Why centralize env parsing?
+### 81. Why centralize env parsing?
 
 Benefits:
 
@@ -1099,7 +1406,7 @@ port: toNumber(process.env.PORT, 5001)
 
 ## API Versioning and Structure
 
-### 77. Why use /api prefix?
+### 82. Why use /api prefix?
 
 This app uses:
 
@@ -1116,7 +1423,7 @@ Benefits:
 - easier proxy setup
 - clearer backend contract
 
-### 78. What is API versioning?
+### 83. What is API versioning?
 
 API versioning allows changing APIs without breaking old clients.
 
@@ -1131,7 +1438,7 @@ This app does not currently version APIs, but it can be added later.
 
 ## Pagination, Filtering, Sorting
 
-### 79. How pagination works in Express API?
+### 84. How pagination works in Express API?
 
 Client sends:
 
@@ -1148,7 +1455,7 @@ req.query.limit
 
 Then applies limit/skip in database query.
 
-### 80. Why pagination is important?
+### 85. Why pagination is important?
 
 Without pagination:
 
@@ -1157,7 +1464,7 @@ Without pagination:
 - frontend table can become slow
 - server memory usage increases
 
-### 81. How filtering works?
+### 86. How filtering works?
 
 Example:
 
@@ -1169,7 +1476,7 @@ Backend builds query filter from `req.query`.
 
 ## Production Concerns
 
-### 82. What is graceful shutdown?
+### 87. What is graceful shutdown?
 
 Graceful shutdown closes server and connections before process exits.
 
@@ -1186,7 +1493,7 @@ Shutdown closes:
 - Redis
 - MongoDB
 
-### 83. Why not expose stack traces in production?
+### 88. Why not expose stack traces in production?
 
 Stack traces reveal implementation details.
 
@@ -1198,7 +1505,7 @@ if (env.nodeEnv !== 'production') {
 }
 ```
 
-### 84. What is trust proxy?
+### 89. What is trust proxy?
 
 `trust proxy` tells Express it is behind a reverse proxy.
 
@@ -1221,7 +1528,7 @@ Example:
 app.set('trust proxy', 1);
 ```
 
-### 85. What is compression?
+### 90. What is compression?
 
 Compression reduces response size using gzip/brotli.
 
@@ -1236,7 +1543,7 @@ This app does not currently use compression.
 
 ## Testing Express APIs
 
-### 86. How to test Express APIs?
+### 91. How to test Express APIs?
 
 Common tools:
 
@@ -1251,7 +1558,7 @@ Example curl:
 curl -i http://localhost:5001/api/health
 ```
 
-### 87. What should be tested?
+### 92. What should be tested?
 
 Test:
 
@@ -1267,7 +1574,7 @@ Test:
 
 ## Common Negative Interview Questions
 
-### 88. What happens if middleware does not call next?
+### 93. What happens if middleware does not call next?
 
 If middleware does not send response and does not call `next()`, request hangs.
 
@@ -1279,25 +1586,25 @@ const middleware = (req, res, next) => {
 };
 ```
 
-### 89. What happens if error handler is before routes?
+### 94. What happens if error handler is before routes?
 
 It will not catch route errors correctly because routes are registered after it.
 
 Error handler should be after routes.
 
-### 90. What happens if express.json is missing?
+### 95. What happens if express.json is missing?
 
 `req.body` will be undefined for JSON requests.
 
 Login/signup APIs may fail.
 
-### 91. What happens if CORS origin is too open?
+### 96. What happens if CORS origin is too open?
 
 Risk increases, especially with credentialed cookies.
 
 Do not allow every origin with credentials in production.
 
-### 92. What happens if rate limiting is missing?
+### 97. What happens if rate limiting is missing?
 
 API is more vulnerable to:
 
@@ -1306,7 +1613,7 @@ API is more vulnerable to:
 - scraping
 - accidental overload
 
-### 93. What happens if async errors are not handled?
+### 98. What happens if async errors are not handled?
 
 Potential issues:
 
@@ -1315,7 +1622,7 @@ Potential issues:
 - request hangs
 - server crash in some cases
 
-### 94. What happens if large body limit is allowed?
+### 99. What happens if large body limit is allowed?
 
 Attackers can send huge payloads and consume memory.
 
@@ -1325,7 +1632,7 @@ Use reasonable limits:
 express.json({ limit: '1mb' })
 ```
 
-### 95. What happens if uploaded files are served blindly?
+### 100. What happens if uploaded files are served blindly?
 
 Risks:
 
@@ -1336,7 +1643,7 @@ Risks:
 
 Validate uploads and restrict file types.
 
-### 96. What happens if auth middleware trusts only frontend role?
+### 101. What happens if auth middleware trusts only frontend role?
 
 Security issue.
 
@@ -1352,7 +1659,7 @@ In this app:
 
 ## App-Specific Express Interview Questions
 
-### 97. Explain Express architecture of this app.
+### 102. Explain Express architecture of this app.
 
 Answer:
 
@@ -1360,7 +1667,7 @@ Answer:
 The app uses app.js to configure middleware and route modules. Each feature has its own route file and controller. Routes define URLs and middleware, controllers handle request logic, services handle reusable business logic like OTP, models handle MongoDB data, and errorHandler centralizes error responses.
 ```
 
-### 98. Which global middleware does this app use?
+### 103. Which global middleware does this app use?
 
 This app uses:
 
@@ -1373,7 +1680,7 @@ This app uses:
 - `express.static`
 - `morgan`
 
-### 99. How is authentication applied to user routes?
+### 104. How is authentication applied to user routes?
 
 ```js
 userRoutes.use(requireAuth);
@@ -1381,7 +1688,7 @@ userRoutes.use(requireAuth);
 
 This protects every route registered after that line.
 
-### 100. How is admin authorization applied?
+### 105. How is admin authorization applied?
 
 ```js
 .delete(requireRole('admin'), deleteUser)
@@ -1389,7 +1696,7 @@ This protects every route registered after that line.
 
 Only admin can delete users.
 
-### 101. How is avatar upload handled?
+### 106. How is avatar upload handled?
 
 ```js
 authRoutes.post(
@@ -1407,7 +1714,7 @@ This route:
 3. stores avatar
 4. updates profile avatar URL
 
-### 102. How does Express handle 404 in this app?
+### 107. How does Express handle 404 in this app?
 
 Unknown route reaches:
 
@@ -1417,7 +1724,7 @@ app.use(notFound);
 
 Then `notFound` forwards a 404 error to `errorHandler`.
 
-### 103. How does Express serve uploaded avatar?
+### 108. How does Express serve uploaded avatar?
 
 ```js
 app.use('/uploads', express.static(uploadsDir));
@@ -1429,7 +1736,7 @@ Browser can access:
 /uploads/avatars/filename.jpeg
 ```
 
-### 104. Why does this app use cookieParser?
+### 109. Why does this app use cookieParser?
 
 Because auth JWT is stored in HTTP-only cookie.
 
@@ -1439,7 +1746,7 @@ Because auth JWT is stored in HTTP-only cookie.
 req.cookies?.[env.authCookieName]
 ```
 
-### 105. Why does this app use cors credentials true?
+### 110. Why does this app use cors credentials true?
 
 Because frontend sends cookie-based auth requests.
 
@@ -1459,61 +1766,61 @@ Both are needed for cookie auth across origins.
 
 ## Most Important Short Answers
 
-### 106. Express in one line
+### 111. Express in one line
 
 ```text
 Express is a Node.js framework for building APIs using routes, middleware, and request/response helpers.
 ```
 
-### 107. Middleware in one line
+### 112. Middleware in one line
 
 ```text
 Middleware is a function that runs in the request-response cycle and can modify req/res, end the response, or call next().
 ```
 
-### 108. Router in one line
+### 113. Router in one line
 
 ```text
 Router lets us group related routes into modular route files.
 ```
 
-### 109. Controller in one line
+### 114. Controller in one line
 
 ```text
 Controller contains request handling logic for a route.
 ```
 
-### 110. Error middleware in one line
+### 115. Error middleware in one line
 
 ```text
 Error middleware has four parameters and centralizes error responses.
 ```
 
-### 111. CORS in one line
+### 116. CORS in one line
 
 ```text
 CORS controls which browser origins can access backend resources.
 ```
 
-### 112. Helmet in one line
+### 117. Helmet in one line
 
 ```text
 Helmet sets security-related HTTP headers for Express apps.
 ```
 
-### 113. Rate limiting in one line
+### 118. Rate limiting in one line
 
 ```text
 Rate limiting restricts request count in a time window to reduce abuse.
 ```
 
-### 114. cookie-parser in one line
+### 119. cookie-parser in one line
 
 ```text
 cookie-parser reads Cookie headers and makes cookies available as req.cookies.
 ```
 
-### 115. Multer in one line
+### 120. Multer in one line
 
 ```text
 Multer is Express middleware for handling multipart/form-data file uploads.

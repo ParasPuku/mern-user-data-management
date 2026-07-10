@@ -1426,6 +1426,275 @@ HS256 is an HMAC signing algorithm using one shared secret.
 
 RS256 uses private/public key pair. Private key signs, public key verifies.
 
+### 21. How to invalidate or expire a JWT token if it is stolen?
+
+Yes, this is a very valid security question.
+
+Short interview answer:
+
+```text
+A pure stateless JWT cannot be immediately invalidated after it is issued. It remains valid until its exp time unless the backend adds a revocation strategy like Redis blacklist, token version, session id validation, or refresh token revocation.
+```
+
+Important point:
+
+```text
+You cannot change the expiry of an already issued JWT because the token is signed. If a hacker already has a valid JWT, they can use it until expiry unless the server checks extra revocation data.
+```
+
+Ways to handle stolen JWT:
+
+1. Use short-lived access tokens.
+
+Example:
+
+```text
+Access token expiry: 5 minutes or 15 minutes
+```
+
+If the token is stolen, the damage window is small.
+
+2. Store revoked token IDs in Redis blacklist.
+
+Add `jti` claim while creating JWT:
+
+```js
+{
+  sub: account.id,
+  purpose: 'auth',
+  jti: 'unique-token-id'
+}
+```
+
+On logout or suspected hacking:
+
+```text
+blacklist:jti -> true
+TTL -> remaining token lifetime
+```
+
+During authentication:
+
+```js
+const payload = jwt.verify(token, JWT_SECRET);
+
+const isBlacklisted = await redis.get(`blacklist:${payload.jti}`);
+
+if (isBlacklisted) {
+  throw new Error('Token revoked');
+}
+```
+
+3. Use token version.
+
+Store a `tokenVersion` in the database.
+
+User document:
+
+```js
+{
+  _id: 'user-id',
+  tokenVersion: 3
+}
+```
+
+JWT payload:
+
+```js
+{
+  sub: 'user-id',
+  tokenVersion: 3
+}
+```
+
+During authentication:
+
+```js
+if (payload.tokenVersion !== user.tokenVersion) {
+  throw new Error('Token revoked');
+}
+```
+
+If password changes or account is hacked:
+
+```text
+Increment tokenVersion in database.
+All old tokens become invalid.
+```
+
+4. Use server-side session id.
+
+JWT payload:
+
+```js
+{
+  sub: 'user-id',
+  sid: 'session-id'
+}
+```
+
+Backend stores active sessions in Redis or database.
+
+On every protected request:
+
+```text
+Verify JWT signature.
+Check sid exists in session store.
+If sid does not exist, reject request.
+```
+
+To force logout:
+
+```text
+Delete that session id from Redis/database.
+```
+
+5. Rotate JWT secret only for extreme cases.
+
+Changing `JWT_SECRET` invalidates all old tokens.
+
+This works, but it logs out every user, so it is usually used only during serious secret leakage.
+
+Best production approach:
+
+```text
+Short-lived access token
++ refresh token rotation
++ Redis/session store for refresh tokens
++ revoke session on logout/password change/suspicious activity
+```
+
+Common mistake:
+
+```text
+Only clearing the token from the browser is not enough if the token was already stolen.
+```
+
+### 22. How do refreshToken and accessToken work in JWT?
+
+Yes, this is also a very valid and common interview question.
+
+Short interview answer:
+
+```text
+An access token is short-lived and used to access protected APIs. A refresh token is longer-lived and used only to get a new access token when the old access token expires.
+```
+
+Why use two tokens?
+
+```text
+Access token limits damage if stolen.
+Refresh token keeps the user logged in without asking for login again.
+```
+
+Typical token lifetimes:
+
+```text
+Access token: 5 minutes or 15 minutes
+Refresh token: 7 days, 15 days, or 30 days
+```
+
+Login flow:
+
+```text
+1. User logs in with email/password.
+2. Backend validates credentials.
+3. Backend creates accessToken and refreshToken.
+4. Frontend uses accessToken for protected APIs.
+5. Refresh token is stored securely, usually in an HTTP-only secure cookie.
+```
+
+API call flow:
+
+```text
+Frontend calls protected API with accessToken.
+Backend verifies accessToken.
+If valid, backend returns protected data.
+If expired, frontend calls refresh endpoint.
+```
+
+Refresh flow:
+
+```text
+1. Access token expires.
+2. Frontend calls /refresh-token.
+3. Browser sends refreshToken cookie automatically.
+4. Backend verifies refreshToken.
+5. Backend checks refresh token/session in Redis or database.
+6. Backend issues a new accessToken.
+7. In secure systems, backend also rotates refreshToken.
+```
+
+Simple example:
+
+```js
+const accessToken = jwt.sign(
+  { sub: user.id, purpose: 'access' },
+  JWT_SECRET,
+  { expiresIn: '15m' }
+);
+
+const refreshToken = jwt.sign(
+  { sub: user.id, purpose: 'refresh', jti: refreshTokenId },
+  REFRESH_TOKEN_SECRET,
+  { expiresIn: '7d' }
+);
+```
+
+Access token usage:
+
+```text
+Authorization: Bearer <accessToken>
+```
+
+Refresh token storage:
+
+```text
+HTTP-only secure cookie
+```
+
+Refresh token rotation:
+
+```text
+Every time refreshToken is used, backend creates a new refreshToken and invalidates the old one.
+```
+
+Why rotation is important:
+
+```text
+If an old refresh token is reused, it may mean the token was stolen. Backend can revoke the whole session and force login again.
+```
+
+Logout flow:
+
+```text
+1. Delete refresh token/session from Redis or database.
+2. Clear refresh token cookie.
+3. Access token naturally expires soon.
+```
+
+If access token is stolen:
+
+```text
+Attacker can use it only until it expires.
+```
+
+If refresh token is stolen:
+
+```text
+This is more serious because refresh token can create new access tokens. Use HTTP-only secure cookie, rotation, reuse detection, and server-side revocation.
+```
+
+Best practice:
+
+```text
+Keep access tokens short-lived.
+Store refresh tokens securely.
+Rotate refresh tokens.
+Track refresh tokens in Redis/database.
+Revoke refresh tokens on logout/password change/suspicious activity.
+```
+
 ## Interview Answer for This App
 
 You can explain this app like this:

@@ -818,6 +818,23 @@ The hardest part of caching is invalidation. Cached data can become stale if the
 
 Caching stores frequently used data in a faster location, like Redis or memory, so the system can respond faster and reduce database load.
 
+
+## 12. What is Load Balancer?
+A load balancer acts like a traffic cop at a busy intersection. It sits in front of your servers and routes incoming user requests across a group of backend machines. This ensures no single server gets overwhelmed, keeping applications fast and preventing crashes during traffic spikes.
+
+1. How It Works (The Traffic Director)
+Instead of all users connecting to a single server, they connect to the load balancer's IP address. The load balancer evaluates the incoming request and forwards it to the best available server in a server pool.
+
+2. The Core Benefits
+- Prevents Overload: It evenly distributes the workload so servers can operate smoothly without hitting a breaking point.
+- High Availability (Failover): The load balancer constantly checks if servers are healthy. If a server crashes, it instantly stops sending traffic to that broken machine and reroutes users to the healthy ones.
+- Scalability: It allows you to easily add or remove servers without interrupting the user experience.
+
+3. Common Routing Methods
+How does it decide where to send the traffic? It uses specific rules:
+- Round Robin: It sends requests to each server in turn (Server 1, Server 2, Server 3, Server 1...).
+- Least Connections: It checks which server currently has the fewest active connections and routes the new user there.
+
 ## 12. Horizontal scaling vs vertical scaling
 
 ### What it is

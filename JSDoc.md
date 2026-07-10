@@ -931,6 +931,9 @@ Use cases:
 - running setup code immediately
 - older module-like patterns before ES modules
 
+### 34. What are Prototypal Inheritence in JS?
+### 34. How to achieve interitence using functions in js?
+### 34. Why we have Class if we can do interitence using functions in JS?
 ### 34. What is the difference between __proto__ and prototype?
 
 `prototype` is a property on constructor functions and classes. It defines methods/properties that instances can inherit.

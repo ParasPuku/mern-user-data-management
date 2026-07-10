@@ -1,92 +1,94 @@
 # MongoDB Interview Questions and Answers
 
-This document covers commonly asked MongoDB interview questions with concise answers, examples, and practical notes from this MERN app.
+This document is ordered by interview priority.
 
-## How to Use This Document
+Use it like this:
 
-Use this file for:
+- First revise Priority 1 to Priority 5 for most MERN interviews.
+- Then revise Aggregation, Scaling, Transactions, and Security.
+- Use Real Time Queries for practical MongoDB query rounds.
 
-- MongoDB interview revision
-- Mongoose interview preparation
-- understanding schemas, models, indexes, and relationships
-- explaining this app's database design
-- preparing positive and negative interview answers
-- revising performance, aggregation, transactions, and security
+Low-value repeated points were merged into bigger answers. For example, `trim`, `lowercase`, `enum`, `select: false`, and `timestamps` are covered inside schema options instead of separate tiny questions.
 
-## MongoDB Basics
+## Priority 1: MongoDB Core Concepts
 
 ### 1. What is MongoDB?
 
 MongoDB is a NoSQL document database.
 
-It stores data in flexible JSON-like documents called BSON documents.
+It stores data in collections as BSON documents.
 
 Interview answer:
 
 ```text
-MongoDB is a NoSQL document-oriented database that stores data as BSON documents inside collections. It is flexible, scalable, and commonly used in modern web applications.
+MongoDB is a NoSQL document-oriented database. It stores data as flexible BSON documents inside collections, which makes it useful for modern applications where data can be nested, flexible, and scalable.
 ```
 
-### 2. What is BSON?
+Example document:
 
-BSON means Binary JSON.
+```json
+{
+  "_id": "ObjectId",
+  "name": "Paras",
+  "email": "paras@example.com",
+  "status": "active"
+}
+```
 
-MongoDB stores documents internally as BSON, not plain JSON.
-
-BSON supports additional data types like:
-
-- ObjectId
-- Date
-- Decimal128
-- Binary data
-
-### 3. MongoDB vs SQL database?
+### 2. MongoDB vs SQL database?
 
 SQL databases:
 
-- table-based
-- fixed schema
-- rows and columns
-- strong relational joins
-- SQL query language
+- store data in tables
+- use rows and columns
+- usually have fixed schema
+- use SQL language
+- are strong for relational data
 
 MongoDB:
 
-- collection-based
-- flexible schema
-- documents
-- nested data support
-- JavaScript-like query syntax
+- stores data in collections
+- uses documents
+- supports nested data
+- has flexible schema
+- uses JavaScript-like query syntax
+- supports horizontal scaling with sharding
 
 Interview answer:
 
 ```text
-SQL databases store data in tables with fixed schemas, while MongoDB stores data in flexible documents inside collections. MongoDB is useful when data is document-shaped, changes frequently, or needs horizontal scaling.
+SQL stores data in tables with rows and columns, while MongoDB stores data as flexible documents inside collections. MongoDB is useful when data is document-shaped, changes frequently, or needs horizontal scaling.
 ```
 
-### 4. What is a database in MongoDB?
+### 3. What are database, collection, and document in MongoDB?
 
-A database is a container for collections.
+Database:
+
+```text
+A container for collections.
+```
+
+Collection:
+
+```text
+A group of documents, similar to a table in SQL.
+```
+
+Document:
+
+```text
+One record in MongoDB, stored as BSON.
+```
 
 Example:
 
 ```text
-mern_user_data_management
+Database: mern_user_data_management
+Collection: users
+Document: one user record
 ```
 
-This app uses MongoDB database configured by:
-
-```env
-MONGO_URI=mongodb://127.0.0.1:27017/mern_user_data_management
-```
-
-### 5. What is a collection?
-
-A collection is a group of documents.
-
-Similar to a table in SQL, but documents in a collection can have flexible structure.
-
-Examples in this app:
+This app uses collections like:
 
 ```text
 accounts
@@ -99,42 +101,24 @@ teammemberships
 otptokens
 ```
 
-### 6. What is a document?
+### 4. What are BSON, _id, and ObjectId?
 
-A document is one record in MongoDB.
+BSON means Binary JSON.
 
-Example:
+MongoDB stores documents internally as BSON, not plain JSON.
 
-```json
-{
-  "_id": "ObjectId",
-  "name": "Paras",
-  "email": "paras@example.com",
-  "status": "active"
-}
-```
+BSON supports extra data types like:
 
-### 7. What is _id?
+- ObjectId
+- Date
+- Decimal128
+- Binary data
 
-`_id` is the unique identifier for every MongoDB document.
+`_id` is the unique identifier for every document.
 
 By default, MongoDB creates an ObjectId.
 
-Example:
-
-```json
-{
-  "_id": {
-    "$oid": "6a201abaaa424933fa63ee78"
-  }
-}
-```
-
-### 8. What is ObjectId?
-
-ObjectId is a 12-byte unique identifier used by MongoDB.
-
-It contains:
+ObjectId contains:
 
 - timestamp
 - machine/process information
@@ -146,21 +130,169 @@ Mongoose type:
 mongoose.Schema.Types.ObjectId
 ```
 
-### 9. Is MongoDB schema-less?
+Interview answer:
+
+```text
+BSON is MongoDB's binary document format. Every document has an _id field, and by default MongoDB uses ObjectId as the unique identifier.
+```
+
+### 5. Is MongoDB schema-less?
 
 MongoDB is schema-flexible, not completely schema-less.
 
-MongoDB itself allows flexible documents, but in real apps we often enforce structure using:
+MongoDB allows flexible documents, but real applications usually enforce structure using:
 
-- application validation
 - Mongoose schemas
+- backend validation
 - MongoDB schema validation
 
-In this app, Mongoose schemas define structure.
+Interview answer:
 
-## Mongoose Basics
+```text
+MongoDB is schema-flexible. It does not force every document to have the same shape, but production apps usually enforce structure through Mongoose schemas and backend validation.
+```
 
-### 10. What is Mongoose?
+## Priority 2: CRUD and Querying
+
+### 6. How do you create, read, update, and delete documents?
+
+Create:
+
+```js
+await User.create({
+  name: 'Paras',
+  email: 'paras@example.com'
+});
+```
+
+Read:
+
+```js
+await User.find({ status: 'active' });
+await User.findOne({ email: 'paras@example.com' });
+await User.findById(userId);
+```
+
+Update:
+
+```js
+await User.findByIdAndUpdate(
+  userId,
+  { status: 'inactive' },
+  { new: true }
+);
+```
+
+Delete:
+
+```js
+await User.findByIdAndDelete(userId);
+```
+
+### 7. `create()` vs `save()`?
+
+`create()` creates and saves in one step.
+
+```js
+await User.create(data);
+```
+
+`save()` is used on a model instance.
+
+```js
+const user = new User(data);
+await user.save();
+```
+
+Use `create()` for simple creation.
+
+Use `save()` when you want to build or modify the document before saving.
+
+### 8. `find()` vs `findOne()`?
+
+`find()` returns an array.
+
+```js
+const users = await User.find({ status: 'active' });
+```
+
+`findOne()` returns one document or `null`.
+
+```js
+const user = await User.findOne({ email });
+```
+
+Interview answer:
+
+```text
+find returns multiple matching documents as an array. findOne returns the first matching document or null.
+```
+
+### 9. Common MongoDB query operators?
+
+Common operators:
+
+```text
+$gt  -> greater than
+$gte -> greater than or equal
+$lt  -> less than
+$lte -> less than or equal
+$ne  -> not equal
+$in  -> value exists in array of options
+$or  -> match any condition
+$and -> match all conditions
+$regex -> pattern matching
+```
+
+Examples:
+
+```js
+await User.find({ age: { $gte: 18 } });
+
+await User.find({
+  role: { $in: ['admin', 'manager'] }
+});
+
+await User.find({
+  $or: [{ name: /paras/i }, { email: /paras/i }]
+});
+```
+
+### 10. What are projection, pagination, and sorting?
+
+Projection selects only required fields.
+
+```js
+await User.find({}, 'name email status');
+```
+
+Pagination:
+
+```js
+const page = Number(req.query.page) || 1;
+const limit = Number(req.query.limit) || 10;
+const skip = (page - 1) * limit;
+
+await User.find(filters)
+  .skip(skip)
+  .limit(limit);
+```
+
+Sorting:
+
+```js
+await User.find(filters).sort({ createdAt: -1 });
+```
+
+Interview answer:
+
+```text
+Projection reduces returned fields, pagination limits large result sets, and sorting controls result order.
+```
+
+## Priority 3: Mongoose Essentials
+
+### 11. What is Mongoose?
 
 Mongoose is an ODM for MongoDB.
 
@@ -173,7 +305,7 @@ It provides:
 - validation
 - middleware/hooks
 - query helpers
-- relationships using ObjectId refs
+- relationships using refs
 - indexes
 
 Interview answer:
@@ -182,32 +314,31 @@ Interview answer:
 Mongoose is an ODM library for MongoDB that lets us define schemas, models, validations, hooks, and query methods in Node.js.
 ```
 
-### 11. What is a Mongoose schema?
+### 12. What are schema and model in Mongoose?
 
-A schema defines the shape and rules of documents.
-
-Example from this app:
+Schema defines the shape and rules of documents.
 
 ```js
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'Name is required'],
+    required: true,
     trim: true
   },
   email: {
     type: String,
     required: true,
     lowercase: true
+  },
+  status: {
+    type: String,
+    enum: ['active', 'inactive'],
+    default: 'active'
   }
 });
 ```
 
-### 12. What is a Mongoose model?
-
-A model is created from a schema and represents a MongoDB collection.
-
-Example:
+Model is created from schema and represents a collection.
 
 ```js
 export const User = mongoose.model('User', userSchema);
@@ -218,412 +349,102 @@ Use:
 ```js
 await User.find();
 await User.create(data);
-await User.findById(id);
 ```
 
-### 13. What is schema validation?
+### 13. Important Mongoose schema options?
 
-Schema validation ensures data follows rules before saving.
+Common options:
 
-Examples:
-
-```js
-required: true
-minlength: [2, 'Name must be at least 2 characters']
-maxlength: [80, 'Name must be 80 characters or less']
-enum: ['admin', 'manager', 'member']
-```
-
-### 14. What is enum in Mongoose?
-
-`enum` restricts field value to specific allowed values.
+- `required`: field must exist
+- `enum`: field must match allowed values
+- `trim`: removes leading/trailing spaces
+- `lowercase`: converts string to lowercase
+- `select: false`: hides sensitive field by default
+- `timestamps: true`: adds `createdAt` and `updatedAt`
 
 Example:
 
 ```js
-role: {
-  type: String,
-  enum: ['admin', 'manager', 'member'],
-  default: 'member'
-}
-```
-
-If value is not one of these, validation fails.
-
-### 15. What is trim?
-
-`trim: true` removes leading and trailing spaces from strings.
-
-Example:
-
-```text
-" paras@example.com " -> "paras@example.com"
-```
-
-### 16. What is lowercase?
-
-`lowercase: true` converts string to lowercase before saving.
-
-Example:
-
-```text
-"PARAS@GMAIL.COM" -> "paras@gmail.com"
-```
-
-### 17. What is select: false?
-
-`select: false` hides a field from query results by default.
-
-In this app:
-
-```js
-passwordHash: {
-  type: String,
-  required: true,
-  select: false
-}
-```
-
-To include it:
-
-```js
-Account.findOne({ email }).select('+passwordHash');
-```
-
-Use case:
-
-```text
-Protect sensitive fields like passwordHash.
-```
-
-### 18. What are timestamps?
-
-Mongoose can automatically add:
-
-```text
-createdAt
-updatedAt
-```
-
-Example:
-
-```js
-new mongoose.Schema(fields, {
-  timestamps: true
-});
-```
-
-## MongoDB CRUD
-
-### 19. How to create a document?
-
-```js
-const user = await User.create({
-  name: 'Paras',
-  email: 'paras@example.com'
-});
-```
-
-Or:
-
-```js
-const user = new User(data);
-await user.save();
-```
-
-### 20. create vs save?
-
-`create` creates and saves in one step.
-
-```js
-await User.create(data);
-```
-
-`save` is used on a model instance.
-
-```js
-const user = new User(data);
-await user.save();
-```
-
-### 21. How to find documents?
-
-```js
-const users = await User.find({ status: 'active' });
-```
-
-Find one:
-
-```js
-const user = await User.findOne({ email });
-```
-
-Find by id:
-
-```js
-const user = await User.findById(id);
-```
-
-### 22. How to update document?
-
-```js
-const user = await User.findByIdAndUpdate(
-  id,
-  { name: 'Updated Name' },
-  { new: true, runValidators: true }
+const accountSchema = new mongoose.Schema(
+  {
+    email: {
+      type: String,
+      required: true,
+      lowercase: true,
+      trim: true
+    },
+    passwordHash: {
+      type: String,
+      required: true,
+      select: false
+    },
+    role: {
+      type: String,
+      enum: ['admin', 'member'],
+      default: 'member'
+    }
+  },
+  {
+    timestamps: true
+  }
 );
 ```
 
-`new: true` returns updated document.
-
-`runValidators: true` runs schema validators.
-
-### 23. How to delete document?
-
-```js
-await User.findByIdAndDelete(id);
-```
-
-Or:
-
-```js
-await User.deleteOne({ _id: id });
-```
-
-### 24. findOne vs find?
-
-`findOne` returns one document or null.
-
-`find` returns an array.
-
-Example:
-
-```js
-await User.findOne({ email });
-await User.find({ status: 'active' });
-```
-
-### 25. deleteOne vs deleteMany?
-
-`deleteOne` deletes first matching document.
-
-`deleteMany` deletes all matching documents.
-
-Example:
-
-```js
-await OtpToken.deleteMany({
-  identifier,
-  purpose,
-  consumedAt: null
-});
-```
-
-## Query Operators
-
-### 26. Common MongoDB query operators?
-
-Common operators:
-
-- `$gt`
-- `$gte`
-- `$lt`
-- `$lte`
-- `$ne`
-- `$in`
-- `$nin`
-- `$or`
-- `$and`
-- `$regex`
-- `$exists`
-
-### 27. Example of comparison query?
-
-```js
-const tokens = await OtpToken.find({
-  expiresAt: { $gt: new Date() }
-});
-```
-
-This finds non-expired OTP tokens.
-
-### 28. Example of $or?
-
-```js
-const account = await Account.findOne({
-  $or: [{ email }, { mobile }]
-});
-```
-
-### 29. Example of $in?
-
-```js
-await User.find({
-  role: { $in: ['admin', 'manager'] }
-});
-```
-
-### 30. Example of regex search?
-
-```js
-await User.find({
-  name: { $regex: search, $options: 'i' }
-});
-```
-
-`i` means case-insensitive.
-
-## Indexes
-
-### 31. What is index in MongoDB?
-
-Index is a data structure that improves query performance.
-
-Without index:
+Important:
 
 ```text
-MongoDB may scan every document.
+Use select: false for sensitive fields like passwordHash.
 ```
 
-With index:
+### 14. What are Mongoose hooks, instance methods, and static methods?
+
+Hooks run before or after operations.
+
+```js
+userSchema.pre('save', function () {
+  this.email = this.email.toLowerCase();
+});
+```
+
+Instance methods run on one document.
+
+```js
+userSchema.methods.isActive = function () {
+  return this.status === 'active';
+};
+```
+
+Static methods run on the model.
+
+```js
+userSchema.statics.findActive = function () {
+  return this.find({ status: 'active' });
+};
+```
+
+Interview answer:
 
 ```text
-MongoDB can quickly locate matching documents.
+Hooks add lifecycle logic, instance methods work on a single document, and static methods work on the model.
 ```
 
-### 32. Why indexes are important?
+## Priority 4: Relationships and Joins
 
-Indexes improve:
-
-- search speed
-- filtering
-- sorting
-- unique constraints
-
-Tradeoff:
-
-```text
-Indexes improve reads but add overhead to writes and consume storage.
-```
-
-### 33. What is single-field index?
-
-Index on one field.
-
-Example:
-
-```js
-owner: {
-  type: mongoose.Schema.Types.ObjectId,
-  index: true
-}
-```
-
-### 34. What is compound index?
-
-Index on multiple fields.
-
-Example from this app:
-
-```js
-userSchema.index({ owner: 1, email: 1 }, { unique: true });
-```
-
-This helps queries by owner and email.
-
-### 35. What is unique index?
-
-Unique index prevents duplicate values.
-
-Example:
-
-```js
-userProfileSchema.index({ owner: 1, user: 1 }, { unique: true });
-```
-
-This ensures one profile per user per owner.
-
-### 36. What is text index?
-
-Text index supports text search.
-
-Example from this app:
-
-```js
-userSchema.index({ name: 'text', email: 'text' });
-skillSchema.index({ name: 'text', category: 'text' });
-```
-
-### 37. What is TTL index?
-
-TTL index automatically deletes documents after a time.
-
-Example from OTP model:
-
-```js
-otpTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
-```
-
-MongoDB deletes document when `expiresAt` time passes.
-
-### 38. What is syncIndexes?
-
-`syncIndexes()` syncs MongoDB indexes with Mongoose schema indexes.
-
-In this app:
-
-```js
-await Promise.all([
-  Account.syncIndexes(),
-  OtpToken.syncIndexes(),
-  Team.syncIndexes(),
-  TeamMembership.syncIndexes(),
-  User.syncIndexes(),
-  UserProfile.syncIndexes()
-]);
-```
-
-Use carefully in production because index changes can be expensive.
-
-### 39. What is explain()?
-
-`explain()` shows how MongoDB executes query.
-
-Example:
-
-```js
-await User.find({ owner }).explain('executionStats');
-```
-
-Useful to check if indexes are being used.
-
-### executionStats
-
-Note - In MongoDB, executionStats is a diagnostic tool that gives you a detailed look into how efficiently a query ran under the hood. When troubleshooting a slow database query, appending .explain("executionStats") to your query string forces MongoDB to execute the command and return a detailed report of execution speeds, index efficiency, and row-scanning metrics.
-
-// How to run it in your MongoDB Shell
-```js
-db.users.find({ username: "paras" }).explain("executionStats");
-```
-
-The 4 Most Critical Metrics to ReadThe report returns a large JSON object. When analyzing it, you only need to look at these four properties inside the executionStats block:1. executionTimeMillisWhat it means: The exact total time it took MongoDB to find and return your data, measured in milliseconds.Goal: Keep this as close to 0 as possible.2. nReturnedWhat it means: The number of documents that matched your search query and were sent back to your application.Example: If 5 users are named "Paras", this value will be 5.3. totalDocsExaminedWhat it means: The number of physical records MongoDB had to open and read from disk/memory to find your results.4. totalKeysExaminedWhat it means: The number of entries checked inside your B-tree index structures. If this value is 0, it means your query ignored your indexes entirely.
-
-## Relationships
-
-### 40. Does MongoDB support relationships?
+### 15. Does MongoDB support relationships?
 
 Yes, but differently from SQL.
 
-MongoDB supports:
+MongoDB supports relationships using:
 
 - embedded documents
 - referenced documents
-- manual joins using queries
+- manual queries
+- Mongoose `populate()`
 - aggregation `$lookup`
 
-### 41. Embedding vs referencing?
+### 16. Embedding vs referencing?
 
-Embedding:
+Embedding stores related data inside the same document.
 
 ```json
 {
@@ -634,7 +455,7 @@ Embedding:
 }
 ```
 
-Referencing:
+Referencing stores ObjectId to another document.
 
 ```json
 {
@@ -642,49 +463,24 @@ Referencing:
 }
 ```
 
-Use embedding when data is small and usually read together.
+Use embedding when:
 
-Use referencing when data is large, shared, or independently updated.
+- data is small
+- data is usually read together
+- data does not change independently often
 
-### 42. One-to-one relationship example?
+Use referencing when:
 
-In this app:
+- data is large
+- data is shared
+- data changes independently
+- relationship is many-to-many
 
-```text
-User -> UserProfile
-```
+### 17. What is a join collection?
 
-Mongoose schema:
+A join collection connects two collections.
 
-```js
-userProfileSchema.index({ owner: 1, user: 1 }, { unique: true });
-```
-
-This ensures one profile for one user.
-
-### 43. One-to-many relationship example?
-
-In this app:
-
-```text
-Account -> Users
-```
-
-Each user has:
-
-```js
-owner: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: 'Account',
-  required: true
-}
-```
-
-One account can own many users.
-
-### 44. Many-to-many relationship example?
-
-In this app:
+Example:
 
 ```text
 User <-> Skill
@@ -696,44 +492,18 @@ Join collection:
 UserSkill
 ```
 
-Schema fields:
-
-```js
-user: ObjectId ref User
-skill: ObjectId ref Skill
-owner: ObjectId ref Account
-```
-
-Unique index:
-
-```js
-userSkillSchema.index({ owner: 1, user: 1, skill: 1 }, { unique: true });
-```
-
-This prevents duplicate skill assignment to same user.
-
-### 45. What is a join collection?
-
-A join collection connects two collections.
-
-Example:
+It can store extra fields:
 
 ```text
-users
-skills
-userskills
-```
-
-`userskills` stores relationship plus extra fields:
-
-```js
 level
 yearsOfExperience
 ```
 
-### 46. What is populate in Mongoose?
+This is useful for many-to-many relationships.
 
-`populate` replaces ObjectId reference with actual document data.
+### 18. What is populate in Mongoose?
+
+`populate()` replaces referenced ObjectId fields with actual document data.
 
 Example:
 
@@ -741,420 +511,329 @@ Example:
 await UserSkill.find({ user: userId }).populate('skill');
 ```
 
-### 47. Populate vs aggregation $lookup?
+Interview answer:
 
-`populate` is Mongoose-level convenience.
+```text
+populate is a Mongoose feature that performs a reference lookup and replaces ObjectId references with actual documents.
+```
 
-`$lookup` is MongoDB aggregation stage.
+### 19. Populate vs aggregation `$lookup`?
 
-Use `populate` for simple refs.
+`populate`:
 
-Use `$lookup` for complex aggregation/reporting.
+- Mongoose-level feature
+- good for simple refs
+- easy to use in app code
 
-## Aggregation
+`$lookup`:
 
-### 48. What is aggregation in MongoDB?
+- MongoDB aggregation stage
+- good for reporting
+- useful for complex joins and filtering
 
-Aggregation processes documents through stages to calculate transformed results.
+Interview answer:
 
-Example stages:
+```text
+Use populate for simple Mongoose references. Use $lookup when you need aggregation, reporting, filtering, grouping, or complex joins.
+```
 
-- `$match`
-- `$group`
-- `$sort`
-- `$project`
-- `$lookup`
-- `$unwind`
-- `$limit`
-- `$skip`
+### 20. How do we join MongoDB collections?
 
-### 49. Example aggregation?
+Common ways:
 
-Count users by status:
+- `$lookup` in aggregation
+- Mongoose `populate()`
+- manual queries in application code
+- embedding documents when data is usually read together
+
+Example collections:
 
 ```js
-await User.aggregate([
-  { $match: { owner: accountId } },
-  { $group: { _id: '$status', count: { $sum: 1 } } }
+// users
+{
+  _id: 1,
+  name: 'Paras'
+}
+
+// orders
+{
+  _id: 101,
+  userId: 1,
+  total: 500
+}
+```
+
+Join using `$lookup`:
+
+```js
+db.users.aggregate([
+  {
+    $lookup: {
+      from: 'orders',
+      localField: '_id',
+      foreignField: 'userId',
+      as: 'orders'
+    }
+  }
 ]);
 ```
 
-### 50. What is $match?
-
-Filters documents.
-
-```js
-{ $match: { status: 'active' } }
-```
-
-### 51. What is $group?
-
-Groups documents and calculates values.
-
-```js
-{
-  $group: {
-    _id: '$role',
-    total: { $sum: 1 }
-  }
-}
-```
-
-### 52. What is $lookup?
-
-`$lookup` performs join-like operation.
-
-Example:
-
-```js
-{
-  $lookup: {
-    from: 'skills',
-    localField: 'skill',
-    foreignField: '_id',
-    as: 'skillDetails'
-  }
-}
-```
-
-### 53. What is $project?
-
-`$project` controls output fields.
-
-Example:
-
-```js
-{
-  $project: {
-    name: 1,
-    email: 1,
-    _id: 0
-  }
-}
-```
-
-## Pagination and Sorting
-
-### 54. How to implement pagination?
-
-Basic pagination:
-
-```js
-const page = Number(req.query.page) || 1;
-const limit = Number(req.query.limit) || 10;
-const skip = (page - 1) * limit;
-
-const users = await User.find(filters)
-  .skip(skip)
-  .limit(limit);
-```
-
-### 55. Why pagination is important?
-
-Without pagination:
-
-- API can return too much data
-- server memory increases
-- frontend slows down
-- database query becomes expensive
-
-### 56. skip/limit disadvantage?
-
-For very large offsets, `skip` can become slow because MongoDB still scans skipped documents.
-
-Alternative:
+Important:
 
 ```text
-cursor-based pagination
+$lookup returns matched documents as an array field.
 ```
 
-Example:
+### 21. Joining two collections with lookup and without lookup?
+
+With `$lookup`:
 
 ```js
-User.find({ _id: { $gt: lastSeenId } }).limit(20);
-```
-
-### 57. How to sort?
-
-```js
-await User.find(filters).sort({ createdAt: -1 });
-```
-
-`-1` descending.
-
-`1` ascending.
-
-## Transactions
-
-### 58. What is transaction?
-
-Transaction ensures multiple operations succeed or fail together.
-
-Example:
-
-```text
-Create order
-Reduce inventory
-Create payment record
-```
-
-If one fails, all rollback.
-
-### 59. Does MongoDB support transactions?
-
-Yes.
-
-MongoDB supports multi-document transactions.
-
-With Mongoose:
-
-```js
-const session = await mongoose.startSession();
-
-await session.withTransaction(async () => {
-  await User.create([data], { session });
-  await UserProfile.create([profile], { session });
-});
-
-await session.endSession();
-```
-
-### 60. When to use transactions?
-
-Use transactions when multiple writes must be atomic.
-
-Examples:
-
-- payment + order
-- transfer money
-- create user + profile + audit log
-
-Avoid transactions for simple single-document updates.
-
-## Mongoose Middleware and Methods
-
-### 61. What are Mongoose hooks?
-
-Hooks run before or after operations.
-
-Example from this app:
-
-```js
-accountSchema.pre('validate', function normalizeAccount(next) {
-  if (this.email) {
-    this.email = normalizeEmail(this.email);
+db.users.aggregate([
+  {
+    $lookup: {
+      from: 'orders',
+      localField: '_id',
+      foreignField: 'userId',
+      as: 'orders'
+    }
   }
-
-  next();
-});
+]);
 ```
 
-This normalizes account before validation.
-
-### 62. What are instance methods?
-
-Methods available on document instances.
-
-Example:
+Without `$lookup`, use manual queries:
 
 ```js
-accountSchema.methods.setPassword = async function setPassword(password) {
-  this.passwordHash = await bcrypt.hash(password, 12);
+const user = await db.collection('users').findOne({ _id: 1 });
+
+const orders = await db.collection('orders').find({
+  userId: user._id
+}).toArray();
+
+const result = {
+  ...user,
+  orders
 };
 ```
 
-Use:
+In Mongoose, use `populate()` when schema has refs.
 
 ```js
-await account.setPassword(password);
+const orders = await Order.find().populate('userId');
 ```
 
-### 63. What are static methods?
+### 22. How can we join more than two collections?
 
-Methods available on model itself.
+Use multiple `$lookup` stages.
 
 Example:
 
 ```js
-accountSchema.statics.findByIdentifier = function findByIdentifier(identifier) {
-  return this.findOne({ email: normalizeEmail(identifier) });
-};
+db.users.aggregate([
+  {
+    $lookup: {
+      from: 'orders',
+      localField: '_id',
+      foreignField: 'userId',
+      as: 'orders'
+    }
+  },
+  {
+    $lookup: {
+      from: 'payments',
+      localField: '_id',
+      foreignField: 'userId',
+      as: 'payments'
+    }
+  }
+]);
 ```
 
-Use:
+Use `$unwind` when the next join depends on each array item.
 
 ```js
-await Account.findByIdentifier(identifier);
+db.users.aggregate([
+  { $lookup: { from: 'orders', localField: '_id', foreignField: 'userId', as: 'orders' } },
+  { $unwind: '$orders' },
+  { $lookup: { from: 'payments', localField: 'orders._id', foreignField: 'orderId', as: 'paymentDetails' } }
+]);
 ```
 
-### 64. What is toJSON transform?
+### 23. MongoDB join two collections with where clause?
 
-`toJSON.transform` changes document output when converted to JSON.
+In MongoDB, SQL `WHERE` is usually `$match`.
 
-Example from this app:
+Filter before join:
 
 ```js
-transform: (_doc, ret) => {
-  ret.id = ret._id.toString();
-  delete ret._id;
-  delete ret.__v;
-  delete ret.passwordHash;
-  return ret;
-}
+db.users.aggregate([
+  {
+    $match: {
+      status: 'active'
+    }
+  },
+  {
+    $lookup: {
+      from: 'orders',
+      localField: '_id',
+      foreignField: 'userId',
+      as: 'orders'
+    }
+  }
+]);
 ```
 
-Use cases:
-
-- hide sensitive fields
-- convert `_id` to `id`
-- remove internal fields
-
-## Data Modeling
-
-### 65. How to design MongoDB schema?
-
-Think about:
-
-- how data is read
-- how data is updated
-- document size
-- relationships
-- indexes
-- data duplication
-- query patterns
-
-MongoDB modeling starts from query patterns, not only entity diagrams.
-
-### 66. When to embed documents?
-
-Embed when:
-
-- child data belongs only to parent
-- data is read together
-- child data is small
-- no need to query child independently
-
-Example:
+Filter inside joined collection:
 
 ```js
-address: {
-  city: String,
-  state: String
-}
+db.users.aggregate([
+  {
+    $lookup: {
+      from: 'orders',
+      let: { userId: '$_id' },
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $eq: ['$userId', '$$userId']
+            }
+          }
+        },
+        {
+          $match: {
+            status: 'paid'
+          }
+        }
+      ],
+      as: 'paidOrders'
+    }
+  }
+]);
 ```
 
-### 67. When to reference documents?
-
-Reference when:
-
-- data is large
-- data is shared
-- data changes independently
-- relationship is many-to-many
-- document can grow unbounded
-
-In this app, `UserSkill` references `User` and `Skill`.
-
-### 68. What is document size limit?
-
-MongoDB document size limit is 16 MB.
-
-This is one reason not to embed unlimited arrays.
-
-### 69. What is denormalization?
-
-Denormalization means duplicating some data to improve read performance.
-
-Example:
-
-```json
-{
-  "userId": "...",
-  "userName": "Paras"
-}
-```
-
-Tradeoff:
+Strong answer:
 
 ```text
-Faster reads but updates must keep duplicated data consistent.
+Use $match before $lookup when filtering the main collection. Use $lookup with pipeline when filtering the joined collection.
 ```
 
-## Multi-Tenancy in This App
+## Priority 5: Indexes and Performance
 
-### 70. What is multi-tenancy?
+### 24. What is index in MongoDB?
 
-Multi-tenancy means one application serves multiple customers/accounts while keeping their data isolated.
+An index is a data structure that improves query speed.
 
-In this app, each managed record has:
+Without index:
 
-```js
-owner: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: 'Account',
-  required: true,
-  index: true
-}
+```text
+MongoDB may scan many documents.
 ```
 
-### 71. How data isolation works in this app?
+With index:
 
-Queries filter by logged-in account:
-
-```js
-User.find({ owner: req.account._id });
+```text
+MongoDB can find matching documents faster.
 ```
-
-This ensures one account cannot access another account's users.
-
-### 72. Why compound unique index includes owner?
 
 Example:
+
+```js
+userSchema.index({ email: 1 });
+```
+
+Important tradeoff:
+
+```text
+Indexes improve reads but add storage and write overhead.
+```
+
+### 25. Important index types?
+
+Single-field index:
+
+```js
+userSchema.index({ email: 1 });
+```
+
+Compound index:
+
+```js
+userSchema.index({ owner: 1, email: 1 });
+```
+
+Unique index:
 
 ```js
 userSchema.index({ owner: 1, email: 1 }, { unique: true });
 ```
 
-This means:
+Text index:
 
-```text
-Same email cannot repeat inside one account's workspace.
-Different accounts can still have same managed user email.
+```js
+userSchema.index({ name: 'text', email: 'text' });
 ```
 
-## Performance
+TTL index:
 
-### 73. How to improve MongoDB performance?
+```js
+otpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+```
 
-Ways:
+### 26. Why does compound unique index include owner?
 
-- create proper indexes
-- query only required fields
-- use pagination
-- avoid unbounded arrays
-- use lean reads where possible
-- optimize schema for query patterns
-- avoid regex without indexes
-- monitor slow queries
-- use aggregation carefully
+In this app:
 
-### 74. What is projection?
+```js
+userSchema.index({ owner: 1, email: 1 }, { unique: true });
+```
 
-Projection selects specific fields.
+Meaning:
+
+```text
+Same email cannot repeat inside one account workspace.
+Different accounts can still have the same managed user email.
+```
+
+This supports multi-tenancy.
+
+### 27. What is `explain()`?
+
+`explain()` shows how MongoDB executes a query.
 
 Example:
 
 ```js
-await User.find({}, 'name email status');
+db.users.find({ email: 'paras@example.com' }).explain('executionStats');
 ```
 
-Or:
+Important metrics:
 
-```js
-await User.find({}).select('name email status');
+- `executionTimeMillis`: query time
+- `nReturned`: documents returned
+- `totalDocsExamined`: documents scanned
+- `totalKeysExamined`: index keys scanned
+
+Good query:
+
+```text
+totalDocsExamined should be close to nReturned.
 ```
 
-### 75. What is lean?
+### 28. How to improve MongoDB performance?
+
+Important practices:
+
+- create proper indexes
+- use projection
+- use pagination
+- use `lean()` for read-only Mongoose queries
+- avoid unbounded arrays
+- avoid regex without index
+- design schema based on query patterns
+- use aggregation carefully
+- check slow queries with `explain()`
+
+### 29. What is `lean()` in Mongoose?
 
 `lean()` returns plain JavaScript objects instead of full Mongoose documents.
 
@@ -1167,20 +846,18 @@ const users = await User.find(filters).lean();
 Benefit:
 
 ```text
-Faster reads and less memory.
+Faster reads and less memory usage.
 ```
 
 Tradeoff:
 
 ```text
-No document methods, virtuals, getters, save().
+No document methods, virtuals, getters, or save().
 ```
 
-### 76. Why avoid unbounded arrays?
+### 30. Why avoid unbounded arrays and N+1 queries?
 
-Arrays that grow forever can make documents too large.
-
-Bad:
+Unbounded array problem:
 
 ```json
 {
@@ -1189,79 +866,449 @@ Bad:
 }
 ```
 
+This can make documents too large and slow.
+
 Better:
 
 ```text
-Store logs in separate collection.
+Store logs in a separate collection.
 ```
 
-### 77. What is N+1 query problem?
+N+1 query problem:
 
-N+1 happens when app makes one query, then one additional query for each result.
+```text
+Find 100 users.
+Then query profile for each user separately.
+Total = 101 queries.
+```
+
+Fix:
+
+- use populate carefully
+- use `$lookup`
+- batch queries
+- redesign data model
+
+## Priority 6: Aggregation
+
+### 31. What is aggregation in MongoDB?
+
+Aggregation is a way to process MongoDB documents step by step and return calculated or transformed results.
+
+Beginner definition:
+
+```text
+Aggregation means taking documents from a collection, passing them through multiple stages, and producing a final result.
+```
+
+Pipeline idea:
+
+```text
+documents
+  -> stage 1
+  -> stage 2
+  -> stage 3
+  -> final result
+```
+
+MongoDB syntax:
+
+```js
+db.collection.aggregate([
+  { stage1 },
+  { stage2 },
+  { stage3 }
+]);
+```
+
+Use aggregation for:
+
+- counting records by group
+- calculating sum or average
+- joining collections using `$lookup`
+- flattening arrays using `$unwind`
+- selecting or renaming fields using `$project`
+- building dashboards and reports
+
+### 32. Sample collection for aggregation examples
+
+Assume `orders` collection:
+
+```js
+{
+  _id: 1,
+  customerId: 101,
+  customerName: 'Paras',
+  status: 'paid',
+  amount: 1200,
+  items: [
+    { name: 'Keyboard', price: 800 },
+    { name: 'Mouse', price: 400 }
+  ],
+  createdAt: ISODate('2026-07-10')
+}
+```
+
+### 33. Important aggregation stages?
+
+`$match` filters documents.
+
+```js
+{ $match: { status: 'paid' } }
+```
+
+`$group` groups documents and calculates values.
+
+```js
+{
+  $group: {
+    _id: '$customerId',
+    totalSpent: { $sum: '$amount' }
+  }
+}
+```
+
+`$project` controls output fields.
+
+```js
+{
+  $project: {
+    _id: 0,
+    customerName: 1,
+    orderAmount: '$amount'
+  }
+}
+```
+
+`$sort`, `$skip`, `$limit` are used for sorting and pagination.
+
+```js
+{ $sort: { amount: -1 } },
+{ $skip: 0 },
+{ $limit: 5 }
+```
+
+`$unwind` breaks an array into multiple documents.
+
+```js
+{ $unwind: '$items' }
+```
+
+`$lookup` joins another collection.
+
+```js
+{
+  $lookup: {
+    from: 'customers',
+    localField: 'customerId',
+    foreignField: '_id',
+    as: 'customerDetails'
+  }
+}
+```
+
+### 34. Complete beginner aggregation example
+
+Question:
+
+```text
+Find total amount spent by each customer and sort highest spender first.
+```
+
+Query:
+
+```js
+db.orders.aggregate([
+  {
+    $match: {
+      status: 'paid'
+    }
+  },
+  {
+    $group: {
+      _id: '$customerId',
+      customerName: {
+        $first: '$customerName'
+      },
+      totalSpent: {
+        $sum: '$amount'
+      },
+      totalOrders: {
+        $sum: 1
+      }
+    }
+  },
+  {
+    $sort: {
+      totalSpent: -1
+    }
+  }
+]);
+```
+
+Step-by-step:
+
+```text
+1. $match keeps only paid orders.
+2. $group groups orders by customerId.
+3. $sum adds each customer's order amount.
+4. $sum: 1 counts total orders.
+5. $sort puts highest spender first.
+```
+
+## Priority 7: Scaling
+
+### 35. What is horizontal scaling?
+
+Horizontal scaling means increasing capacity by adding more machines or servers.
+
+Interview answer:
+
+```text
+Horizontal scaling means scaling by adding more servers instead of making one server bigger. In databases, it means distributing data and traffic across multiple machines so the system can handle more storage, reads, and writes.
+```
+
+Horizontal scaling vs vertical scaling:
+
+```text
+Vertical scaling   -> make one server bigger
+Horizontal scaling -> add more servers
+```
+
+### 36. How does MongoDB support horizontal scaling?
+
+MongoDB supports horizontal scaling using sharding.
+
+Interview answer:
+
+```text
+MongoDB implements horizontal scaling through sharding. In a sharded cluster, MongoDB splits data into chunks based on a shard key and distributes those chunks across multiple shards. The application talks to mongos, which routes queries to the correct shard or shards.
+```
+
+Components:
+
+```text
+Shard          -> stores part of the data
+Shard key      -> field used to distribute data
+mongos         -> query router
+Config servers -> cluster metadata
+Balancer       -> moves chunks across shards
+```
+
+### 37. What is MongoDB sharding?
+
+Sharding means splitting a large collection into smaller parts and distributing those parts across multiple servers.
 
 Example:
 
 ```text
-Find 100 users
-Then query profile for each user separately
-Total 101 queries
+users collection has 100 million documents
+  -> shard 1 stores some users
+  -> shard 2 stores some users
+  -> shard 3 stores some users
 ```
 
-Solutions:
+Use sharding when:
 
-- populate carefully
-- aggregation `$lookup`
-- batch queries
-- redesign data model
+- one server is not enough
+- collection is very large
+- write traffic is high
+- vertical scaling is expensive
 
-## Security
+Common mistake:
 
-### 78. How to protect MongoDB data?
+```text
+Sharding is not a replacement for good indexes or good schema design.
+```
 
-Practices:
+### 38. What is shard key?
+
+A shard key is the field MongoDB uses to decide where a document should live.
+
+Example:
+
+```js
+{
+  accountId: 'account-1',
+  email: 'paras@example.com'
+}
+```
+
+If `accountId` is shard key:
+
+```text
+MongoDB distributes documents based on accountId.
+```
+
+Good shard key:
+
+- high cardinality
+- evenly distributed
+- used often in queries
+- avoids hot shards
+
+Bad shard key:
+
+```text
+status: active/inactive
+```
+
+Only a few values means poor distribution.
+
+### 39. Sharding vs replication?
+
+Replication:
+
+```text
+Copies same data to multiple servers for high availability.
+```
+
+Sharding:
+
+```text
+Splits different parts of data across multiple servers for horizontal scaling.
+```
+
+Simple difference:
+
+```text
+Replication = same data copied
+Sharding = data divided
+```
+
+## Priority 8: Transactions and Data Modeling
+
+### 40. What is transaction in MongoDB?
+
+A transaction ensures multiple database operations succeed or fail together.
+
+Example:
+
+```text
+Create order
+Reduce inventory
+Create payment record
+```
+
+If one fails, all should roll back.
+
+MongoDB supports multi-document transactions with replica sets and sharded clusters.
+
+### 41. When should we use transactions?
+
+Use transactions when multiple writes must stay consistent.
+
+Good examples:
+
+- payment flow
+- wallet transfer
+- inventory update
+- order creation with related records
+
+Avoid transactions for simple single-document updates.
+
+### 42. How to design MongoDB schema?
+
+Design schema based on query patterns.
+
+Ask:
+
+- What data is read together?
+- What data changes together?
+- Is the relationship one-to-one, one-to-many, or many-to-many?
+- Can the array grow forever?
+- Do we need indexes?
+
+Rule:
+
+```text
+Embed when data is small and read together. Reference when data is large, shared, or independently updated.
+```
+
+### 43. What is denormalization?
+
+Denormalization means duplicating some data to make reads faster.
+
+Example:
+
+```js
+{
+  userId: ObjectId('...'),
+  userName: 'Paras',
+  skillName: 'React'
+}
+```
+
+Benefit:
+
+```text
+Faster reads and fewer joins.
+```
+
+Tradeoff:
+
+```text
+Duplicated data must be kept consistent.
+```
+
+### 44. What is document size limit?
+
+MongoDB document size limit is 16 MB.
+
+This is one reason to avoid unbounded arrays inside one document.
+
+## Priority 9: Security and Reliability
+
+### 45. How to protect MongoDB data?
+
+Important practices:
 
 - validate input
 - use authentication
 - use least privilege DB user
 - do not expose MongoDB publicly
-- use environment variables for URI
+- store URI in environment variables
 - avoid logging secrets
 - sanitize query input
 - use indexes to avoid expensive scans
+- do not expose sensitive fields
 
-### 79. What is NoSQL injection?
+### 46. What is NoSQL injection?
 
 NoSQL injection happens when user input changes query structure.
 
 Bad:
 
 ```js
-User.findOne(req.body);
+const user = await User.findOne(req.body);
 ```
 
-If body contains:
+If attacker sends:
 
 ```json
 {
-  "email": {
-    "$ne": null
-  }
+  "email": { "$ne": null },
+  "password": { "$ne": null }
 }
 ```
 
-it may bypass logic.
+It may bypass expected checks if code is unsafe.
 
 Better:
 
 ```js
-User.findOne({ email: normalizeEmail(req.body.email) });
+const { email } = req.body;
+
+const user = await User.findOne({
+  email: String(email).toLowerCase()
+});
 ```
 
-### 80. Why not expose passwordHash?
+### 47. Why not expose passwordHash?
 
-Password hash is sensitive.
+Password hash should never be returned in API responses.
 
-This app uses:
+In this app:
 
 ```js
 passwordHash: {
@@ -1270,174 +1317,82 @@ passwordHash: {
 }
 ```
 
-And removes it in `toJSON`.
+Use `select('+passwordHash')` only when verifying login.
 
-### 81. Why use environment variable for Mongo URI?
+### 48. What happens if MongoDB is down?
 
-Mongo URI can contain username/password.
+Possible effects:
 
-Keep it out of source code.
-
-Use:
-
-```env
-MONGO_URI=mongodb://127.0.0.1:27017/mern_user_data_management
-```
-
-## MongoDB With Redis
-
-### 82. Why use Redis if we already have MongoDB?
-
-MongoDB stores permanent data.
-
-Redis stores temporary fast data.
-
-In this app:
-
-```text
-MongoDB -> accounts, users, profiles, teams, skills
-Redis -> OTP temporary data
-```
-
-### 83. Why OTP moved from MongoDB to Redis?
-
-OTP is temporary.
-
-Redis supports TTL naturally and is faster for short-lived operational data.
-
-MongoDB fallback still exists for local resilience.
-
-## Common Negative Interview Questions
-
-### 84. What happens if MongoDB is down?
-
-The app cannot read/write permanent data.
+- API requests fail
+- login/signup may fail
+- reads/writes fail
+- app may return 500 errors
 
 Good handling:
 
-- fail startup if DB is required
-- log clear error
-- return proper error response
-- monitor DB health
+- connect DB before `app.listen`
+- return safe error response
+- log the error
+- use health checks
+- use retry/monitoring in production
 
-### 85. What happens if indexes are missing?
+### 49. What happens if indexes are missing or too many?
 
-Queries may scan many documents.
+Missing indexes:
 
-Problems:
-
-- slow APIs
+- slow queries
+- collection scans
 - high CPU
-- high disk I/O
-- timeouts
-
-### 86. Can too many indexes be bad?
-
-Yes.
+- bad API response time
 
 Too many indexes:
 
-- slow down writes
-- consume storage
-- increase memory usage
-- make index maintenance expensive
+- slower writes
+- more storage
+- more index maintenance
 
-### 87. What happens if unique index is missing?
-
-Duplicate data can enter database.
-
-Example:
+Interview answer:
 
 ```text
-two profiles for same user
-same skill assigned twice to same user
+Indexes improve read performance but add write and storage overhead, so we should index based on real query patterns.
 ```
 
-Unique indexes protect data integrity.
+### 50. Can MongoDB replace Redis?
 
-### 88. What happens if we store huge arrays in one document?
+Sometimes, but not always.
 
-Problems:
+MongoDB is for durable persistent data.
 
-- document can hit 16 MB limit
-- updates become slower
-- document becomes hard to manage
-- concurrent writes may conflict
+Redis is for fast in-memory use cases like:
 
-### 89. What happens if we use regex search without index?
-
-MongoDB may scan collection.
-
-For large collections this is slow.
-
-Use:
-
-- text index
-- Atlas Search
-- proper search service
-
-### 90. What happens if we trust frontend owner/account id?
-
-Security issue.
-
-Bad:
-
-```js
-User.find({ owner: req.body.owner });
-```
-
-Good:
-
-```js
-User.find({ owner: req.account._id });
-```
-
-Backend must derive owner from authenticated account.
-
-### 91. What happens if schema validation is only frontend?
-
-Attackers can bypass frontend and call API directly.
-
-Backend and database validation are required.
-
-### 92. Can MongoDB replace Redis?
-
-For some temporary data, yes MongoDB can work.
-
-But Redis is better for:
-
-- very fast temporary reads/writes
-- TTL-heavy data
-- rate limiting
-- sessions
+- OTP
 - cache
+- sessions
+- rate limiting
+- temporary tokens
 
-MongoDB is better for:
+In this app, OTP moved from MongoDB to Redis because Redis expiry and fast temporary storage fit OTP better.
 
-- permanent data
-- complex queries
-- durable records
+## Priority 10: App-Specific MongoDB Questions
 
-## App-Specific MongoDB Questions
+### 51. Explain MongoDB design of this app.
 
-### 93. Explain MongoDB design of this app.
-
-This app uses MongoDB with Mongoose models:
+This app uses MongoDB with Mongoose models for:
 
 ```text
 Account
 User
 UserProfile
-Team
-TeamMembership
 Skill
 UserSkill
+Team
+TeamMembership
 OtpToken
 ```
 
 Each authenticated account owns its managed data using `owner`.
 
-### 94. How Account and User are related?
+### 52. How Account and User are related?
 
 One account can own many users.
 
@@ -1447,7 +1402,7 @@ Account -> Users
 
 `User.owner` stores Account ObjectId.
 
-### 95. How User and UserProfile are related?
+### 53. How User and UserProfile are related?
 
 One user has one profile.
 
@@ -1461,7 +1416,7 @@ Unique index:
 userProfileSchema.index({ owner: 1, user: 1 }, { unique: true });
 ```
 
-### 96. How User and Skill are related?
+### 54. How User and Skill are related?
 
 Many-to-many through `UserSkill`.
 
@@ -1469,29 +1424,14 @@ Many-to-many through `UserSkill`.
 User -> UserSkill -> Skill
 ```
 
-`UserSkill` also stores:
+`UserSkill` stores:
 
 ```text
 level
 yearsOfExperience
 ```
 
-### 97. How OTP was stored before Redis?
-
-OTP was stored in MongoDB `OtpToken` collection with:
-
-```text
-identifier
-purpose
-codeHash
-attempts
-expiresAt
-consumedAt
-```
-
-TTL index removed expired OTP documents.
-
-### 98. How duplicate managed user email is prevented?
+### 55. How duplicate managed user email is prevented?
 
 Using compound unique index:
 
@@ -1499,91 +1439,71 @@ Using compound unique index:
 userSchema.index({ owner: 1, email: 1 }, { unique: true });
 ```
 
-### 99. How passwordHash is protected?
+This means:
 
-`Account.passwordHash` has:
-
-```js
-select: false
+```text
+Same email cannot repeat inside one account workspace.
+Different accounts can still have same managed user email.
 ```
 
-And `toJSON` removes it before response.
+### 56. How indexes are synchronized in this app?
 
-### 100. How indexes are synchronized in this app?
+This app calls `syncIndexes()` for models.
 
-In DB connection:
+Example:
 
 ```js
 await Promise.all([
   Account.syncIndexes(),
-  OtpToken.syncIndexes(),
-  Team.syncIndexes(),
-  TeamMembership.syncIndexes(),
   User.syncIndexes(),
   UserProfile.syncIndexes()
 ]);
 ```
 
+Use carefully in production because index changes can be expensive.
+
 ## Most Important Short Answers
 
-### 101. MongoDB in one line
+### 57. MongoDB in one line
 
 ```text
 MongoDB is a NoSQL document database that stores data as BSON documents in collections.
 ```
 
-### 102. Collection in one line
-
-```text
-A collection is a group of MongoDB documents, similar to a table in SQL.
-```
-
-### 103. Document in one line
-
-```text
-A document is one MongoDB record stored as BSON.
-```
-
-### 104. Mongoose in one line
+### 58. Mongoose in one line
 
 ```text
 Mongoose is an ODM that provides schemas, models, validation, hooks, and query helpers for MongoDB in Node.js.
 ```
 
-### 105. Index in one line
+### 59. Index in one line
 
 ```text
 An index improves query performance but adds write and storage overhead.
 ```
 
-### 106. ObjectId in one line
+### 60. Aggregation in one line
 
 ```text
-ObjectId is MongoDB's default unique identifier type for documents.
+Aggregation processes documents through pipeline stages to filter, group, join, sort, and calculate data.
 ```
 
-### 107. populate in one line
+### 61. populate in one line
 
 ```text
 populate replaces referenced ObjectId fields with actual document data.
 ```
 
-### 108. Aggregation in one line
-
-```text
-Aggregation processes documents through pipeline stages to transform, group, join, or calculate data.
-```
-
-### 109. Transaction in one line
+### 62. Transaction in one line
 
 ```text
 A transaction ensures multiple database operations succeed or fail together.
 ```
 
-### 110. TTL index in one line
+### 63. Sharding in one line
 
 ```text
-A TTL index automatically deletes documents after a configured expiry time.
+Sharding splits large MongoDB data across multiple servers to horizontally scale storage and traffic.
 ```
 
 ## Final MongoDB Interview Checklist
@@ -1595,27 +1515,25 @@ Must know:
 - database/collection/document
 - ObjectId
 - CRUD operations
+- query operators
 - Mongoose schema/model
 - validation
-- enum
 - indexes
 - unique index
 - compound index
-- text index
 - TTL index
 - relationships
 - embedding vs referencing
-- one-to-one
-- one-to-many
-- many-to-many
 - populate
+- `$lookup`
 - aggregation
 - pagination
 - transactions
-- hooks/methods/statics
-- toJSON transform
+- schema design
 - multi-tenancy with owner
 - performance optimization
+- horizontal scaling
+- sharding
 - NoSQL injection
 - MongoDB vs Redis
 
@@ -1629,4 +1547,361 @@ Example:
 
 ```text
 An index is a data structure that improves query performance. For example, this app uses a compound unique index on owner and email in the User collection. It matters because queries by owner/email become faster and duplicate emails are prevented within the same account workspace.
+```
+
+## Real Time Queries
+
+These are practical MongoDB aggregation questions commonly asked in interviews.
+
+Assume an `orders` collection like this:
+
+```js
+{
+  _id: ObjectId('...'),
+  customerId: ObjectId('...'),
+  customerName: 'Paras',
+  amount: 1200,
+  status: 'paid',
+  items: [
+    { name: 'Keyboard', price: 800 },
+    { name: 'Mouse', price: 400 }
+  ],
+  createdAt: ISODate('2026-07-10')
+}
+```
+
+### 1. Calculate average order amount for each customer and sort descending
+
+Question:
+
+```text
+Write a query to calculate the average order amount for each customer and sort by the average amount in descending order.
+```
+
+Query:
+
+```js
+db.orders.aggregate([
+  {
+    $group: {
+      _id: '$customerId',
+      customerName: {
+        $first: '$customerName'
+      },
+      averageOrderAmount: {
+        $avg: '$amount'
+      },
+      totalOrders: {
+        $sum: 1
+      }
+    }
+  },
+  {
+    $sort: {
+      averageOrderAmount: -1
+    }
+  }
+]);
+```
+
+### 2. Flatten nested arrays using aggregation
+
+Question:
+
+```text
+How can you flatten nested arrays using aggregation?
+```
+
+Query:
+
+```js
+db.orders.aggregate([
+  {
+    $unwind: '$items'
+  },
+  {
+    $project: {
+      _id: 0,
+      customerName: 1,
+      itemName: '$items.name',
+      itemPrice: '$items.price'
+    }
+  }
+]);
+```
+
+### 3. Find top 3 customers who spent the most
+
+Question:
+
+```text
+Write a query to find the top 3 customers who spent the most.
+```
+
+Query:
+
+```js
+db.orders.aggregate([
+  {
+    $match: {
+      status: 'paid'
+    }
+  },
+  {
+    $group: {
+      _id: '$customerId',
+      customerName: {
+        $first: '$customerName'
+      },
+      totalSpent: {
+        $sum: '$amount'
+      },
+      totalOrders: {
+        $sum: 1
+      }
+    }
+  },
+  {
+    $sort: {
+      totalSpent: -1
+    }
+  },
+  {
+    $limit: 3
+  }
+]);
+```
+
+### 4. Count orders by status
+
+```js
+db.orders.aggregate([
+  {
+    $group: {
+      _id: '$status',
+      totalOrders: {
+        $sum: 1
+      }
+    }
+  },
+  {
+    $sort: {
+      totalOrders: -1
+    }
+  }
+]);
+```
+
+### 5. Calculate total sales per month
+
+```js
+db.orders.aggregate([
+  {
+    $match: {
+      status: 'paid'
+    }
+  },
+  {
+    $group: {
+      _id: {
+        year: {
+          $year: '$createdAt'
+        },
+        month: {
+          $month: '$createdAt'
+        }
+      },
+      totalSales: {
+        $sum: '$amount'
+      },
+      totalOrders: {
+        $sum: 1
+      }
+    }
+  },
+  {
+    $sort: {
+      '_id.year': 1,
+      '_id.month': 1
+    }
+  }
+]);
+```
+
+### 6. Find latest order for each customer
+
+```js
+db.orders.aggregate([
+  {
+    $sort: {
+      createdAt: -1
+    }
+  },
+  {
+    $group: {
+      _id: '$customerId',
+      customerName: {
+        $first: '$customerName'
+      },
+      latestOrderId: {
+        $first: '$_id'
+      },
+      latestAmount: {
+        $first: '$amount'
+      },
+      latestOrderDate: {
+        $first: '$createdAt'
+      }
+    }
+  }
+]);
+```
+
+### 7. Join orders with customer details
+
+```js
+db.orders.aggregate([
+  {
+    $lookup: {
+      from: 'customers',
+      localField: 'customerId',
+      foreignField: '_id',
+      as: 'customer'
+    }
+  },
+  {
+    $unwind: '$customer'
+  },
+  {
+    $project: {
+      _id: 1,
+      amount: 1,
+      status: 1,
+      customerName: '$customer.name',
+      customerEmail: '$customer.email'
+    }
+  }
+]);
+```
+
+### 8. Find duplicate emails in users collection
+
+```js
+db.users.aggregate([
+  {
+    $group: {
+      _id: '$email',
+      count: {
+        $sum: 1
+      },
+      users: {
+        $push: {
+          id: '$_id',
+          name: '$name'
+        }
+      }
+    }
+  },
+  {
+    $match: {
+      count: {
+        $gt: 1
+      }
+    }
+  }
+]);
+```
+
+### 9. Pagination using aggregation
+
+```js
+db.orders.aggregate([
+  {
+    $sort: {
+      createdAt: -1
+    }
+  },
+  {
+    $skip: 10
+  },
+  {
+    $limit: 10
+  }
+]);
+```
+
+### 10. Count total paid and failed orders in one query
+
+```js
+db.orders.aggregate([
+  {
+    $group: {
+      _id: null,
+      paidOrders: {
+        $sum: {
+          $cond: [{ $eq: ['$status', 'paid'] }, 1, 0]
+        }
+      },
+      failedOrders: {
+        $sum: {
+          $cond: [{ $eq: ['$status', 'failed'] }, 1, 0]
+        }
+      },
+      totalOrders: {
+        $sum: 1
+      }
+    }
+  }
+]);
+```
+
+### 11. Filter nested array items
+
+```js
+db.orders.aggregate([
+  {
+    $project: {
+      customerName: 1,
+      expensiveItems: {
+        $filter: {
+          input: '$items',
+          as: 'item',
+          cond: {
+            $gt: ['$$item.price', 500]
+          }
+        }
+      }
+    }
+  }
+]);
+```
+
+### 12. Find customers with more than 5 orders
+
+```js
+db.orders.aggregate([
+  {
+    $group: {
+      _id: '$customerId',
+      customerName: {
+        $first: '$customerName'
+      },
+      totalOrders: {
+        $sum: 1
+      }
+    }
+  },
+  {
+    $match: {
+      totalOrders: {
+        $gt: 5
+      }
+    }
+  },
+  {
+    $sort: {
+      totalOrders: -1
+    }
+  }
+]);
 ```
