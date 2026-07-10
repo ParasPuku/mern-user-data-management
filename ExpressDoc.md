@@ -232,6 +232,10 @@ Validation helps prevent:
 
 Rate limiting protects APIs from brute-force and abuse.
 
+Rate limiting is a technique used to limit the number of times a user can interact with a website, app, or API within a specific timeframe.
+
+Rate limiting is primarily part of the Express layer of your application. It works as middleware that intercepts incoming requests before they reach your logic or database, tracking request counts.
+
 Common routes to rate limit:
 
 - login
@@ -248,11 +252,45 @@ import rateLimit from 'express-rate-limit';
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
-  message: 'Too many login attempts. Try again later.'
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    return res.status(429).json({
+      success: false,
+      statusCode: 429,
+      message: 'Too many login attempts. Please try again after 15 minutes.'
+    });
+  }
 });
 
 app.use('/api/auth/login', loginLimiter);
 ```
+
+#### How will we send the response to the client once the max limit is reached?
+
+When the user reaches the maximum limit, `express-rate-limit` stops the request before it reaches the login controller and sends the response from the `handler`.
+
+Response sent to frontend:
+
+```json
+{
+  "success": false,
+  "statusCode": 429,
+  "message": "Too many login attempts. Please try again after 15 minutes."
+}
+```
+
+Important interview answer:
+
+```text
+If the limit is not reached, the request goes to the next middleware or controller.
+If the limit is reached, the rate limiter sends 429 Too Many Requests and the actual API logic does not run.
+```
+
+How they work together:
+- Express (The Gatekeeper): You use Express middleware like express-rate-limit to define how many requests a user can make (e.g., 100 requests per hour).
+
+- MongoDB (The Storage): By default, Express stores these limits in memory. If you have multiple server instances or need to persist rate limits over time (or across server restarts), you use MongoDB to store the request counts and timestamps. Packages like rate-limit-mongo connect Express to MongoDB for this exact purpose.
 
 #### 5. Helmet security headers
 
