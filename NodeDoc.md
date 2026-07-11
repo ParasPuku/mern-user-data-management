@@ -335,6 +335,20 @@ console.log("✍️ 1. Main Synchronous Line");
 
 This can prevent timers/I/O from running.
 
+### Difference between Microtask Queue and Macrotask Queue
+Today’s focus was microtasks vs macrotasks.
+
+1. The Two Queues :
+When the Call Stack is empty, the Event Loop doesn't just grab the first thing it sees. It checks two different queues with different priority levels:
+
+A. The Microtask Queue (The VIP Lane)
+Microtasks are high-priority tasks that must be executed immediately after the current synchronous code finishes, but before the browser renders or moves to the next Macrotask.
+Sources: Promises (.then, .catch, .finally), async/await, queueMicrotask(), and MutationObserver.
+
+B. The Macrotask Queue (The Standard Lane)
+Also known simply as the Task Queue. These are standard background tasks.
+Sources: setTimeout, setInterval, setImmediate (Node.js), requestAnimationFrame, and I/O events (clicks, network responses).
+
 ### 15. What is libuv?
 
 "Libuv is the underlying C library that provides Node.js with its Event Loop and Thread Pool, allowing a single-threaded language like JavaScript to handle thousands of heavy network and file tasks concurrently without blocking."

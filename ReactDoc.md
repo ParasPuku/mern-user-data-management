@@ -59,7 +59,144 @@ Components can be:
 
 Modern React mostly uses functional components with hooks.
 
-### 4. What is JSX?
+### 4. Difference between React 18 and React 19 with features?
+
+React 18 and React 19 are both modern React versions, but their focus is different.
+
+Interview answer:
+
+```text
+React 18 mainly introduced the concurrent rendering foundation, automatic batching, transitions, and better server-side rendering support.
+
+React 19 builds on top of React 18 and adds more developer-friendly features like Actions, form-related hooks, the use API, ref as a normal prop, better hydration errors, document metadata support, and better support for async resources.
+```
+
+#### React 18 main features
+
+React 18 focused on performance and rendering improvements.
+
+Important features:
+
+- concurrent rendering foundation
+- automatic batching
+- transitions using `startTransition` and `useTransition`
+- new root API using `createRoot`
+- improved Suspense support
+- streaming server-side rendering
+- `useId`
+- `useSyncExternalStore`
+- `useInsertionEffect`
+
+Example: automatic batching
+
+```tsx
+function Counter() {
+  const [count, setCount] = useState(0);
+  const [name, setName] = useState('Paras');
+
+  function handleClick() {
+    setCount((prev) => prev + 1);
+    setName('React 18');
+
+    // React 18 batches these updates into one render.
+  }
+
+  return <button onClick={handleClick}>{count} - {name}</button>;
+}
+```
+
+Before React 18, batching was mostly limited to React event handlers. In React 18, updates inside promises, timeouts, native events, and other async operations are also batched.
+
+#### React 19 main features
+
+React 19 focuses more on async workflows, forms, server integration, and developer experience.
+
+Important features:
+
+- Actions for async form/state updates
+- `useActionState`
+- `useFormStatus`
+- `useOptimistic`
+- `use` API for reading promises and context
+- `ref` can be passed as a normal prop
+- better hydration error messages
+- `<Context>` can be used directly as a provider
+- cleanup functions for refs
+- document metadata support
+- stylesheet and async script handling
+- resource preloading APIs
+- stable React Server Components related APIs for frameworks
+
+Example: React 19 Action style
+
+```tsx
+function UpdateName() {
+  const [name, setName] = useState('');
+
+  async function submitAction(formData: FormData) {
+    const newName = formData.get('name') as string;
+
+    await updateUserName(newName);
+    setName(newName);
+  }
+
+  return (
+    <form action={submitAction}>
+      <input name="name" />
+      <button type="submit">Update</button>
+      <p>{name}</p>
+    </form>
+  );
+}
+```
+
+#### React 18 vs React 19 comparison
+
+| Topic | React 18 | React 19 |
+|---|---|---|
+| Main focus | Rendering performance and concurrency foundation | Async workflows, forms, server integration, and DX |
+| Batching | Automatic batching added | Continues automatic batching |
+| Concurrent features | Introduced concurrent rendering foundation | Builds on the same foundation |
+| Forms | Mostly handled manually with state and submit handlers | Actions, `useActionState`, `useFormStatus`, `useOptimistic` |
+| Async data | Usually handled with `useEffect`, libraries, or framework loaders | Adds `use` API for promise/context reading in supported cases |
+| Refs | `forwardRef` commonly used to pass refs | Ref can be passed as a prop |
+| Hydration errors | Less detailed mismatch messages | Better hydration error diagnostics |
+| Metadata | Usually managed by framework or libraries | Built-in support for document metadata |
+| Server rendering | Streaming SSR improvements | Better Server Components and async resource support |
+
+#### Simple interview explanation
+
+```text
+React 18 made React's rendering engine more powerful with concurrent rendering, automatic batching, transitions, and streaming SSR.
+
+React 19 improves the developer experience on top of that by making async actions, forms, refs, hydration errors, metadata, and server-related workflows easier.
+```
+
+#### Which version features affect daily React development?
+
+Most commonly used React 18 features:
+
+- automatic batching
+- `useTransition`
+- `useId`
+- `createRoot`
+
+Most commonly used React 19 features:
+
+- Actions
+- `useActionState`
+- `useFormStatus`
+- `useOptimistic`
+- `ref` as a prop
+- better hydration error messages
+
+Important note:
+
+```text
+React 19 does not replace React 18 concepts. It builds on React 18. So understanding rendering, batching, transitions, Suspense, and hooks is still important.
+```
+
+### 5. What is JSX?
 
 JSX is a syntax extension that lets us write HTML-like code inside JavaScript/TypeScript.
 
@@ -83,7 +220,7 @@ becomes:
 React.createElement('h1', null, 'Hello');
 ```
 
-### 5. Why do we use React?
+### 6. Why do we use React?
 
 Reasons:
 
@@ -101,7 +238,7 @@ Interview answer:
 React helps build reusable, state-driven UI components. We describe what UI should look like for a given state, and React updates the DOM efficiently when state changes.
 ```
 
-### 6. What is declarative UI?
+### 7. What is declarative UI?
 
 Declarative UI means describing what the UI should look like, not manually telling the browser every DOM operation.
 
@@ -113,7 +250,7 @@ return isLoggedIn ? <Dashboard /> : <SignIn />;
 
 React decides how to update the DOM.
 
-### 7. What is imperative UI?
+### 8. What is imperative UI?
 
 Imperative UI means manually controlling each step.
 
@@ -129,7 +266,7 @@ React is declarative.
 
 ## Props and State
 
-### 8. What are props?
+### 9. What are props?
 
 Props are inputs passed from parent component to child component.
 
@@ -145,7 +282,7 @@ const UserCard = ({ name }: { name: string }) => {
 
 Props are read-only.
 
-### 9. What is state?
+### 10. What is state?
 
 State is data managed inside a component.
 
@@ -161,7 +298,7 @@ const Counter = () => {
 };
 ```
 
-### 10. Difference between props and state?
+### 11. Difference between props and state?
 
 Props:
 
@@ -181,7 +318,7 @@ Interview answer:
 Props are external inputs passed to a component, while state is internal data managed by the component.
 ```
 
-### 11. Can props be modified?
+### 12. Can props be modified?
 
 No. Props should not be modified by child components.
 
@@ -199,7 +336,7 @@ onChange('New Name');
 
 Child should notify parent through callback.
 
-### 12. What happens when state changes?
+### 13. What happens when state changes?
 
 When state changes:
 
@@ -210,7 +347,7 @@ When state changes:
 
 ## Rendering
 
-### 13. What is rendering in React?
+### 14. What is rendering in React?
 
 Rendering means React calls the component function to calculate UI.
 
@@ -226,7 +363,7 @@ const App = () => {
 
 React runs `App()` to know what UI should be.
 
-### 14. What causes a re-render?
+### 15. What causes a re-render?
 
 Common causes:
 
@@ -238,7 +375,7 @@ Common causes:
 
 Note - Yes, by default in React, if a parent component re-renders, the child component will also re-render.
 
-### 15. What is conditional rendering?
+### 16. What is conditional rendering?
 
 Conditional rendering means showing UI based on condition.
 
@@ -254,7 +391,7 @@ Another example:
 {error ? <p>{error}</p> : null}
 ```
 
-### 16. What is list rendering?
+### 17. What is list rendering?
 
 Rendering array items using `map`.
 
@@ -264,7 +401,7 @@ Example:
 users.map((user) => <UserRow key={user.id} user={user} />);
 ```
 
-### 17. Why is key important in list rendering?
+### 18. Why is key important in list rendering?
 
 `key` helps React identify which list item changed, added, or removed.
 
@@ -284,7 +421,7 @@ Using index can cause bugs when list order changes.
 
 ## Virtual DOM and Reconciliation
 
-### 18. What is Virtual DOM?
+### 19. What is Virtual DOM?
 
 Virtual DOM is a lightweight, and in-memory representation of the real DOM.
 
@@ -294,7 +431,7 @@ When state changes:
 2. React compares it with previous virtual DOM.
 3. React updates only necessary real DOM parts.
 
-### 19. What is reconciliation?
+### 20. What is reconciliation?
 
 Reconciliation is React's process of comparing old and new element trees to decide what needs to update.
 
@@ -304,7 +441,7 @@ Interview answer:
 Reconciliation is the process where React compares previous and next UI trees and efficiently updates the real DOM.
 ```
 
-### 20. Does React always update the real DOM on render?
+### 21. Does React always update the real DOM on render?
 
 No.
 
@@ -312,7 +449,7 @@ React may re-render components but only update the real DOM if output changes.
 
 ## Hooks
 
-### 21. What are hooks?
+### 22. What are hooks?
 
 Hooks are functions that let functional components use React features like state, effects, refs, and context.
 
@@ -320,13 +457,16 @@ Common hooks:
 
 - `useState`
 - `useEffect`
+- `useLayoutEffect`
 - `useMemo`
 - `useCallback`
+- `useTransition`
+- `useDeferredValue`
 - `useRef`
 - `useContext`
 - `useReducer`
 
-### 22. Rules of hooks?
+### 23. Rules of hooks?
 
 Rules:
 
@@ -409,7 +549,7 @@ Summary Checklist
 - Primitives are compared by Value. Same value = No re-run.
 - Objects/Arrays are compared by Reference. New reference = Re-runs every time.
 
-### 23. What is useState?
+### 24. What is useState?
 
 `useState` stores local component state.
 
@@ -433,7 +573,7 @@ setCount((current) => current + 1);
 
 Use functional update when next value depends on previous value.
 
-### 24. Why state updates are asynchronous?
+### 25. Why state updates are asynchronous?
 
 React batches state updates for performance.
 
@@ -448,7 +588,7 @@ console.log(count); // old value
 
 The state variable updates on next render.
 
-### 25. What is batching?
+### 26. What is batching?
 
 Batching means React groups multiple state updates into one render.
 
@@ -461,7 +601,7 @@ setRole('Admin');
 
 React can render once instead of twice.
 
-### 26. What is useEffect?
+### 27. What is useEffect?
 
 `useEffect` runs side effects after render.
 
@@ -481,7 +621,7 @@ useEffect(() => {
 }, []);
 ```
 
-### 27. useEffect dependency array?
+### 28. useEffect dependency array?
 
 No dependency array:
 
@@ -509,7 +649,7 @@ useEffect(() => {
 
 Runs when `userId` changes.
 
-### 28. What is cleanup in useEffect?
+### 29. What is cleanup in useEffect?
 
 Cleanup runs before effect re-runs or component unmounts.
 
@@ -534,7 +674,175 @@ Use cleanup for:
 - event listeners
 - aborting requests
 
-### 29. Difference between Webpack and Babel?
+### 30. What is useLayoutEffect?
+
+`useLayoutEffect` is a React hook that runs after React updates the DOM but before the browser paints the screen.
+
+It is similar to `useEffect`, but timing is different.
+
+Interview answer:
+
+```text
+useLayoutEffect runs synchronously after DOM changes and before the browser paints. It is useful when we need to read layout from the DOM or make visual changes before the user sees the screen.
+```
+
+Simple difference:
+
+```text
+useEffect       -> runs after browser paint
+useLayoutEffect -> runs before browser paint
+```
+
+#### How it differs from useEffect
+
+| Point | useEffect | useLayoutEffect |
+|---|---|---|
+| Timing | Runs after the browser paints the UI | Runs after DOM update but before browser paint |
+| Blocking | Does not block painting | Blocks painting until it finishes |
+| Best for | API calls, subscriptions, timers, logging | DOM measurement and layout correction |
+| User experience | User may briefly see initial layout before effect runs | User sees corrected layout immediately |
+| Performance | Better default choice for most side effects | Can hurt performance if overused |
+
+Execution order:
+
+```text
+React render
+DOM update
+useLayoutEffect runs
+Browser paints
+useEffect runs
+```
+
+Interview answer:
+
+```text
+The main difference is timing. useEffect runs after the browser has painted, so it is good for normal side effects like API calls. useLayoutEffect runs before the browser paints, so it is useful when we need to measure or change layout before the user sees it.
+```
+
+Example:
+
+```tsx
+import { useLayoutEffect, useRef, useState } from 'react';
+
+function BoxHeight() {
+  const boxRef = useRef<HTMLDivElement | null>(null);
+  const [height, setHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    if (boxRef.current) {
+      const boxHeight = boxRef.current.getBoundingClientRect().height;
+      setHeight(boxHeight);
+    }
+  }, []);
+
+  return (
+    <>
+      <div ref={boxRef}>Hello React</div>
+      <p>Height: {height}px</p>
+    </>
+  );
+}
+```
+
+Why use `useLayoutEffect` here?
+
+```text
+We need to measure the DOM size before the browser paints the final UI.
+This helps avoid flickering layout changes.
+```
+
+Common use cases:
+
+- measuring DOM size
+- reading element position
+- synchronously adjusting scroll position
+- positioning tooltip/popover before it appears
+- preventing visual flicker
+
+#### When to use useLayoutEffect
+
+Use `useLayoutEffect` when the effect directly affects layout or visual position.
+
+Good examples:
+
+- measuring an element using `getBoundingClientRect`
+- positioning a tooltip based on button position
+- scrolling to a specific element before the user sees the screen
+- calculating modal/popover placement
+- fixing layout flicker before paint
+
+Tooltip example:
+
+```tsx
+useLayoutEffect(() => {
+  const buttonRect = buttonRef.current?.getBoundingClientRect();
+
+  if (buttonRect) {
+    setTooltipPosition({
+      top: buttonRect.bottom + 8,
+      left: buttonRect.left
+    });
+  }
+}, []);
+```
+
+Use `useEffect` for normal side effects:
+
+- API calls
+- analytics events
+- updating document title
+- subscriptions
+- timers
+- logging
+
+Cleanup works the same as `useEffect`:
+
+```tsx
+useLayoutEffect(() => {
+  function handleResize() {
+    console.log(window.innerWidth);
+  }
+
+  window.addEventListener('resize', handleResize);
+
+  return () => {
+    window.removeEventListener('resize', handleResize);
+  };
+}, []);
+```
+
+When not to use:
+
+- API calls
+- normal data fetching
+- logging
+- simple subscriptions that do not affect layout
+- heavy calculations
+
+#### Important considerations
+
+```text
+useLayoutEffect blocks browser painting until it finishes. So use it only when layout measurement or pre-paint DOM updates are required. For most side effects, useEffect is better.
+```
+
+Important points:
+
+- Prefer `useEffect` by default.
+- Use `useLayoutEffect` only when the UI would flicker or show wrong layout without it.
+- Keep the logic inside `useLayoutEffect` small and fast.
+- Avoid API calls inside `useLayoutEffect`.
+- State updates inside `useLayoutEffect` run before paint, so they can delay what the user sees.
+- In StrictMode during development, React may run setup and cleanup one extra time to catch effect bugs.
+- In server-side rendering, layout information is not available on the server, so avoid `useLayoutEffect` in server-rendered components unless the component is client-only.
+
+Final interview shortcut:
+
+```text
+Use useEffect for side effects after paint.
+Use useLayoutEffect only when you must read or change layout before paint.
+```
+
+### 31. Difference between Webpack and Babel?
 
 Webpack and Babel solve different problems in a React app.
 
@@ -588,7 +896,7 @@ Babel transpiles modern JavaScript or JSX into browser-compatible JavaScript. We
 
 In this project, we use Vite instead of Webpack. Vite handles development/build tooling, and the React plugin handles React/JSX transformation.
 
-### 30. What is React Fiber?
+### 32. What is React Fiber?
 
 React Fiber is React's internal rendering architecture.
 
@@ -607,7 +915,7 @@ Interview answer:
 React Fiber is React's internal reconciliation engine. It breaks rendering work into units so React can prioritize updates and keep the UI responsive.
 ```
 
-### 31. What is hydration in React, and what role does hydration play in server-side rendering?
+### 33. What is hydration in React, and what role does hydration play in server-side rendering?
 
 Hydration is the process where React takes HTML that was already generated on the server and makes it interactive in the browser.
 
@@ -720,7 +1028,163 @@ Important interview point:
 Hydration does not create HTML from scratch. It reuses server-rendered HTML and attaches React behavior to it.
 ```
 
-### 32. What is infinite render loop?
+### 34. Difference between Server-Side Rendering and Client-Side Rendering?
+
+This is mainly a React/frontend architecture question, not a core JavaScript question.
+
+Server-Side Rendering is also called SSR.
+
+Client-Side Rendering is also called CSR.
+
+Interview answer:
+
+```text
+Server-Side Rendering means the HTML is generated on the server and sent to the browser. The user can see meaningful content quickly, and React later hydrates that HTML to make it interactive.
+
+Client-Side Rendering means the browser receives a basic HTML file and JavaScript bundle. Then JavaScript runs in the browser, renders React components, and builds the UI on the client side.
+```
+
+#### Server-Side Rendering
+
+In SSR, the server prepares the HTML first.
+
+Flow:
+
+```text
+Request page
+  -> Server renders React component to HTML
+  -> Browser receives HTML
+  -> User sees content
+  -> React JavaScript loads
+  -> Hydration makes the page interactive
+```
+
+Good for:
+
+- SEO
+- faster first content display
+- public pages
+- blogs
+- product pages
+- landing pages
+- pages shared on social media
+
+Example:
+
+```text
+Product title, price, description, and reviews can be server-rendered.
+```
+
+#### Client-Side Rendering
+
+In CSR, the browser renders the UI using JavaScript.
+
+Flow:
+
+```text
+Request page
+  -> Server sends basic HTML and JS bundle
+  -> Browser downloads JavaScript
+  -> React runs in browser
+  -> UI is created on client side
+```
+
+Good for:
+
+- dashboards
+- admin panels
+- authenticated pages
+- highly interactive UI
+- modals, dropdowns, tabs
+- browser-only features like `localStorage`, `window`, and `document`
+
+Example:
+
+```text
+Dashboard filters, charts, modals, and user-specific widgets are commonly client-rendered.
+```
+
+#### SSR vs CSR comparison
+
+| Point | SSR | CSR |
+|---|---|---|
+| Where HTML is created | Server | Browser |
+| Initial content | Visible faster | Visible after JavaScript loads |
+| SEO | Better | Weaker unless handled separately |
+| Interactivity | Needs hydration | Interactive after React renders |
+| Server load | Higher | Lower |
+| Browser work | Less initial rendering work | More initial rendering work |
+| Best for | Public, SEO, content-heavy pages | App-like, private, interactive pages |
+
+Simple rule:
+
+```text
+Use SSR when content should be visible fast and searchable.
+Use CSR when the UI is private, interactive, or depends heavily on browser-side state.
+```
+
+Important interview point:
+
+```text
+SSR does not mean no JavaScript. If the page is interactive, React still needs JavaScript for hydration. CSR means JavaScript creates the UI in the browser from the beginning.
+```
+
+### 35. How do you decide whether a component should be server-rendered or client-rendered?
+
+This is a valid and important interview question, especially for Next.js, SSR, and React Server Components.
+
+Interview answer:
+
+```text
+I choose server rendering when the content should be visible quickly, SEO-friendly, shareable, or can be prepared on the server.
+
+I choose client rendering when the component depends on browser APIs, user interaction, local state, real-time behavior, or data that should only be loaded after the page opens.
+```
+
+Use server rendering for:
+
+- SEO-important pages
+- blog pages
+- product pages
+- landing pages
+- public profile pages
+- static or mostly-read-only content
+- content that should be visible before JavaScript loads
+- data that can be safely fetched on the server
+
+Use client rendering for:
+
+- modals
+- dropdowns
+- tabs
+- forms with heavy user interaction
+- charts that depend on browser size
+- components using `window`, `document`, or `localStorage`
+- authenticated user-only widgets
+- real-time notifications
+- components with frequent client-side state changes
+
+Simple rule:
+
+```text
+If the content must be fast, searchable, and available in initial HTML, prefer SSR.
+If the component needs browser-only APIs or heavy interactivity, prefer client-side rendering.
+```
+
+Example:
+
+```text
+Product title, description, price -> server-rendered
+Add to cart button, quantity selector, wishlist toggle -> client-rendered
+```
+
+Important interview point:
+
+```text
+SSR improves the initial HTML and SEO, but the component still needs hydration if it is interactive. Client rendering is better for browser-only and interaction-heavy UI.
+```
+
+### 36. What is infinite render loop?
 
 An infinite render loop happens when state updates repeatedly during render or effect.
 
@@ -734,7 +1198,7 @@ useEffect(() => {
 
 This changes `count`, effect runs again, and loop continues.
 
-### 33. What is useRef?
+### 37. What is useRef?
 
 `useRef` stores a mutable value that does not cause re-render.
 
@@ -755,7 +1219,7 @@ const renderCount = useRef(0);
 renderCount.current += 1;
 ```
 
-### 34. useRef vs useState?
+### 38. useRef vs useState?
 
 `useState`:
 
@@ -767,7 +1231,7 @@ renderCount.current += 1;
 - does not cause re-render
 - used for mutable values/DOM refs
 
-### 35. What is useMemo?
+### 39. What is useMemo?
 
 `useMemo` memoizes a calculated value.
 
@@ -782,7 +1246,7 @@ const filteredUsers = useMemo(
 
 Use it when calculation is expensive or reference stability matters.
 
-### 36. What is useCallback?
+### 40. What is useCallback?
 
 `useCallback` memoizes a function reference.
 
@@ -805,7 +1269,204 @@ useCallback memoizes the function, meaning React returns the same function insta
 - Including the function in dependency arrays of useEffect or other hooks.
 - Avoiding unnecessary re-renders caused by changing function references.
 
-### 37. useMemo vs useCallback?
+### 41. What is useTransition?
+
+`useTransition` is a React hook used to mark some state updates as non-urgent.
+
+It helps keep the UI responsive when an update may cause expensive rendering.
+
+Interview answer:
+
+```text
+useTransition lets React separate urgent updates from non-urgent updates. Urgent updates like typing should update immediately. Non-urgent updates like filtering a large list can be wrapped in startTransition so React can keep the UI responsive.
+```
+
+Syntax:
+
+```tsx
+const [isPending, startTransition] = useTransition();
+```
+
+Example:
+
+```tsx
+import { useState, useTransition } from 'react';
+
+function SearchUsers({ users }) {
+  const [inputValue, setInputValue] = useState('');
+  const [searchText, setSearchText] = useState('');
+  const [isPending, startTransition] = useTransition();
+
+  function handleChange(event) {
+    const value = event.target.value;
+
+    setInputValue(value); // urgent update
+
+    startTransition(() => {
+      setSearchText(value); // non-urgent update
+    });
+  }
+
+  const filteredUsers = users.filter((user) =>
+    user.name.toLowerCase().includes(searchText.toLowerCase())
+  );
+
+  return (
+    <>
+      <input value={inputValue} onChange={handleChange} />
+      {isPending ? <p>Updating list...</p> : null}
+
+      {filteredUsers.map((user) => (
+        <p key={user.id}>{user.name}</p>
+      ))}
+    </>
+  );
+}
+```
+
+What happens here:
+
+```text
+Typing in the input is urgent, so it updates immediately.
+Filtering the list is non-urgent, so React can delay it slightly if the UI is busy.
+```
+
+Use `useTransition` when:
+
+- updating a large list
+- switching heavy tabs
+- rendering expensive UI after input
+- route/page-like UI changes are slower
+- you want the current UI to stay responsive while next UI is prepared
+
+Important considerations:
+
+- `useTransition` does not make slow code faster.
+- It helps React prioritize urgent UI updates first.
+- It is useful when rendering is expensive, not for every state update.
+- It is not a replacement for debouncing API calls.
+- `isPending` can be used to show lightweight pending UI.
+
+Final interview shortcut:
+
+```text
+useTransition is used when a state update is expensive and can be treated as low priority.
+```
+
+### 42. What is useDeferredValue?
+
+`useDeferredValue` is a React hook that lets you defer updating a value until the browser has time to handle less urgent rendering.
+
+Interview answer:
+
+```text
+useDeferredValue keeps the previous value visible while React prepares the updated value in the background. It is useful when a fast-changing value causes expensive rendering, such as typing into a search box that filters a large list.
+```
+
+Syntax:
+
+```tsx
+const deferredValue = useDeferredValue(value);
+```
+
+Example:
+
+```tsx
+import { useDeferredValue, useMemo, useState } from 'react';
+
+function SearchUsers({ users }) {
+  const [searchText, setSearchText] = useState('');
+  const deferredSearchText = useDeferredValue(searchText);
+
+  const filteredUsers = useMemo(() => {
+    return users.filter((user) =>
+      user.name.toLowerCase().includes(deferredSearchText.toLowerCase())
+    );
+  }, [users, deferredSearchText]);
+
+  return (
+    <>
+      <input
+        value={searchText}
+        onChange={(event) => setSearchText(event.target.value)}
+      />
+
+      {searchText !== deferredSearchText ? <p>Updating results...</p> : null}
+
+      {filteredUsers.map((user) => (
+        <p key={user.id}>{user.name}</p>
+      ))}
+    </>
+  );
+}
+```
+
+What happens here:
+
+```text
+searchText updates immediately as the user types.
+deferredSearchText may lag behind slightly.
+The expensive filtered list uses deferredSearchText, so typing stays responsive.
+```
+
+Use `useDeferredValue` when:
+
+- a value changes quickly
+- rendering based on that value is expensive
+- you want to keep showing the old UI while the new UI is prepared
+- the value comes from props or a parent component
+- you cannot easily wrap the original state update with `startTransition`
+
+#### useTransition vs useDeferredValue
+
+| Point | useTransition | useDeferredValue |
+|---|---|---|
+| What it does | Marks a state update as non-urgent | Defers a value |
+| You control | The state update | The value after it changes |
+| Main API | `startTransition(() => setState())` | `useDeferredValue(value)` |
+| Best when | You own the state setter | Value comes from props or existing state |
+| Pending UI | Gives `isPending` | Compare original value with deferred value |
+
+Example memory trick:
+
+```text
+useTransition -> defer the update
+useDeferredValue -> defer the value
+```
+
+#### useDeferredValue vs debounce
+
+```text
+Debounce waits for a fixed time before running logic.
+useDeferredValue does not wait for a fixed time. It lets React schedule lower-priority rendering when the browser has time.
+```
+
+Use debounce for:
+
+- delaying API calls
+- search requests
+- autosave requests
+
+Use `useDeferredValue` for:
+
+- delaying expensive rendering
+- filtering a big list in UI
+- keeping typing smooth
+
+Important considerations:
+
+- It does not reduce the number of state updates.
+- It helps make rendering feel smoother.
+- It should be used for UI rendering performance, not API rate limiting.
+- It works best with memoized expensive children or calculations.
+
+Final interview shortcut:
+
+```text
+useDeferredValue is useful when a fast-changing value causes expensive rendering and we want React to show the previous UI until the new UI is ready.
+```
+
+### 43. useMemo vs useCallback?
 
 `useMemo` memoizes a value.
 
@@ -825,7 +1486,7 @@ This is roughly:
 useCallback(fn, deps) === useMemo(() => fn, deps)
 ```
 
-### 38. How useMemo and useCallback works behind the scene?
+### 44. How useMemo and useCallback works behind the scene?
 The reason they look different is because useCallback and useMemo are designed for different purposes, even though they're closely related.
 
 In fact, useCallback is essentially a special case of useMemo.
@@ -1317,7 +1978,7 @@ Easy way to remember
 - useCallback → Memoize a function.
 - PureComponent → Class component equivalent of React.memo with shallow prop and state comparison.
 
-### 38. What is useContext?
+### 45. What is useContext?
 
 `The useContext hook` in React is a built-in function that lets functional components read and subscribe to data from a context object without manually passing props through intermediate components. It provides an elegant solution to prop drilling, which is the tedious process of passing props down multiple levels of a component tree just to reach a deeply nested child.
 
@@ -1339,7 +2000,7 @@ Use Context for app-wide values like:
 
 Avoid putting frequently changing large state in Context if it causes unnecessary renders.
 
-### 39. What is useReducer?
+### 46. What is useReducer?
 
 `useReducer` manages complex local state using reducer function.
 
@@ -1363,7 +2024,7 @@ function reducer(state: State, action: Action): State {
 const [state, dispatch] = useReducer(reducer, { count: 0 });
 ```
 
-### 40. What is a custom hook?
+### 47. What is a custom hook?
 
 A custom hook is a reusable function that uses React hooks.
 
@@ -1394,7 +2055,7 @@ Custom hook name should start with `use`.
 
 ## Forms
 
-### 41. Controlled vs uncontrolled components?
+### 48. Controlled vs uncontrolled components?
 - Controlled components rely on React state to manage form data
 - Controlled input: 
 
@@ -1417,7 +2078,7 @@ const inputRef = useRef<HTMLInputElement | null>(null);
 
 DOM controls the value.
 
-### 42. Which is better: controlled or uncontrolled?
+### 49. Which is better: controlled or uncontrolled?
 
 Controlled is better when:
 
@@ -1432,7 +2093,7 @@ Uncontrolled is useful when:
 - file inputs
 - integration with non-React libraries
 
-### 43. How to handle form validation?
+### 50. How to handle form validation?
 
 Common approach:
 
@@ -1451,7 +2112,7 @@ For large apps:
 
 ## Component Communication
 
-### 44. How parent passes data to child?
+### 51. How parent passes data to child?
 
 Using props.
 
@@ -1459,7 +2120,7 @@ Using props.
 <UserCard user={user} />
 ```
 
-### 45. How child sends data to parent?
+### 52. How child sends data to parent?
 
 Using callback prop.
 
@@ -1481,7 +2142,7 @@ const Child = ({ onSelect }: { onSelect: (id: string) => void }) => {
 };
 ```
 
-### 46. What is prop drilling?
+### 53. What is prop drilling?
 
 Prop drilling means passing props through many levels just to reach a deeply nested component.
 
@@ -1492,7 +2153,7 @@ Solutions:
 - component composition
 - custom hooks
 
-### 47. What is lifting state up?
+### 54. What is lifting state up?
 
 Moving shared state to the nearest common parent.
 
@@ -1507,7 +2168,7 @@ Pass value/callback to both
 
 ## Routing
 
-### 48. What is React Router?
+### 55. What is React Router?
 
 React Router is a routing library for React apps.
 
@@ -1522,7 +2183,7 @@ Example:
 </Routes>
 ```
 
-### 49. What is protected route?
+### 56. What is protected route?
 
 Protected route allows access only when user is authenticated.
 
@@ -1538,7 +2199,7 @@ In this app:
 frontend/src/components/ProtectedRoute.tsx
 ```
 
-### 50. What is public route?
+### 57. What is public route?
 
 Public route is accessible without login.
 
@@ -1550,7 +2211,7 @@ In this app:
 frontend/src/components/PublicRoute.tsx
 ```
 
-### 51. What is Navigate?
+### 58. What is Navigate?
 
 `Navigate` redirects user to another route.
 
@@ -1562,7 +2223,7 @@ Example:
 
 ## State Management
 
-### 52. When to use local state?
+### 59. When to use local state?
 
 Use local state when data belongs to one component.
 
@@ -1573,7 +2234,7 @@ Examples:
 - selected tab
 - local loading state
 
-### 53. When to use global state?
+### 60. When to use global state?
 
 Use global state when many parts of app need same data.
 
@@ -1585,7 +2246,7 @@ Examples:
 - skills
 - notifications/toasts
 
-### 54. What is Redux?
+### 61. What is Redux?
 
 Redux is a predictable state management library.
 
@@ -1599,7 +2260,7 @@ Core ideas:
 - dispatch
 - selectors
 
-### 55. What is Redux Toolkit?
+### 62. What is Redux Toolkit?
 
 Redux Toolkit is the recommended way to write Redux.
 
@@ -1629,7 +2290,7 @@ export const store = configureStore({
 });
 ```
 
-### 56. What is Thunk in Redux?
+### 63. What is Thunk in Redux?
 In Redux Toolkit (RTK), a thunk is a function that contains delayed, asynchronous logic. Because a standard Redux store can only handle synchronous data flow, Redux Toolkit automatically includes the Redux Thunk middleware by default to let you perform side effects like fetching API data.
 
 - How createAsyncThunk Works
@@ -1641,7 +2302,157 @@ When you create an async thunk, you provide an action type prefix and a payload 
 
 - rejected: Dispatched if the Promise fails or rejects.
 
-### 57. What is reducer?
+### 64. Difference between Thunk and Saga in Redux?
+
+Thunk and Saga are both Redux middleware used to handle side effects like API calls, async flows, and delayed actions.
+
+Interview answer:
+
+```text
+Redux Thunk is simpler and lets us write async logic inside functions that can dispatch actions.
+
+Redux Saga is more powerful and uses generator functions to manage complex async flows like cancellation, retries, debouncing, background polling, and race conditions.
+```
+
+#### Redux Thunk
+
+Thunk is a function that returns another function.
+
+It receives:
+
+- `dispatch`
+- `getState`
+
+Basic thunk example:
+
+```ts
+const fetchUsers = () => async (dispatch, getState) => {
+  dispatch({ type: 'users/loading' });
+
+  try {
+    const response = await fetch('/api/users');
+    const data = await response.json();
+
+    dispatch({ type: 'users/success', payload: data });
+  } catch (error) {
+    dispatch({ type: 'users/error', payload: error.message });
+  }
+};
+```
+
+Redux Toolkit style:
+
+```ts
+export const fetchUsers = createAsyncThunk('users/fetchUsers', async () => {
+  const response = await fetch('/api/users');
+  return response.json();
+});
+```
+
+Use Thunk when:
+
+- async logic is simple
+- you mostly call APIs and store response
+- you use Redux Toolkit
+- you want less boilerplate
+- the team wants easier learning and maintenance
+
+#### Redux Saga
+
+Saga uses generator functions to handle side effects separately from components and reducers.
+
+Saga example:
+
+```ts
+import { call, put, takeLatest } from 'redux-saga/effects';
+
+function* fetchUsersSaga() {
+  try {
+    const response = yield call(fetch, '/api/users');
+    const data = yield call([response, 'json']);
+
+    yield put({ type: 'users/success', payload: data });
+  } catch (error) {
+    yield put({ type: 'users/error', payload: error.message });
+  }
+}
+
+function* watchFetchUsers() {
+  yield takeLatest('users/fetchUsers', fetchUsersSaga);
+}
+```
+
+Use Saga when:
+
+- async flow is complex
+- you need cancellation
+- you need retry logic
+- you need debouncing/throttling
+- you need background polling
+- you need race handling
+- many async actions depend on each other
+
+#### Thunk vs Saga comparison
+
+| Point | Thunk | Saga |
+|---|---|---|
+| Style | Normal functions | Generator functions |
+| Complexity | Simple | More advanced |
+| Learning curve | Easy | Higher |
+| Best for | Simple API calls | Complex async workflows |
+| Boilerplate | Less | More |
+| Cancellation | Manual | Built-in patterns like `takeLatest` |
+| Testing | Simple but mixed with async code | Easier to test step-by-step |
+| Redux Toolkit support | Built-in by default | Needs extra setup |
+
+#### When should we choose Thunk?
+
+Choose Thunk for most normal React apps.
+
+Example:
+
+```text
+Login API
+Fetch users
+Create user
+Update profile
+Load dashboard data
+```
+
+Strong interview line:
+
+```text
+If my async logic is mostly request -> success/failure -> update store, I prefer Redux Thunk or createAsyncThunk.
+```
+
+#### When should we choose Saga?
+
+Choose Saga when async logic becomes orchestration-heavy.
+
+Example:
+
+```text
+Search with debounce
+Cancel previous request
+Retry failed API
+Background sync
+Payment flow with multiple dependent steps
+WebSocket/event-based flows
+```
+
+Strong interview line:
+
+```text
+If my app has complex async workflows like cancellation, race conditions, retries, or background tasks, Redux Saga can be a better choice.
+```
+
+Final answer:
+
+```text
+For most Redux Toolkit applications, I choose Thunk because it is simple and built in. I choose Saga only when the async flow becomes complex enough that Saga's generator-based control flow provides real value.
+```
+
+### 65. What is reducer?
 
 Reducer is a pure function that calculates next state from current state and action.
 
@@ -1651,7 +2462,7 @@ Concept:
 nextState = reducer(currentState, action);
 ```
 
-### 58. What is action?
+### 66. What is action?
 
 An action is an object describing what happened.
 
@@ -1664,7 +2475,7 @@ Example:
 }
 ```
 
-### 59. What is dispatch?
+### 67. What is dispatch?
 
 Dispatch sends an action to Redux store.
 
@@ -1674,7 +2485,7 @@ Example:
 dispatch(fetchUsers());
 ```
 
-### 60. What is selector?
+### 68. What is selector?
 
 Selector reads data from Redux state.
 
@@ -1690,7 +2501,7 @@ Usage:
 const users = useAppSelector(selectUsers);
 ```
 
-### 61. What is createAsyncThunk?
+### 69. What is createAsyncThunk?
 
 `createAsyncThunk` handles async Redux logic.
 
@@ -1708,7 +2519,7 @@ It creates:
 - fulfilled action
 - rejected action
 
-### 62. What is Redux middleware?
+### 70. What is Redux middleware?
 
 Middleware runs between dispatching action and reducer.
 
@@ -1725,7 +2536,7 @@ In this app:
 frontend/src/app/toastMiddleware.ts
 ```
 
-### 63. What is Immer?
+### 71. What is Immer?
 
 Immer lets us write mutable-looking reducer code while keeping state immutable internally.
 
@@ -1737,7 +2548,7 @@ state.items.push(user);
 
 Redux Toolkit uses Immer behind the scenes.
 
-### 64. What is selector stability warning?
+### 72. What is selector stability warning?
 
 React Redux warns when a selector returns a new reference for same input.
 
@@ -1760,7 +2571,7 @@ This issue happened in this app in the skills selector and was fixed by using a 
 
 ## Performance Optimization
 
-### 65. How to secure the React APP?
+### 73. How to secure the React APP?
 Securing a React app requires layers of protection at both the client level and the server level. The most critical step is preventing Cross-Site Scripting (XSS) by allowing React to auto-escape data, avoiding dangerouslySetInnerHTML, and sanitizing user inputs. Always treat the frontend as untrusted.
 
 - Prevent Cross-Site Scripting (XSS)
@@ -1769,7 +2580,7 @@ Securing a React app requires layers of protection at both the client level and 
 - Rely on the Backend for Security
 - Keep Dependencies Updated [Vulnerability]
 
-### 65. How to optimize React performance?
+### 74. How to optimize React performance?
 
 Common ways:
 
@@ -1784,7 +2595,7 @@ Common ways:
 - split code with lazy loading
 - avoid unnecessary global state changes
 
-### 66. What is React.memo?
+### 75. What is React.memo?
 
 `React.memo` prevents re-render if props did not change.
 
@@ -1798,13 +2609,13 @@ const UserRow = React.memo(({ user }: { user: User }) => {
 
 Useful for expensive child components.
 
-### 67. React.memo vs useMemo?
+### 76. React.memo vs useMemo?
 
 `React.memo` memoizes a component render based on props.
 
 `useMemo` memoizes a calculated value inside a component.
 
-### 68. What causes unnecessary re-render?
+### 77. What causes unnecessary re-render?
 
 Common causes:
 
@@ -1815,7 +2626,7 @@ Common causes:
 - selector returning new array/object every time
 - unstable keys
 
-### 69. Difference between `npm create vite@latest my-react-app -- --template react` and `npx create-react-app my-react-app`?
+### 78. Difference between `npm create vite@latest my-react-app -- --template react` and `npx create-react-app my-react-app`?
 
 Both commands create a new React project, but they use different project setup tools.
 
@@ -1894,7 +2705,7 @@ You can see that from:
 "build": "tsc -b && vite build"
 ```
 
-### 70. What happens behind the scenes when we create a React project using Vite or Create React App?
+### 79. What happens behind the scenes when we create a React project using Vite or Create React App?
 
 When you run a project setup command, it does not magically create React by itself.
 
@@ -1966,7 +2777,7 @@ Mount the React App component inside that element
 
 So the setup command creates the project structure, but React starts running when the browser loads the entry file and React renders `<App />`.
 
-### 71. How to avoid new object prop each render?
+### 80. How to avoid new object prop each render?
 
 Bad:
 
@@ -1982,7 +2793,7 @@ const filters = useMemo(() => ({ status: 'active' }), []);
 <Table filters={filters} />;
 ```
 
-### 72. What is lazy loading in React?
+### 81. What is lazy loading in React?
 
 Lazy loading loads components only when needed.
 
@@ -2000,7 +2811,7 @@ Use with:
 </Suspense>
 ```
 
-### 73. What is code splitting?
+### 82. What is code splitting?
 
 Code splitting breaks app bundle into smaller chunks.
 
@@ -2009,7 +2820,7 @@ Benefits:
 - faster initial load
 - load feature code only when needed
 
-### 74. What is list virtualization?
+### 83. What is list virtualization?
 
 Virtualization renders only visible rows in a large list.
 
@@ -2026,7 +2837,7 @@ Libraries:
 
 ## API Calls
 
-### 75. Where should API calls be made?
+### 84. Where should API calls be made?
 
 Common places:
 
@@ -2042,7 +2853,7 @@ In this app:
 API calls are mostly handled through Redux thunks and service files.
 ```
 
-### 76. How to fetch data in useEffect?
+### 85. How to fetch data in useEffect?
 
 ```tsx
 useEffect(() => {
@@ -2064,7 +2875,7 @@ useEffect(() => {
 }, []);
 ```
 
-### 77. Why avoid directly making useEffect callback async?
+### 86. Why avoid directly making useEffect callback async?
 
 Bad:
 
@@ -2088,7 +2899,7 @@ useEffect(() => {
 }, []);
 ```
 
-### 78. How to handle loading and error state?
+### 87. How to handle loading and error state?
 
 Example:
 
@@ -2110,7 +2921,7 @@ In Redux apps, common statuses are:
 'idle' | 'loading' | 'succeeded' | 'failed'
 ```
 
-### 79. How to cancel API request?
+### 88. How to cancel API request?
 
 Use `AbortController`.
 
@@ -2132,7 +2943,7 @@ useEffect(() => {
 
 ## Authentication in React
 
-### 80. How does React know user is logged in?
+### 89. How does React know user is logged in?
 
 Usually by auth state.
 
@@ -2151,7 +2962,7 @@ dispatch(bootstrapAuth());
 
 Backend checks HTTP-only cookie and returns session/account.
 
-### 81. Can React read HTTP-only cookie?
+### 90. Can React read HTTP-only cookie?
 
 No.
 
@@ -2165,7 +2976,7 @@ Example:
 GET /api/auth/session
 ```
 
-### 82. Why use credentials: include?
+### 91. Why use credentials: include?
 
 In fetch:
 
@@ -2181,7 +2992,7 @@ In this app:
 frontend/src/services/http.ts
 ```
 
-### 83. How protected route works in this app?
+### 92. How protected route works in this app?
 
 Concept:
 
@@ -2195,7 +3006,7 @@ return children;
 
 The route guard uses Redux auth state.
 
-### 84. How role-based UI works?
+### 93. How role-based UI works?
 
 Example:
 
@@ -2211,7 +3022,7 @@ Backend must also enforce authorization.
 
 ## TypeScript With React
 
-### 85. Why use TypeScript with React?
+### 94. Why use TypeScript with React?
 
 Benefits:
 
@@ -2221,7 +3032,7 @@ Benefits:
 - better autocomplete
 - safer refactoring
 
-### 86. How to type component props?
+### 95. How to type component props?
 
 ```tsx
 type UserCardProps = {
@@ -2234,7 +3045,7 @@ const UserCard = ({ name, email }: UserCardProps) => {
 };
 ```
 
-### 87. How to type useState?
+### 96. How to type useState?
 
 ```tsx
 const [user, setUser] = useState<User | null>(null);
@@ -2246,7 +3057,7 @@ For inferred values:
 const [count, setCount] = useState(0);
 ```
 
-### 88. How to type event handlers?
+### 97. How to type event handlers?
 
 Input change:
 
@@ -2264,7 +3075,7 @@ const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
 };
 ```
 
-### 89. How to type useRef?
+### 98. How to type useRef?
 
 ```tsx
 const inputRef = useRef<HTMLInputElement | null>(null);
@@ -2278,7 +3089,7 @@ inputRef.current?.focus();
 
 ## React Patterns
 
-### 90. What is composition?
+### 99. What is composition?
 
 Composition means building components by combining smaller components.
 
@@ -2298,7 +3109,7 @@ Usage:
 </Card>
 ```
 
-### 91. Controlled modal pattern?
+### 100. Controlled modal pattern?
 
 Parent controls open/close state.
 
@@ -2308,7 +3119,7 @@ const [isOpen, setIsOpen] = useState(false);
 {isOpen ? <Modal onClose={() => setIsOpen(false)} /> : null}
 ```
 
-### 92. Container vs presentational components?
+### 101. Container vs presentational components?
 
 Container component:
 
@@ -2329,7 +3140,7 @@ UserManagementPage -> container
 UserTable -> presentational
 ```
 
-### 93. What is children prop?
+### 102. What is children prop?
 
 `children` lets component render nested content.
 
@@ -2343,7 +3154,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
 ## Error Handling
 
-### 94. What is Error Boundary?
+### 103. What is Error Boundary?
 
 Error Boundary catches rendering errors in child component tree.
 
@@ -2377,7 +3188,7 @@ Error boundaries do not catch:
 - async errors
 - server errors
 
-### 95. How to handle API errors?
+### 104. How to handle API errors?
 
 Common pattern:
 
@@ -2393,7 +3204,7 @@ In this app, toast middleware also shows success/error messages.
 
 ## React Strict Mode
 
-### 96. What is StrictMode?
+### 105. What is StrictMode?
 
 StrictMode helps find problems during development.
 
@@ -2415,13 +3226,13 @@ StrictMode is a development-only tool that helps detect unsafe side effects and 
 
 ## Common Tricky Questions
 
-### 97. Why does useEffect run twice in development?
+### 106. Why does useEffect run twice in development?
 
 Because React StrictMode intentionally mounts/unmounts/remounts components in development to detect unsafe effects.
 
 Production does not behave the same way.
 
-### 98. Why not update state directly?
+### 107. Why not update state directly?
 
 Bad:
 
@@ -2438,11 +3249,11 @@ Good:
 setUser({ ...user, name: 'New Name' });
 ```
 
-### 99. Why state should be immutable?
+### 108. Why state should be immutable?
 
 Immutability helps React detect changes and makes updates predictable.
 
-### 100. Why component names should start with capital letter?
+### 109. Why component names should start with capital letter?
 
 React treats lowercase tags as HTML elements.
 
@@ -2458,13 +3269,13 @@ Bad:
 <userCard />
 ```
 
-### 101. Why hooks cannot be conditional?
+### 110. Why hooks cannot be conditional?
 
 React relies on hook call order.
 
 If hooks are conditional, order can change between renders and React cannot match hook state correctly.
 
-### 102. What is stale closure?
+### 111. What is stale closure?
 
 Stale closure happens when a function captures old state/props.
 
@@ -2488,7 +3299,7 @@ Fix:
 - use functional update
 - use ref for latest value
 
-### 103. Why use functional state update?
+### 112. Why use functional state update?
 
 Use when new state depends on previous state.
 
@@ -2498,7 +3309,7 @@ setCount((current) => current + 1);
 
 This avoids stale state issues.
 
-### 104. Why not use array index as key?
+### 113. Why not use array index as key?
 
 Index key can break UI when list order changes.
 
@@ -2510,7 +3321,7 @@ Problems:
 
 Use stable ID instead.
 
-### 105. What is client-side rendering?
+### 114. What is client-side rendering?
 
 Client-side rendering means browser receives minimal HTML and JavaScript builds the UI in the browser.
 
@@ -2518,7 +3329,7 @@ Vite React apps are usually client-side rendered.
 
 ## Testing
 
-### 106. What should we test in React?
+### 115. What should we test in React?
 
 Test user behavior, not implementation details.
 
@@ -2530,7 +3341,7 @@ Examples:
 - route protection
 - role-based UI
 
-### 107. What is React Testing Library?
+### 116. What is React Testing Library?
 
 React Testing Library helps test components from user perspective.
 
@@ -2542,7 +3353,7 @@ expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
 
 ## React App Architecture
 
-### 108. How is this app structured?
+### 117. How is this app structured?
 
 This app uses feature-based structure:
 
@@ -2563,7 +3374,7 @@ Benefits:
 - easier scaling
 - easier maintenance
 
-### 109. What is feature-based folder structure?
+### 118. What is feature-based folder structure?
 
 Feature-based structure groups code by business feature instead of file type.
 
@@ -2578,7 +3389,7 @@ features/users/types.ts
 
 This is better for medium/large apps.
 
-### 110. What is reusable component?
+### 119. What is reusable component?
 
 A reusable component is generic enough to be used in many places.
 
@@ -2595,7 +3406,7 @@ PublicRoute
 
 ## Interview Questions Based on This App
 
-### 111. How does auth bootstrap work in this app?
+### 120. How does auth bootstrap work in this app?
 
 On app load:
 
@@ -2611,7 +3422,7 @@ If cookie is valid, user becomes authenticated.
 
 If not, user is unauthenticated.
 
-### 112. How does session refresh work in this app?
+### 121. How does session refresh work in this app?
 
 The app listens to user activity and periodically verifies/refreshes session.
 
@@ -2622,7 +3433,7 @@ User active -> refresh session
 No activity -> verify session without extending it
 ```
 
-### 113. How does role-based UI work in this app?
+### 122. How does role-based UI work in this app?
 
 Admin route is visible only when:
 
@@ -2638,7 +3449,7 @@ Important interview answer:
 Frontend role checks are for UX. Backend authorization is the real security.
 ```
 
-### 114. How are API calls centralized?
+### 123. How are API calls centralized?
 
 This app uses:
 
@@ -2654,7 +3465,7 @@ It centralizes:
 - `credentials: 'include'`
 - error parsing
 
-### 115. How are toasts handled?
+### 124. How are toasts handled?
 
 This app uses Redux listener middleware.
 
@@ -2664,61 +3475,79 @@ This keeps toast logic centralized instead of duplicating it in every component.
 
 ## Most Important Short Answers
 
-### 116. React in one line
+### 125. React in one line
 
 ```text
 React is a JavaScript library for building reusable, state-driven UI components.
 ```
 
-### 117. Component in one line
+### 126. Component in one line
 
 ```text
 A component is a reusable function/class that returns UI.
 ```
 
-### 118. Props in one line
+### 127. Props in one line
 
 ```text
 Props are read-only inputs passed from parent to child.
 ```
 
-### 119. State in one line
+### 128. State in one line
 
 ```text
 State is component-managed data that triggers re-render when changed.
 ```
 
-### 120. useEffect in one line
+### 129. useEffect in one line
 
 ```text
 useEffect runs side effects after render and can clean them up.
 ```
 
-### 121. Virtual DOM in one line
+### 130. useLayoutEffect in one line
+
+```text
+useLayoutEffect runs after DOM updates but before browser paint, mainly for layout measurement or pre-paint visual fixes.
+```
+
+### 131. useTransition in one line
+
+```text
+useTransition marks expensive state updates as non-urgent so urgent UI like typing can stay responsive.
+```
+
+### 132. useDeferredValue in one line
+
+```text
+useDeferredValue defers a fast-changing value so expensive rendering can update later without blocking urgent UI.
+```
+
+### 133. Virtual DOM in one line
 
 ```text
 Virtual DOM is a lightweight representation of UI used to calculate efficient real DOM updates.
 ```
 
-### 122. Redux in one line
+### 134. Redux in one line
 
 ```text
 Redux is a centralized state management library where state changes through actions and reducers.
 ```
 
-### 123. React Router in one line
+### 135. React Router in one line
 
 ```text
 React Router maps URL paths to React components.
 ```
 
-### 124. Controlled component in one line
+### 136. Controlled component in one line
 
 ```text
 A controlled component is a form element whose value is controlled by React state.
 ```
 
-### 125. Custom hook in one line
+### 137. Custom hook in one line
 
 ```text
 A custom hook is a reusable function that uses React hooks to share stateful logic.
@@ -2739,9 +3568,12 @@ Must know:
 - hooks
 - `useState`
 - `useEffect`
+- `useLayoutEffect`
 - `useRef`
 - `useMemo`
 - `useCallback`
+- `useTransition`
+- `useDeferredValue`
 - `useContext`
 - controlled forms
 - routing
@@ -4349,6 +5181,21 @@ If only `title` changes, React can keep the same `h1` DOM node and update text.
 
 Without good keys, React may match list items by position.
 
+Using an array index as a key in React is considered an anti-pattern for dynamic lists because it identifies the position of the item rather than the item itself. When the array changes (items are added, removed, or sorted), the indexes change, which breaks React's reconciliation algorithm.
+
+The Root Cause: React's Reconciliation
+React uses the key prop to determine which elements in a list have changed, been added, or been removed.
+- If you use a stable identifier (like a database ID), the key moves with the item.
+- If you use the index, the key stays anchored to the position.
+
+Example Scenario:
+- You render a list of 3 items: [Apples (Index 0), Bananas (Index 1), Oranges (Index 2)].
+- You check a checkbox inside the Bananas component (Index 1).
+- You delete Apples from the top of the array.
+- The array is now [Bananas (now Index 0), Oranges (now Index 1)].
+
+The Bug: Because the checkbox state was tied to Index 1, React assumes the new item at Index 1 (Oranges) should be checked. Bananas will suddenly lose its checked state.
+
 ```tsx
 users.map((user) => <UserRow key={user.id} user={user} />);
 ```
@@ -5147,4 +5994,623 @@ Strong final interview answer:
 
 ```text
 If the user changes route during an API call, the component may unmount before the response returns. I handle this by cleaning up the effect. For fetch, I use AbortController and abort the request in the cleanup function. If cancellation is not possible, I keep an isActive flag or request id and ignore stale responses. This prevents state updates on unmounted components, avoids stale UI, and reduces unnecessary work.
+```
+
+## Low Priority SSR and Hydration Questions
+
+These questions are more common in Next.js, SSR, and React Server Components interviews. They are useful after you understand normal React rendering, hydration, and client-side rendering.
+
+### 21. What is hydration mismatch?
+
+Hydration mismatch happens when the HTML generated on the server is different from what React renders on the client during hydration.
+
+Interview answer:
+
+```text
+Hydration mismatch means the server-rendered HTML and the client-rendered React output are not the same. React expects both to match during hydration. If they do not match, React may warn, patch the DOM, or re-render parts of the UI.
+```
+
+Example:
+
+```tsx
+function CurrentTime() {
+  return <p>{new Date().toLocaleTimeString()}</p>;
+}
+```
+
+Why this can mismatch:
+
+```text
+The server renders one time value.
+The browser renders another time value.
+Both HTML outputs are different.
+```
+
+Common causes:
+
+- using `Date.now()` during render
+- using `Math.random()` during render
+- reading `window`, `document`, or `localStorage` during render
+- rendering different UI on server and client
+- different API data on server and client
+- user-specific content rendered before client auth state is ready
+
+Fix:
+
+```tsx
+function CurrentTime() {
+  const [time, setTime] = useState('');
+
+  useEffect(() => {
+    setTime(new Date().toLocaleTimeString());
+  }, []);
+
+  return <p>{time}</p>;
+}
+```
+
+Important point:
+
+```text
+If a value can be different between server and browser, avoid rendering it directly during SSR. Render it after mount using useEffect or make the component client-only.
+```
+
+### 22. Why can window, document, or localStorage cause issues in SSR?
+
+`window`, `document`, and `localStorage` exist only in the browser.
+
+They do not exist on the server.
+
+Bad:
+
+```tsx
+function ThemeLabel() {
+  const theme = localStorage.getItem('theme');
+
+  return <p>{theme}</p>;
+}
+```
+
+Problem:
+
+```text
+During SSR, this code runs on the server.
+The server does not have localStorage.
+So the app can crash with "localStorage is not defined".
+```
+
+Correct approach:
+
+```tsx
+function ThemeLabel() {
+  const [theme, setTheme] = useState('');
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
+  }, []);
+
+  return <p>{theme}</p>;
+}
+```
+
+Why this works:
+
+```text
+useEffect runs only in the browser after the component mounts.
+So browser-only APIs are accessed safely.
+```
+
+Other safe checks:
+
+```tsx
+if (typeof window !== 'undefined') {
+  console.log(window.innerWidth);
+}
+```
+
+Interview answer:
+
+```text
+Browser APIs like window, document, and localStorage are not available during server rendering. I avoid using them during render. If I need them, I access them inside useEffect or guard them with typeof window !== 'undefined'.
+```
+
+### 23. What is the difference between Server Component and Client Component?
+
+Server Components render on the server.
+
+Client Components render and run in the browser.
+
+This is mostly asked in Next.js App Router interviews.
+
+#### Server Component
+
+A Server Component is rendered on the server and its result is sent to the client.
+
+Good for:
+
+- fetching data on the server
+- reading from database
+- reading server-only environment variables
+- rendering static or content-heavy UI
+- reducing client JavaScript bundle size
+
+Server Component example:
+
+```tsx
+async function ProductsPage() {
+  const products = await getProductsFromDatabase();
+
+  return (
+    <ul>
+      {products.map((product) => (
+        <li key={product.id}>{product.name}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+Server Components cannot use:
+
+- `useState`
+- `useEffect`
+- browser APIs
+- event handlers like `onClick`
+
+#### Client Component
+
+A Client Component runs in the browser and can use React hooks and browser APIs.
+
+In Next.js, it is marked with:
+
+```tsx
+'use client';
+```
+
+Client Component example:
+
+```tsx
+'use client';
+
+import { useState } from 'react';
+
+function Counter() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <button onClick={() => setCount(count + 1)}>
+      Count: {count}
+    </button>
+  );
+}
+```
+
+Use Client Components for:
+
+- buttons with `onClick`
+- forms with local state
+- modals
+- dropdowns
+- tabs
+- browser APIs
+- animations
+- interactive widgets
+
+Simple difference:
+
+| Point | Server Component | Client Component |
+|---|---|---|
+| Runs on | Server | Browser |
+| Can use `useState` | No | Yes |
+| Can use `useEffect` | No | Yes |
+| Can access database directly | Yes | No |
+| Can use `window/localStorage` | No | Yes, after mount |
+| Best for | Data fetching and static UI | Interactivity and browser behavior |
+
+Interview answer:
+
+```text
+Server Components are used for server-side data fetching and rendering UI without shipping extra JavaScript to the browser. Client Components are used when the UI needs interactivity, hooks, browser APIs, or event handlers.
+```
+
+### 24. When should we use SSR vs CSR?
+
+Use SSR when the page should be visible quickly, SEO-friendly, and available in the initial HTML.
+
+Use CSR when the page is mostly private, app-like, and highly interactive.
+
+Use SSR for:
+
+- product pages
+- blog pages
+- news articles
+- marketing pages
+- public profile pages
+- pages shared on social media
+- SEO-important pages
+
+Use CSR for:
+
+- dashboards
+- admin panels
+- authenticated-only pages
+- chat widgets
+- interactive charts
+- modals, filters, tabs
+- pages that depend heavily on browser state
+
+Example:
+
+```text
+E-commerce product page:
+- Product title, price, description -> SSR
+- Add to cart button, wishlist toggle -> CSR/client component
+```
+
+Decision checklist:
+
+```text
+Need SEO? Use SSR.
+Need fast first content? Use SSR.
+Need browser APIs? Use CSR.
+Need local state and interactions? Use CSR.
+Need private authenticated data only after login? CSR can be simpler.
+Need server-only data access? Use SSR or Server Component.
+```
+
+Final interview answer:
+
+```text
+I use SSR for public, SEO-heavy, content-first pages. I use CSR for private, interactive, browser-dependent UI. In modern React frameworks, we often combine both: render the content on the server and make interactive parts client-rendered.
+```
+
+## Additional Low Priority React Questions
+
+These topics are useful for mid-level React interviews and real-world frontend discussions.
+
+### 25. What is React Suspense?
+
+React Suspense lets a component wait for something before rendering and show a fallback UI during that waiting time.
+
+Most common uses:
+
+- lazy loading components
+- showing fallback UI while a component loads
+- framework-supported data fetching
+- streaming/server rendering workflows
+
+Interview answer:
+
+```text
+React Suspense is a React feature that lets us show a fallback UI while some part of the component tree is not ready yet, such as a lazy-loaded component or async data in supported frameworks.
+```
+
+Example with lazy loading:
+
+```tsx
+import { lazy, Suspense } from 'react';
+
+const UserReports = lazy(() => import('./UserReports'));
+
+function Dashboard() {
+  return (
+    <Suspense fallback={<p>Loading reports...</p>}>
+      <UserReports />
+    </Suspense>
+  );
+}
+```
+
+What happens:
+
+```text
+React starts loading UserReports.
+Until it is ready, React shows Loading reports...
+When the component is loaded, React renders UserReports.
+```
+
+Important points:
+
+- Suspense is not an error handler.
+- Use Error Boundary to catch rendering/loading errors.
+- Suspense fallback should be small and useful.
+- Suspense is commonly used with `React.lazy`.
+- Data fetching with Suspense usually depends on a framework or library setup.
+
+When to use:
+
+```text
+Use Suspense when part of the UI can wait and you want to show a fallback while that part loads.
+```
+
+### 26. What is React Portal?
+
+React Portal lets us render a component outside its normal parent DOM hierarchy.
+
+It is commonly used for:
+
+- modals
+- tooltips
+- dropdown menus
+- popovers
+- toast containers
+
+Interview answer:
+
+```text
+React Portal allows a component to be rendered into a different DOM node while still behaving like part of the React component tree.
+```
+
+Example:
+
+```tsx
+import { createPortal } from 'react-dom';
+
+function Modal({ children, onClose }) {
+  return createPortal(
+    <div className="modal-backdrop">
+      <div className="modal">
+        <button onClick={onClose}>Close</button>
+        {children}
+      </div>
+    </div>,
+    document.body
+  );
+}
+```
+
+Why use Portal?
+
+```text
+Sometimes a modal or tooltip should visually appear above the whole app. If it stays inside a deeply nested parent, CSS overflow, z-index, or positioning can break it. Portal renders it somewhere safer, like document.body.
+```
+
+Important points:
+
+- Portal changes DOM placement, not React ownership.
+- Events still bubble through the React tree.
+- Useful for escaping `overflow: hidden` and stacking context issues.
+- Very useful for accessible modals and dropdowns.
+
+When to use:
+
+```text
+Use Portal when the UI should visually escape its parent container, such as modals, tooltips, dropdowns, and toast overlays.
+```
+
+### 27. What is React Performance Profiling?
+
+React performance profiling means measuring component render behavior to find slow renders or unnecessary re-renders.
+
+Interview answer:
+
+```text
+React performance profiling is the process of using tools like React DevTools Profiler to identify which components render, why they render, and how long they take to render.
+```
+
+Common tools:
+
+- React DevTools Profiler
+- browser Performance tab
+- console timing for small checks
+- why-did-you-render library in development
+
+What to check:
+
+- component render time
+- unnecessary re-renders
+- expensive calculations
+- unstable props
+- large lists
+- slow child components
+- selectors returning new references
+
+Common fixes:
+
+- move state closer to where it is used
+- split large components
+- use stable keys
+- use `React.memo` for expensive child components
+- use `useMemo` for expensive calculated values
+- use `useCallback` for callbacks passed to memoized children
+- virtualize long lists
+- avoid creating new object/array props every render
+
+Important interview point:
+
+```text
+Do not optimize blindly. First measure the problem, then optimize the specific component or render path causing the issue.
+```
+
+Example:
+
+```tsx
+const filteredUsers = useMemo(() => {
+  return users.filter((user) => user.name.includes(searchText));
+}, [users, searchText]);
+```
+
+Use this only when filtering is expensive or the list is large.
+
+Final answer:
+
+```text
+I use React DevTools Profiler to find slow or unnecessary renders. Then I optimize only the measured problem using memoization, state placement, list virtualization, or component splitting.
+```
+
+### 28. What are React Query and RTK Query?
+
+React Query and RTK Query are libraries for managing server state.
+
+Server state means data that comes from the backend, such as:
+
+- users
+- products
+- orders
+- notifications
+- dashboard data
+
+Interview answer:
+
+```text
+React Query and RTK Query help manage API data in React apps. They handle loading state, error state, caching, refetching, retries, and stale data better than manually writing every API call inside useEffect.
+```
+
+#### Why not always use useEffect for API calls?
+
+With only `useEffect`, we manually handle:
+
+- loading
+- error
+- success
+- cache
+- retries
+- refetching
+- duplicate requests
+- stale data
+- request cancellation
+
+React Query or RTK Query handles much of this for us.
+
+#### React Query
+
+React Query is commonly used for server-state management in React apps. It is also known as TanStack Query.
+
+Good for:
+
+- apps not using Redux
+- caching API data
+- background refetching
+- pagination/infinite queries
+- retrying failed requests
+- keeping server state separate from UI state
+
+Example idea:
+
+```tsx
+const { data, isLoading, error } = useQuery({
+  queryKey: ['users'],
+  queryFn: fetchUsers
+});
+```
+
+#### RTK Query
+
+RTK Query is part of Redux Toolkit.
+
+Good for:
+
+- apps already using Redux Toolkit
+- centralized API definitions
+- auto-generated hooks
+- caching inside Redux store
+- consistent Redux-based architecture
+
+Example idea:
+
+```tsx
+const { data, isLoading, error } = useGetUsersQuery();
+```
+
+#### React Query vs RTK Query
+
+| Point | React Query | RTK Query |
+|---|---|---|
+| Best fit | Apps without Redux or with lightweight state | Apps already using Redux Toolkit |
+| Store dependency | Does not require Redux | Uses Redux Toolkit |
+| API setup | Query functions | API slice/endpoints |
+| Strength | Flexible server-state caching | Strong Redux integration |
+| Generated hooks | Based on query setup | Auto-generated from endpoints |
+
+When to choose:
+
+```text
+Choose React Query if the app does not need Redux and you mainly want powerful server-state caching.
+
+Choose RTK Query if the app already uses Redux Toolkit and you want API logic integrated with Redux.
+```
+
+Final interview answer:
+
+```text
+For simple or medium apps, React Query is great for API caching without Redux. If the project already uses Redux Toolkit, RTK Query is often a natural choice because API calls, caching, and generated hooks fit into the Redux architecture.
+```
+
+### 29. What is Accessibility in React?
+
+Accessibility means building UI that can be used by everyone, including users who use keyboard navigation, screen readers, or assistive technologies.
+
+Interview answer:
+
+```text
+Accessibility in React means building components with semantic HTML, proper labels, keyboard support, focus management, readable text, and ARIA only when needed.
+```
+
+Important practices:
+
+- use semantic HTML
+- use real `button` for clickable actions
+- use real `label` for form inputs
+- support keyboard navigation
+- manage focus in modals
+- provide `alt` text for images
+- keep color contrast readable
+- show clear validation errors
+- avoid clickable `div` when a `button` is correct
+- use ARIA only when semantic HTML is not enough
+
+Good form example:
+
+```tsx
+function EmailField() {
+  return (
+    <div>
+      <label htmlFor="email">Email</label>
+      <input id="email" name="email" type="email" />
+    </div>
+  );
+}
+```
+
+Bad:
+
+```tsx
+<div onClick={handleSubmit}>Submit</div>
+```
+
+Better:
+
+```tsx
+<button type="button" onClick={handleSubmit}>
+  Submit
+</button>
+```
+
+Accessible modal considerations:
+
+- focus should move into the modal when it opens
+- focus should return to the trigger when it closes
+- Escape key should close the modal if appropriate
+- background content should not be reachable by keyboard
+- modal should have a clear title
+
+Example ARIA usage:
+
+```tsx
+<button aria-label="Close modal" onClick={onClose}>
+  X
+</button>
+```
+
+Important interview point:
+
+```text
+Accessibility should be built from the start. It is not only about ARIA. Most accessibility comes from correct semantic HTML, keyboard support, labels, and focus management.
+```
+
+Final answer:
+
+```text
+In React, I make components accessible by using semantic HTML, proper form labels, keyboard-friendly controls, focus management for modals, alt text for images, and ARIA only when necessary.
 ```

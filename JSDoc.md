@@ -931,14 +931,222 @@ Use cases:
 - running setup code immediately
 - older module-like patterns before ES modules
 
-### 34. What are Prototypal Inheritence in JS?
-### 34. How to achieve interitence using functions in js?
-### 34. Why we have Class if we can do interitence using functions in JS?
-### 34. What is the difference between __proto__ and prototype?
+### 34. What is prototypal inheritance in JS?
 
-`prototype` is a property on constructor functions and classes. It defines methods/properties that instances can inherit.
+Prototypal inheritance means one object can access properties and methods from another object through the prototype chain.
 
-`__proto__` is the internal prototype link on an object that points to the object it inherits from.
+In JavaScript, objects do not directly copy methods from another object. Instead, each object has an internal prototype link. If JavaScript does not find a property or method on the current object, it looks for it in the prototype object.
+
+Interview answer:
+
+```text
+Prototypal inheritance is JavaScript's inheritance mechanism where objects can inherit properties and methods from other objects through the prototype chain.
+```
+
+Example:
+
+```js
+const person = {
+  greet() {
+    return `Hello ${this.name}`;
+  }
+};
+
+const user = Object.create(person);
+user.name = 'Paras';
+
+console.log(user.greet()); // Hello Paras
+```
+
+What happens here:
+
+```text
+user does not have greet directly.
+JavaScript checks user first.
+greet is not found on user.
+JavaScript checks user's prototype, which is person.
+greet is found on person and executed.
+```
+
+Prototype chain:
+
+```text
+user -> person -> Object.prototype -> null
+```
+
+Important:
+
+```text
+JavaScript inheritance is prototype-based internally. Classes in JavaScript also use prototypes behind the scenes.
+```
+
+#### How to achieve inheritance using functions in JS?
+
+Before ES6 classes, JavaScript used constructor functions and prototypes to create reusable object behavior.
+
+Step 1: Create a parent constructor function.
+
+```js
+function Person(name) {
+  this.name = name;
+}
+
+Person.prototype.greet = function () {
+  return `Hello ${this.name}`;
+};
+```
+
+Step 2: Create a child constructor function.
+
+```js
+function Employee(name, role) {
+  Person.call(this, name); // call parent constructor
+  this.role = role;
+}
+```
+
+Step 3: Connect child prototype with parent prototype.
+
+```js
+Employee.prototype = Object.create(Person.prototype);
+Employee.prototype.constructor = Employee;
+```
+
+Step 4: Add child-specific methods.
+
+```js
+Employee.prototype.work = function () {
+  return `${this.name} is working as ${this.role}`;
+};
+```
+
+Full example:
+
+```js
+function Person(name) {
+  this.name = name;
+}
+
+Person.prototype.greet = function () {
+  return `Hello ${this.name}`;
+};
+
+function Employee(name, role) {
+  Person.call(this, name);
+  this.role = role;
+}
+
+Employee.prototype = Object.create(Person.prototype);
+Employee.prototype.constructor = Employee;
+
+Employee.prototype.work = function () {
+  return `${this.name} is working as ${this.role}`;
+};
+
+const employee = new Employee('Paras', 'Frontend Developer');
+
+console.log(employee.greet()); // Hello Paras
+console.log(employee.work()); // Paras is working as Frontend Developer
+```
+
+Interview explanation:
+
+```text
+Person.call(this, name) copies parent properties into the child object.
+Object.create(Person.prototype) connects the child prototype to the parent prototype.
+Employee.prototype.constructor = Employee fixes the constructor reference.
+```
+
+What `new Employee()` does:
+
+```text
+1. Creates a new empty object.
+2. Links the object to Employee.prototype.
+3. Calls Employee with this pointing to the new object.
+4. Returns the new object.
+```
+
+Prototype chain:
+
+```text
+employee -> Employee.prototype -> Person.prototype -> Object.prototype -> null
+```
+
+#### Why do we have class if we can do inheritance using functions in JS?
+
+JavaScript classes were introduced to make object creation and inheritance easier to read and write.
+
+Important interview point:
+
+```text
+class is cleaner syntax over JavaScript's prototype-based inheritance. It does not remove prototypes. It makes prototype inheritance easier to use.
+```
+
+Same example using class:
+
+```js
+class Person {
+  constructor(name) {
+    this.name = name;
+  }
+
+  greet() {
+    return `Hello ${this.name}`;
+  }
+}
+
+class Employee extends Person {
+  constructor(name, role) {
+    super(name);
+    this.role = role;
+  }
+
+  work() {
+    return `${this.name} is working as ${this.role}`;
+  }
+}
+
+const employee = new Employee('Paras', 'Frontend Developer');
+
+console.log(employee.greet()); // Hello Paras
+console.log(employee.work()); // Paras is working as Frontend Developer
+```
+
+Why classes are useful:
+
+- cleaner and more readable syntax
+- easier inheritance using `extends`
+- easier parent constructor call using `super`
+- less manual prototype setup
+- reduces mistakes like forgetting to reset `constructor`
+- familiar syntax for developers from other languages
+
+Function constructor vs class:
+
+```text
+Function constructor:
+Employee.prototype = Object.create(Person.prototype);
+Person.call(this, name);
+
+Class:
+class Employee extends Person {
+  constructor(name) {
+    super(name);
+  }
+}
+```
+
+Interview answer:
+
+```text
+We can achieve inheritance using constructor functions and prototypes, but classes make the syntax cleaner, safer, and easier to understand. Internally, JavaScript classes still use prototypes.
+```
+
+#### What is the difference between `__proto__` and `prototype`?
+
+`prototype` is a property on constructor functions and classes. It defines methods and properties that instances can inherit.
+
+`__proto__` is the prototype link of an object. It points to the object from which the current object inherits.
 
 Example:
 
@@ -953,14 +1161,26 @@ User.prototype.greet = function () {
 
 const user = new User('Paras');
 
+console.log(User.prototype); // object containing greet
 console.log(user.__proto__ === User.prototype); // true
+console.log(user.greet()); // Hello Paras
 ```
 
 Interview answer:
 
 ```text
-prototype belongs to constructor functions and is used to define shared behavior for instances. __proto__ is an object's internal prototype reference.
+prototype belongs to constructor functions and classes. It is used to define shared behavior for instances.
+
+__proto__ belongs to objects. It points to the prototype object from which the object inherits.
 ```
+
+Modern recommendation:
+
+```js
+console.log(Object.getPrototypeOf(user) === User.prototype); // true
+```
+
+Prefer `Object.getPrototypeOf(obj)` instead of directly using `__proto__`.
 
 ### 35. What is pure function?
 
@@ -1518,27 +1738,815 @@ async function fetchUser() {
 }
 ```
 
-### 65. Promise.all vs Promise.allSettled?
+### 65. Promise methods: all, allSettled, race, and any
 
-`Promise.all` fails if any promise rejects.
+Assume we have three async tasks:
 
-```js
-await Promise.all([p1, p2, p3]);
+1. Create user
+2. Send email
+3. Send notification
+
+Interview note:
+
+```text
+In a real application, user creation is usually the main task. Email and notification are side effects. So we often create the user first, then run email and notification after that.
+
+But to understand Promise methods clearly, we can use these three promises together and compare their behavior.
 ```
 
-`Promise.allSettled` waits for all promises, whether fulfilled or rejected.
+Base promises:
 
 ```js
-await Promise.allSettled([p1, p2, p3]);
+function createUser(shouldFail = false) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (shouldFail) {
+        reject('Create user failed');
+      } else {
+        resolve({ id: 1, name: 'Paras', email: 'paras@example.com' });
+      }
+    }, 1000);
+  });
+}
+
+function sendEmail(shouldFail = false) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (shouldFail) {
+        reject('Email failed');
+      } else {
+        resolve('Email sent successfully');
+      }
+    }, 1500);
+  });
+}
+
+function sendNotification(shouldFail = false) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (shouldFail) {
+        reject('Notification failed');
+      } else {
+        resolve('Notification sent successfully');
+      }
+    }, 500);
+  });
+}
 ```
 
-### 66. Promise.race vs Promise.any?
+#### Promise states
 
-`Promise.race` returns first settled promise, success or failure.
+A promise can be in one of three states:
 
-`Promise.any` returns first fulfilled promise and ignores rejections until all fail.
+- `pending`: promise is still running
+- `fulfilled`: promise completed successfully
+- `rejected`: promise failed
 
-### 67. What is callback hell?
+Example:
+
+```js
+const promise = createUser();
+
+console.log(promise); // Promise { <pending> }
+
+promise
+  .then((result) => {
+    console.log('Fulfilled:', result);
+  })
+  .catch((error) => {
+    console.log('Rejected:', error);
+  });
+```
+
+Important:
+
+```text
+Pending does not mean failed. It only means the async task has not finished yet.
+```
+
+#### Promise.all()
+
+`Promise.all()` is used when all promises must succeed or resolve, and it will all resolved Promise object in a array. If any of the Promise gets reject means it will return the rejected Promise value[string, object, array].
+
+- Promise.all() is used when multiple promises should run together and all of them must succeed.
+- If all promises are fulfilled, Promise.all() returns an array of resolved values in the same order as the promises passed.
+- If any one the promise gets rejects, Promise.all() immediately rejects with that rejected reason/value.
+
+Example:
+
+```js
+async function registerUserWithAll() {
+  try {
+    const result = await Promise.all([
+      createUser(),
+      sendEmail(),
+      sendNotification()
+    ]);
+
+    console.log(result);
+  } catch (error) {
+    console.log('Failed:', error);
+  }
+}
+
+registerUserWithAll();
+```
+
+Output after all promises are fulfilled:
+
+```js
+[
+  { id: 1, name: 'Paras', email: 'paras@example.com' },
+  'Email sent successfully',
+  'Notification sent successfully'
+]
+```
+
+Rejected case:
+
+```js
+async function registerUserWithAllFailure() {
+  try {
+    const result = await Promise.all([
+      createUser(),
+      sendEmail(true),
+      sendNotification()
+    ]);
+
+    console.log(result);
+  } catch (error) {
+    console.log('Failed:', error);
+  }
+}
+
+registerUserWithAllFailure();
+```
+
+Output:
+
+```text
+Failed: Email failed
+```
+
+Important interview point:
+
+```text
+Promise.all rejects as soon as any one promise rejects.
+But it does not cancel the other promises automatically. Other promises may still continue running in the background.
+```
+
+When to use:
+
+```text
+Use Promise.all when every task is required.
+Example: fetch user details, permissions, and settings before showing dashboard.
+```
+
+#### Promise.allSettled()
+
+`Promise.allSettled()` waits for all promises to finish, whether they are fulfilled or rejected.
+
+- Promise.allSettled() is used when multiple promises should run together, but we want the result of every promise whether it succeeds or fails and it returns as a array.
+- It always waits for all promises to complete.
+- If a promise succeeds, its result will have status: "fulfilled" and value.
+- If a promise fails, its result will have status: "rejected" and reason.
+
+Example:
+
+```js
+async function registerUserWithAllSettled() {
+  const result = await Promise.allSettled([
+    createUser(),
+    sendEmail(true),
+    sendNotification()
+  ]);
+
+  console.log(result);
+}
+
+registerUserWithAllSettled();
+```
+
+Output:
+
+```js
+[
+  {
+    status: 'fulfilled',
+    value: { id: 1, name: 'Paras', email: 'paras@example.com' }
+  },
+  {
+    status: 'rejected',
+    reason: 'Email failed'
+  },
+  {
+    status: 'fulfilled',
+    value: 'Notification sent successfully'
+  }
+]
+```
+
+Important interview point:
+
+```text
+Promise.allSettled never fails fast. It gives the final status of every promise.
+```
+
+When to use:
+
+```text
+Use Promise.allSettled when tasks are independent and you want to know which succeeded and which failed.
+Example: create user succeeds, but email fails. You can still return success to the user and retry email later.
+```
+
+Real-world style:
+
+```js
+async function registerUser() {
+  const user = await createUser();
+
+  const sideEffects = await Promise.allSettled([
+    sendEmail(),
+    sendNotification()
+  ]);
+
+  return {
+    user,
+    sideEffects
+  };
+}
+```
+
+In this flow:
+
+```text
+User creation is mandatory.
+Email and notification are optional side effects.
+```
+
+#### Promise.race()
+
+`Promise.race()` returns the first promise that settles.
+
+Settled means:
+
+- fulfilled, or
+- rejected
+
+- Promise.race() is used when multiple promises run together, but we only care about the first promise that finishes.
+- It returns the result of the first settled promise whether its resolved or rejected.
+- Settled means either resolved or rejected.
+- If the first finished promise succeeds, Promise.race() resolves with that value.
+- If the first finished promise fails, Promise.race() rejects with that reason.
+
+Promise.race() is useful for timeout handling because whichever finishes first wins: the API response or the timeout.
+
+Example:
+
+```js
+async function firstCompletedTask() {
+  try {
+    const result = await Promise.race([
+      createUser(),
+      sendEmail(),
+      sendNotification()
+    ]);
+
+    console.log(result);
+  } catch (error) {
+    console.log('Failed first:', error);
+  }
+}
+
+firstCompletedTask();
+```
+
+Output:
+
+```text
+Notification sent successfully
+```
+
+Why?
+
+```text
+sendNotification finishes in 500ms, createUser in 1000ms, and sendEmail in 1500ms.
+So Promise.race returns the notification result first.
+```
+
+Rejected case:
+
+```js
+async function raceFailure() {
+  try {
+    const result = await Promise.race([
+      createUser(),
+      sendEmail(),
+      sendNotification(true)
+    ]);
+
+    console.log(result);
+  } catch (error) {
+    console.log('Failed first:', error);
+  }
+}
+
+raceFailure();
+```
+
+Output:
+
+```text
+Failed first: Notification failed
+```
+
+When to use:
+
+```text
+Use Promise.race when you care about the first completed result, whether success or failure.
+Common use case: API timeout.
+```
+
+Timeout example:
+
+```js
+function timeout(ms) {
+  return new Promise((_, reject) => {
+    setTimeout(() => {
+      reject('Request timeout');
+    }, ms);
+  });
+}
+
+async function createUserWithTimeout() {
+  try {
+    const result = await Promise.race([
+      createUser(),
+      timeout(700)
+    ]);
+
+    console.log(result);
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+createUserWithTimeout();
+```
+
+Output:
+
+```text
+Request timeout
+```
+
+#### Promise.any()
+
+`Promise.any()` returns the first fulfilled promise.
+It ignores rejected promises until all promises fail.
+
+- Promise.any() is used when multiple promises run together, but we only care about the first successful promise.
+- It ignores rejected promises until one promise is fulfilled.
+- If any promise succeeds, Promise.any() resolves with the first fulfilled value.
+- *** If all promises fail, Promise.any() rejects with an AggregateError: [All promises were rejected]
+
+Example:
+
+```js
+async function firstSuccessfulTask() {
+  try {
+    const result = await Promise.any([
+      sendEmail(true),
+      sendNotification(),
+      createUser()
+    ]);
+
+    console.log(result);
+  } catch (error) {
+    console.log('All promises failed:', error);
+  }
+}
+
+firstSuccessfulTask();
+```
+
+Output:
+
+```text
+Notification sent successfully
+```
+
+Why?
+
+```text
+sendEmail rejects, but Promise.any ignores it.
+sendNotification fulfills first, so Promise.any returns that result.
+```
+
+All rejected case:
+
+```js
+async function allFailedWithAny() {
+  try {
+    const result = await Promise.any([
+      createUser(true),
+      sendEmail(true),
+      sendNotification(true)
+    ]);
+
+    console.log(result);
+  } catch (error) {
+    console.log(error.name);
+    console.log(error.errors);
+  }
+}
+
+allFailedWithAny();
+```
+
+Output:
+
+```text
+AggregateError
+[
+  'Create user failed',
+  'Email failed',
+  'Notification failed'
+]
+```
+
+When to use:
+
+```text
+Use Promise.any when you need the first successful result and failure of some promises is acceptable.
+Example: call multiple mirror APIs and use the first successful response.
+```
+
+#### Promise methods interview questions
+
+#### 1. Difference between Promise.all and Promise.allSettled?
+
+Answer:
+
+```text
+Promise.all is fail-fast. If one promise rejects, the whole Promise.all rejects.
+
+Promise.allSettled waits for every promise to complete and returns each promise status as fulfilled or rejected.
+```
+
+Example use:
+
+```text
+Use Promise.all when all data is required.
+Use Promise.allSettled when partial success is acceptable.
+```
+
+#### 2. Difference between Promise.race and Promise.any?
+
+Answer:
+
+```text
+Promise.race returns the first settled promise. It can be success or failure.
+
+Promise.any returns the first fulfilled promise. It ignores rejected promises unless all promises reject.
+```
+
+#### 3. Which promise method is best for create user, send email, and send notification?
+
+Answer:
+
+```text
+First create the user because it is the main operation.
+After that, use Promise.allSettled for sending email and notification, because those are side effects.
+
+If email fails, user creation should not always fail.
+```
+
+Example:
+
+```js
+async function registerUserSafely() {
+  const user = await createUser();
+
+  const result = await Promise.allSettled([
+    sendEmail(),
+    sendNotification()
+  ]);
+
+  return {
+    message: 'User created',
+    user,
+    result
+  };
+}
+```
+
+#### 4. What happens if one promise rejects in Promise.all?
+
+Answer:
+
+```text
+Promise.all immediately rejects with that error.
+The catch block runs.
+```
+
+Important:
+
+```text
+Promise.all does not automatically cancel other promises.
+```
+
+#### 5. What happens if one promise rejects in Promise.allSettled?
+
+Answer:
+
+```text
+Promise.allSettled still waits for all promises.
+It returns an array where each item has status fulfilled or rejected.
+```
+
+#### 6. What happens if the first promise rejects in Promise.race?
+
+Answer:
+
+```text
+Promise.race rejects immediately because it returns the first settled promise.
+Settled can mean fulfilled or rejected.
+```
+
+#### 7. What happens if some promises reject in Promise.any?
+
+Answer:
+
+```text
+Promise.any ignores rejected promises and waits for the first fulfilled promise.
+It rejects only when all promises reject.
+```
+
+#### 8. What error does Promise.any throw if all promises reject?
+
+Answer:
+
+```text
+Promise.any throws AggregateError when all promises reject.
+```
+
+#### 9. What if one promise stays pending forever?
+
+Answer:
+
+```text
+Promise.all waits forever if any promise remains pending and no promise rejects.
+Promise.allSettled waits forever because it needs every promise to settle.
+Promise.race may still finish if another promise settles first.
+Promise.any may still finish if another promise fulfills first.
+```
+
+#### 10. Do promises start only when passed to Promise.all?
+
+Answer:
+
+```text
+No. A promise starts executing as soon as it is created.
+Promise.all, allSettled, race, and any only observe promises that are already running.
+```
+
+Example:
+
+```js
+const p1 = createUser(); // starts here
+const p2 = sendEmail(); // starts here
+
+await Promise.all([p1, p2]); // waits here
+```
+
+#### 11. Quick memory trick
+
+```text
+Promise.all        -> all must pass
+Promise.allSettled -> wait for all results
+Promise.race       -> first finished wins, success or failure
+Promise.any        -> first success wins
+```
+
+### 66. What is anonymous function with an example?
+
+An anonymous function is a function without a name.
+
+It is usually created when we need a function for a short time, especially as a callback.
+
+Interview answer:
+
+```text
+An anonymous function is a function that does not have a name. It is commonly used when a function is needed only once, such as in callbacks, event handlers, array methods, or timers.
+```
+
+Normal named function:
+
+```js
+function greet() {
+  console.log('Hello');
+}
+
+greet();
+```
+
+Anonymous function assigned to a variable:
+
+```js
+const greet = function () {
+  console.log('Hello');
+};
+
+greet();
+```
+
+Here:
+
+```text
+The function itself has no name.
+But it is stored inside the greet variable.
+So we can call it using greet().
+```
+
+Anonymous function as a callback:
+
+```js
+setTimeout(function () {
+  console.log('Runs after 2 seconds');
+}, 2000);
+```
+
+Anonymous function with array method:
+
+```js
+const numbers = [1, 2, 3];
+
+const doubled = numbers.map(function (number) {
+  return number * 2;
+});
+
+console.log(doubled); // [2, 4, 6]
+```
+
+Arrow functions are also commonly anonymous:
+
+```js
+const numbers = [1, 2, 3];
+
+const doubled = numbers.map((number) => {
+  return number * 2;
+});
+
+console.log(doubled); // [2, 4, 6]
+```
+
+Event handler example:
+
+```js
+button.addEventListener('click', function () {
+  console.log('Button clicked');
+});
+```
+
+Important interview point:
+
+```text
+Anonymous functions are useful for short one-time logic, but if the same logic is reused or needs better readability, a named function is better.
+```
+
+Named function vs anonymous function:
+
+```js
+// Named function
+function add(a, b) {
+  return a + b;
+}
+
+// Anonymous function
+const addNumbers = function (a, b) {
+  return a + b;
+};
+```
+
+Simple difference:
+
+```text
+Named function has a function name.
+Anonymous function does not have a function name.
+```
+
+### 67. What is callback with an example?
+
+A callback is a function that is passed as an argument to another function and is executed later.
+
+Interview answer:
+
+```text
+A callback is a function passed into another function so that it can be called later, usually after some work is completed.
+```
+
+Simple example:
+
+```js
+function greet(name, callback) {
+  const message = `Hello ${name}`;
+  callback(message);
+}
+
+function printMessage(message) {
+  console.log(message);
+}
+
+greet('Paras', printMessage);
+```
+
+Output:
+
+```text
+Hello Paras
+```
+
+Here:
+
+```text
+printMessage is passed as a callback.
+greet receives it as an argument.
+greet calls the callback after preparing the message.
+```
+
+Anonymous callback example:
+
+```js
+greet('Paras', function (message) {
+  console.log(message);
+});
+```
+
+Arrow function callback example:
+
+```js
+greet('Paras', (message) => {
+  console.log(message);
+});
+```
+
+Real-world async callback example:
+
+```js
+console.log('Start');
+
+setTimeout(() => {
+  console.log('Runs after 2 seconds');
+}, 2000);
+
+console.log('End');
+```
+
+Output:
+
+```text
+Start
+End
+Runs after 2 seconds
+```
+
+Why?
+
+```text
+setTimeout takes a callback function.
+JavaScript does not wait for 2 seconds.
+It continues running the next line.
+After 2 seconds, the callback is executed.
+```
+
+Common places where callbacks are used:
+
+- event listeners
+- `setTimeout`
+- `setInterval`
+- array methods like `map`, `filter`, `forEach`
+- older asynchronous code before promises and async/await
+
+Example with array method:
+
+```js
+const numbers = [1, 2, 3];
+
+const doubled = numbers.map((number) => {
+  return number * 2;
+});
+
+console.log(doubled); // [2, 4, 6]
+```
+
+Important interview point:
+
+```text
+Callbacks are useful, but too many nested callbacks can make code hard to read. This problem is called callback hell.
+```
+
+### 68. What is callback hell?
 
 Callback hell is nested callbacks that make code hard to read.
 
@@ -1562,7 +2570,7 @@ Solution:
 
 ## Error Handling
 
-### 68. How to handle errors in JavaScript?
+### 69. How to handle errors in JavaScript?
 
 Synchronous:
 
@@ -1584,7 +2592,7 @@ try {
 }
 ```
 
-### 69. What is finally?
+### 70. What is finally?
 
 `finally` runs whether error happens or not.
 
@@ -1600,13 +2608,13 @@ try {
 
 ## DOM and Browser
 
-### 70. What is DOM?
+### 71. What is DOM?
 
 DOM means Document Object Model.
 
 It is a tree representation of HTML that JavaScript can read and modify.
 
-### 71. Event bubbling vs capturing?
+### 72. Event bubbling vs capturing?
 
 Capturing:
 
@@ -1622,7 +2630,7 @@ child -> parent -> document
 
 By default, events bubble.
 
-### 72. What is event delegation?
+### 73. What is event delegation?
 
 Event delegation means adding one event listener to a parent instead of many children.
 
@@ -1641,7 +2649,7 @@ Benefits:
 - better performance
 - works for dynamic elements
 
-### 73. localStorage vs sessionStorage vs cookies?
+### 74. localStorage vs sessionStorage vs cookies?
 
 `localStorage`:
 
@@ -1660,7 +2668,7 @@ Cookies:
 - can be HTTP-only
 - useful for auth
 
-### 74. What is CORS?
+### 75. What is CORS?
 
 CORS means Cross-Origin Resource Sharing.
 
@@ -1677,13 +2685,13 @@ These are different origins.
 
 ## Node.js Basics
 
-### 75. What is Node.js?
+### 76. What is Node.js?
 
 Node.js is a JavaScript runtime built on Chrome V8 engine.
 
 It allows JavaScript to run outside the browser.
 
-### 76. CommonJS vs ES Modules?
+### 77. CommonJS vs ES Modules?
 
 CommonJS:
 
@@ -1705,7 +2713,7 @@ This app uses ES Modules:
 "type": "module"
 ```
 
-### 77. What is middleware?
+### 78. What is middleware?
 
 Middleware is a function that runs between request and response.
 
@@ -1726,7 +2734,7 @@ app.use(logger);
 
 ## Security Questions
 
-### 78. What is XSS?
+### 79. What is XSS?
 
 XSS means Cross-Site Scripting.
 
@@ -1739,7 +2747,7 @@ Prevention:
 - use Content Security Policy
 - avoid dangerously setting HTML
 
-### 79. What is CSRF?
+### 80. What is CSRF?
 
 CSRF means Cross-Site Request Forgery.
 
@@ -1751,7 +2759,7 @@ Prevention:
 - CSRF tokens
 - origin checks
 
-### 80. Why should JWT not be stored in localStorage?
+### 81. Why should JWT not be stored in localStorage?
 
 Because XSS can read localStorage.
 
@@ -1763,7 +2771,7 @@ HTTP-only secure cookie
 
 ## Performance Questions
 
-### 81. What is debounce?
+### 82. What is debounce?
 
 Debounce delays function execution until user stops triggering it.
 
@@ -1788,7 +2796,7 @@ function debounce(fn, delay) {
 }
 ```
 
-### 82. What is throttle?
+### 83. What is throttle?
 
 Throttle ensures function runs at most once in a given time.
 
@@ -1814,7 +2822,7 @@ function throttle(fn, delay) {
 }
 ```
 
-### 83. What is memoization?
+### 84. What is memoization?
 
 Memoization caches expensive function results.
 
@@ -1840,7 +2848,7 @@ function memoize(fn) {
 
 ## Tricky Output Questions
 
-### 84. Output question: var loop
+### 85. Output question: var loop
 
 ```js
 for (var i = 0; i < 3; i += 1) {
@@ -1860,7 +2868,7 @@ Reason:
 
 `var` is function scoped. All callbacks share same `i`.
 
-### 85. Output question: let loop
+### 86. Output question: let loop
 
 ```js
 for (let i = 0; i < 3; i += 1) {
@@ -1880,7 +2888,7 @@ Reason:
 
 `let` creates a new binding for each loop iteration.
 
-### 86. Output question: object reference
+### 87. Output question: object reference
 
 ```js
 const a = { value: 1 };
@@ -1901,7 +2909,7 @@ Reason:
 
 `a` and `b` point to same object.
 
-### 87. Output question: typeof null
+### 88. Output question: typeof null
 
 ```js
 console.log(typeof null);
@@ -1917,7 +2925,7 @@ Reason:
 
 Historical JavaScript behavior.
 
-### 88. Output question: equality
+### 89. Output question: equality
 
 ```js
 console.log([] == false);
@@ -1935,7 +2943,7 @@ Reason:
 
 `==` does coercion, `===` does not.
 
-### 89. Output question: closure
+### 90. Output question: closure
 
 ```js
 function outer() {
@@ -1966,7 +2974,7 @@ Inner function remembers outer `count`.
 
 ## Coding Questions
 
-### 90. Reverse a string
+### 91. Reverse a string
 
 ```js
 function reverseString(str) {
@@ -1976,7 +2984,7 @@ function reverseString(str) {
 console.log(reverseString('hello')); // 'olleh'
 ```
 
-### 91. Check palindrome
+### 92. Check palindrome
 
 ```js
 function isPalindrome(str) {
@@ -1985,7 +2993,7 @@ function isPalindrome(str) {
 }
 ```
 
-### 92. Find max number
+### 93. Find max number
 
 ```js
 function findMax(numbers) {
@@ -2004,7 +3012,7 @@ function findMax(numbers) {
 }
 ```
 
-### 93. Count character frequency
+### 94. Count character frequency
 
 ```js
 function countChars(str) {
@@ -2015,7 +3023,7 @@ function countChars(str) {
 }
 ```
 
-### 94. Group array by property
+### 95. Group array by property
 
 ```js
 function groupBy(items, key) {
@@ -2036,7 +3044,7 @@ const users = [
 console.log(groupBy(users, 'role'));
 ```
 
-### 95. Check anagram
+### 96. Check anagram
 
 ```js
 function sortText(text) {
@@ -2048,7 +3056,7 @@ function isAnagram(a, b) {
 }
 ```
 
-### 96. Implement once function
+### 97. Implement once function
 
 ```js
 function once(fn) {
@@ -2066,7 +3074,7 @@ function once(fn) {
 }
 ```
 
-### 97. Implement sleep
+### 98. Implement sleep
 
 ```js
 function sleep(ms) {
@@ -2076,7 +3084,7 @@ function sleep(ms) {
 await sleep(1000);
 ```
 
-### 98. Retry async function
+### 99. Retry async function
 
 ```js
 async function retry(fn, attempts = 3) {
@@ -2096,7 +3104,7 @@ async function retry(fn, attempts = 3) {
 
 ## React/Frontend JavaScript Questions
 
-### 99. What is immutability and why is it important?
+### 100. What is immutability and why is it important?
 
 Immutability means not changing existing data directly.
 
@@ -2117,7 +3125,7 @@ Why important:
 - React change detection
 - Redux best practice
 
-### 100. Why should keys be stable in React lists?
+### 101. Why should keys be stable in React lists?
 
 Stable keys help React identify which items changed.
 
@@ -2133,7 +3141,7 @@ Good:
 users.map((user) => <User key={user.id} user={user} />);
 ```
 
-### 101. What is optional chaining?
+### 102. What is optional chaining?
 
 Optional chaining safely accesses nested values.
 
@@ -2147,7 +3155,7 @@ Without optional chaining:
 const city = user && user.address && user.address.city;
 ```
 
-### 102. What is nullish coalescing?
+### 103. What is nullish coalescing?
 
 `??` returns right side only if left side is `null` or `undefined`.
 
@@ -2164,7 +3172,7 @@ console.log(0 ?? 10); // 0
 
 ## Backend JavaScript Questions
 
-### 103. What is asyncHandler in Express?
+### 104. What is asyncHandler in Express?
 
 `asyncHandler` wraps async route handlers and forwards errors to Express error middleware.
 
@@ -2184,7 +3192,7 @@ app.get('/users', asyncHandler(async (req, res) => {
 }));
 ```
 
-### 104. Why use environment variables?
+### 105. Why use environment variables?
 
 Environment variables store configuration outside code.
 
@@ -2197,7 +3205,7 @@ Examples:
 
 Never hardcode secrets in code.
 
-### 105. What is JSON?
+### 106. What is JSON?
 
 JSON means JavaScript Object Notation.
 
@@ -2212,7 +3220,7 @@ Example:
 }
 ```
 
-### 106. JSON.stringify vs JSON.parse?
+### 107. JSON.stringify vs JSON.parse?
 
 `JSON.stringify` converts object to JSON string.
 
@@ -2228,37 +3236,37 @@ JSON.parse('{"name":"Paras"}');
 
 ## Most Important Short Interview Answers
 
-### 107. Explain closure in one line.
+### 108. Explain closure in one line.
 
 ```text
 A closure is when a function remembers variables from its outer scope even after the outer function has returned.
 ```
 
-### 108. Explain event loop in one line.
+### 109. Explain event loop in one line.
 
 ```text
 The event loop moves async callbacks and microtasks into the call stack when the stack is empty.
 ```
 
-### 109. Explain promise in one line.
+### 110. Explain promise in one line.
 
 ```text
 A promise represents a future value that can be pending, fulfilled, or rejected.
 ```
 
-### 110. Explain this in one line.
+### 111. Explain this in one line.
 
 ```text
 this refers to the execution context and depends on how a function is called.
 ```
 
-### 111. Explain prototype in one line.
+### 112. Explain prototype in one line.
 
 ```text
 Prototype is JavaScript's inheritance mechanism where objects can access properties and methods from another object.
 ```
 
-### 112. Explain hoisting in one line.
+### 113. Explain hoisting in one line.
 
 ```text
 Hoisting is JavaScript's behavior of processing declarations before code execution.
