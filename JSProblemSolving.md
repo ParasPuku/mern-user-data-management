@@ -4,9 +4,13 @@ This document contains commonly asked JavaScript problem-solving interview quest
 
 It focuses on:
 
-- 10 array-based questions
-- 10 string-based questions
-- 5 object-based questions
+- array-based questions
+- string-based questions
+- mathematical and logic puzzles
+- object and data transformation questions
+- advanced functions and closures
+- asynchronous JavaScript and Promise questions
+- native polyfills and basic data structures
 - Vanilla JavaScript only
 - simple logic that is easy to explain in interviews
 
@@ -1935,6 +1939,343 @@ Then compare each word with the target word and count matches.
 
 ---
 
+## 21. Reverse A String Recursively
+
+### Question
+
+Reverse a string recursively without using `.reverse()`.
+
+### Code
+
+```js
+function reverseStringRecursive(str) {
+  if (str.length <= 1) {
+    return str;
+  }
+
+  return reverseStringRecursive(str.slice(1)) + str[0];
+}
+
+console.log(reverseStringRecursive('hello'));
+```
+
+### Output
+
+```js
+'olleh'
+```
+
+### Explanation
+
+Remove the first character and reverse the remaining string.
+
+Then add the first character at the end.
+
+---
+
+## 22. Palindrome Checker Ignoring Case And Symbols
+
+### Question
+
+Return `true` if a string reads the same backward while ignoring casing and non-alphanumeric characters.
+
+### Code
+
+```js
+function isCleanPalindrome(str) {
+  var clean = '';
+
+  for (var i = 0; i < str.length; i++) {
+    var char = str[i].toLowerCase();
+
+    if ((char >= 'a' && char <= 'z') || (char >= '0' && char <= '9')) {
+      clean = clean + char;
+    }
+  }
+
+  var left = 0;
+  var right = clean.length - 1;
+
+  while (left < right) {
+    if (clean[left] !== clean[right]) {
+      return false;
+    }
+
+    left++;
+    right--;
+  }
+
+  return true;
+}
+
+console.log(isCleanPalindrome('A man, a plan, a canal: Panama'));
+console.log(isCleanPalindrome('hello'));
+```
+
+### Output
+
+```js
+true
+false
+```
+
+### Explanation
+
+First keep only letters and numbers in lowercase.
+
+Then compare characters using two pointers from both ends.
+
+---
+
+## 23. First Unique Character Index
+
+### Question
+
+Find the index of the first non-repeating character in a string.
+
+### Code
+
+```js
+function firstUniqueCharIndex(str) {
+  var frequency = {};
+
+  for (var i = 0; i < str.length; i++) {
+    var char = str[i];
+    frequency[char] = (frequency[char] || 0) + 1;
+  }
+
+  for (var j = 0; j < str.length; j++) {
+    if (frequency[str[j]] === 1) {
+      return j;
+    }
+  }
+
+  return -1;
+}
+
+console.log(firstUniqueCharIndex('leetcode'));
+console.log(firstUniqueCharIndex('aabb'));
+```
+
+### Output
+
+```js
+0
+-1
+```
+
+### Explanation
+
+First count every character.
+
+Then return the first index whose character count is `1`.
+
+---
+
+## 24. Truncate String
+
+### Question
+
+Truncate a string if it exceeds a maximum length and append `"..."`.
+
+### Code
+
+```js
+function truncateString(str, maxLength) {
+  if (str.length <= maxLength) {
+    return str;
+  }
+
+  return str.slice(0, maxLength) + '...';
+}
+
+console.log(truncateString('JavaScript problem solving', 10));
+console.log(truncateString('React', 10));
+```
+
+### Output
+
+```js
+'JavaScript...'
+'React'
+```
+
+### Explanation
+
+If the string is longer than the allowed length, take only the required part and add `"..."`.
+
+---
+
+# Mathematical And Logic Puzzles
+
+## 1. Fibonacci Series
+
+### Question
+
+Print the Fibonacci series up to `n` terms.
+
+### Code
+
+```js
+function fibonacciSeries(n) {
+  var result = [];
+  var first = 0;
+  var second = 1;
+
+  for (var i = 0; i < n; i++) {
+    result.push(first);
+
+    var next = first + second;
+    first = second;
+    second = next;
+  }
+
+  return result;
+}
+
+console.log(fibonacciSeries(7));
+```
+
+### Output
+
+```js
+[0, 1, 1, 2, 3, 5, 8]
+```
+
+### Explanation
+
+Every next number is the sum of the previous two numbers.
+
+---
+
+## 2. Prime Number Checker
+
+### Question
+
+Check whether a number is prime or composite.
+
+### Code
+
+```js
+function isPrime(num) {
+  if (num <= 1) {
+    return false;
+  }
+
+  for (var i = 2; i <= Math.sqrt(num); i++) {
+    if (num % i === 0) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+console.log(isPrime(7));
+console.log(isPrime(10));
+```
+
+### Output
+
+```js
+true
+false
+```
+
+### Explanation
+
+A prime number is divisible only by `1` and itself.
+
+We check divisibility from `2` to square root of the number.
+
+---
+
+## 3. FizzBuzz
+
+### Question
+
+Print numbers from `1` to `n`.
+
+- Print `Fizz` for multiples of `3`
+- Print `Buzz` for multiples of `5`
+- Print `FizzBuzz` for multiples of both `3` and `5`
+
+### Code
+
+```js
+function fizzBuzz(n) {
+  var result = [];
+
+  for (var i = 1; i <= n; i++) {
+    if (i % 3 === 0 && i % 5 === 0) {
+      result.push('FizzBuzz');
+    } else if (i % 3 === 0) {
+      result.push('Fizz');
+    } else if (i % 5 === 0) {
+      result.push('Buzz');
+    } else {
+      result.push(i);
+    }
+  }
+
+  return result;
+}
+
+console.log(fizzBuzz(15));
+```
+
+### Output
+
+```js
+[1, 2, 'Fizz', 4, 'Buzz', 'Fizz', 7, 8, 'Fizz', 'Buzz', 11, 'Fizz', 13, 14, 'FizzBuzz']
+```
+
+### Explanation
+
+Check the condition for both `3` and `5` first.
+
+---
+
+## 4. Factorial Number
+
+### Question
+
+Find factorial of a number.
+
+### Code
+
+```js
+function factorial(num) {
+  var result = 1;
+
+  for (var i = 2; i <= num; i++) {
+    result = result * i;
+  }
+
+  return result;
+}
+
+console.log(factorial(5));
+```
+
+### Output
+
+```js
+120
+```
+
+### Explanation
+
+Factorial means multiplying all numbers from `1` to that number.
+
+Example:
+
+```js
+5 * 4 * 3 * 2 * 1 = 120
+```
+
+---
+
 # Object Problem Solving Questions
 
 ## 1. Count Number Of Keys In An Object
@@ -2111,18 +2452,17 @@ Find the key that has the highest value in an object.
 
 ```js
 function findHighestScore(scores) {
-  var highestName = '';
+  var highestNameKey = '';
   var highestScore = -Infinity;
 
   for (var key in scores) {
     if (scores[key] > highestScore) {
       highestScore = scores[key];
-      highestName = key;
+      highestNameKey = key;
     }
   }
-
   return {
-    name: highestName,
+    name: highestNameKey,
     score: highestScore
   };
 }
@@ -2152,6 +2492,1166 @@ If a bigger value is found, update both:
 
 - highest key
 - highest value
+
+---
+
+## 6. Deep Clone Object Without JSON Methods
+
+### Question
+
+Replicate an object completely, including nested objects and arrays, without using `JSON.parse(JSON.stringify())`.
+
+### Code
+
+```js
+function deepClone(value) {
+  if (value === null || typeof value !== 'object') {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    var arrCopy = [];
+
+    for (var i = 0; i < value.length; i++) {
+      arrCopy[i] = deepClone(value[i]);
+    }
+
+    return arrCopy;
+  }
+
+  var objCopy = {};
+
+  for (var key in value) {
+    if (value.hasOwnProperty(key)) {
+      objCopy[key] = deepClone(value[key]);
+    }
+  }
+
+  return objCopy;
+}
+
+var user = {
+  name: 'Paras',
+  address: {
+    city: 'Bengaluru'
+  },
+  skills: ['JS', 'React']
+};
+
+var copiedUser = deepClone(user);
+copiedUser.address.city = 'Delhi';
+
+console.log(user.address.city);
+console.log(copiedUser.address.city);
+```
+
+### Output
+
+```js
+'Bengaluru'
+'Delhi'
+```
+
+### Explanation
+
+If the value is primitive, return it directly.
+
+If it is an array or object, recursively copy each nested value.
+
+---
+
+## 7. Deep Equality Comparison
+
+### Question
+
+Compare two variables or objects deeply to confirm if they hold identical values.
+
+### Code
+
+```js
+function deepEqual(a, b) {
+  if (a === b) {
+    return true;
+  }
+
+  if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') {
+    return false;
+  }
+
+  var keysA = Object.keys(a);
+  var keysB = Object.keys(b);
+
+  if (keysA.length !== keysB.length) {
+    return false;
+  }
+
+  for (var i = 0; i < keysA.length; i++) {
+    var key = keysA[i];
+
+    if (!b.hasOwnProperty(key)) {
+      return false;
+    }
+
+    if (!deepEqual(a[key], b[key])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+console.log(deepEqual({ a: 1, b: { c: 2 } }, { a: 1, b: { c: 2 } }));
+console.log(deepEqual({ a: 1 }, { a: 2 }));
+```
+
+### Output
+
+```js
+true
+false
+```
+
+### Explanation
+
+First compare direct values.
+
+If both are objects, compare keys and then compare every nested value recursively.
+
+---
+
+## 8. Object Inversion
+
+### Question
+
+Swap an object's keys and values.
+
+### Code
+
+```js
+function invertObject(obj) {
+  var result = {};
+
+  for (var key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      var value = obj[key];
+      result[value] = key;
+    }
+  }
+
+  return result;
+}
+
+console.log(invertObject({ name: 'Paras', role: 'admin' }));
+```
+
+### Output
+
+```js
+{ Paras: 'name', admin: 'role' }
+```
+
+### Explanation
+
+Loop over each key.
+
+Use the old value as the new key and the old key as the new value.
+
+---
+
+## 9. Filter Collection
+
+### Question
+
+Filter an array of objects based on key-value matching criteria.
+
+### Code
+
+```js
+function filterCollection(collection, key, value) {
+  var result = [];
+
+  for (var i = 0; i < collection.length; i++) {
+    if (collection[i][key] === value) {
+      result.push(collection[i]);
+    }
+  }
+
+  return result;
+}
+
+var users = [
+  { name: 'Amit', role: 'admin' },
+  { name: 'Priya', role: 'user' },
+  { name: 'Rahul', role: 'admin' }
+];
+
+console.log(filterCollection(users, 'role', 'admin'));
+```
+
+### Output
+
+```js
+[
+  { name: 'Amit', role: 'admin' },
+  { name: 'Rahul', role: 'admin' }
+]
+```
+
+### Explanation
+
+Loop through every object and push only the objects whose key value matches.
+
+---
+
+## 10. Generic Group By Utility
+
+### Question
+
+Group an array of objects by a common property key.
+
+### Code
+
+```js
+function groupBy(collection, key) {
+  var result = {};
+
+  for (var i = 0; i < collection.length; i++) {
+    var groupKey = collection[i][key];
+
+    if (!result[groupKey]) {
+      result[groupKey] = [];
+    }
+
+    result[groupKey].push(collection[i]);
+  }
+
+  return result;
+}
+
+var users = [
+  { name: 'Amit', role: 'admin' },
+  { name: 'Priya', role: 'user' },
+  { name: 'Rahul', role: 'admin' }
+];
+
+console.log(groupBy(users, 'role'));
+```
+
+### Output
+
+```js
+{
+  admin: [
+    { name: 'Amit', role: 'admin' },
+    { name: 'Rahul', role: 'admin' }
+  ],
+  user: [
+    { name: 'Priya', role: 'user' }
+  ]
+}
+```
+
+### Explanation
+
+Use the selected property value as the group name.
+
+---
+
+## 11. Query String Parser
+
+### Question
+
+Convert a URL query string into a JavaScript object.
+
+Example:
+
+```js
+'?item=book&qty=2'
+```
+
+### Code
+
+```js
+function parseQueryString(query) {
+  var result = {};
+
+  if (query[0] === '?') {
+    query = query.slice(1);
+  }
+
+  if (query === '') {
+    return result;
+  }
+
+  var pairs = query.split('&');
+
+  for (var i = 0; i < pairs.length; i++) {
+    var parts = pairs[i].split('=');
+    var key = decodeURIComponent(parts[0]);
+    var value = decodeURIComponent(parts[1] || '');
+
+    result[key] = value;
+  }
+
+  return result;
+}
+
+console.log(parseQueryString('?item=book&qty=2'));
+```
+
+### Output
+
+```js
+{ item: 'book', qty: '2' }
+```
+
+### Explanation
+
+Remove `?`, split by `&`, then split each key-value pair by `=`.
+
+---
+
+## 12. Object Flattening
+
+### Question
+
+Flatten a nested object into dot-notated path keys.
+
+Example:
+
+```js
+{ a: { b: 1 } } -> { 'a.b': 1 }
+```
+
+### Code
+
+```js
+function flattenObject(obj, parentKey) {
+  var result = {};
+
+  for (var key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      var newKey = parentKey ? parentKey + '.' + key : key;
+      var value = obj[key];
+
+      if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+        var nested = flattenObject(value, newKey);
+
+        for (var nestedKey in nested) {
+          result[nestedKey] = nested[nestedKey];
+        }
+      } else {
+        result[newKey] = value;
+      }
+    }
+  }
+
+  return result;
+}
+
+console.log(flattenObject({ a: { b: 1 }, c: 2 }));
+```
+
+### Output
+
+```js
+{ 'a.b': 1, c: 2 }
+```
+
+### Explanation
+
+Use recursion and keep building the key path with dots.
+
+---
+
+# Advanced Functions And Closures
+
+## 1. Debounce
+
+### Question
+
+Delay function execution until a specific amount of idle time has passed.
+
+### Code
+
+```js
+function debounce(fn, delay) {
+  var timerId;
+
+  return function () {
+    var context = this;
+    var args = arguments;
+
+    clearTimeout(timerId);
+
+    timerId = setTimeout(function () {
+      fn.apply(context, args);
+    }, delay);
+  };
+}
+
+var search = debounce(function (text) {
+  console.log('Searching:', text);
+}, 500);
+
+search('r');
+search('re');
+search('rea');
+```
+
+### Explanation
+
+Every new call resets the timer.
+
+The function runs only after calls stop for the given delay.
+
+---
+
+## 2. Throttle
+
+### Question
+
+Limit function execution to once every specified time interval.
+
+### Code
+
+```js
+function throttle(fn, delay) {
+  var lastCall = 0;
+
+  return function () {
+    var now = Date.now();
+
+    if (now - lastCall >= delay) {
+      lastCall = now;
+      fn.apply(this, arguments);
+    }
+  };
+}
+
+var handleScroll = throttle(function () {
+  console.log('Scroll event handled');
+}, 1000);
+
+handleScroll();
+handleScroll();
+```
+
+### Explanation
+
+Throttle allows the function to run at most once during the given time interval.
+
+---
+
+## 3. Currying Function
+
+### Question
+
+Transform a function with multiple arguments into a chain of functions.
+
+### Code
+
+```js
+function curryAdd(a) {
+  return function (b) {
+    return function (c) {
+      return a + b + c;
+    };
+  };
+}
+
+console.log(curryAdd(2)(3)(4));
+```
+
+### Output
+
+```js
+9
+```
+
+### Explanation
+
+Each function remembers the previous argument using closure.
+
+---
+
+## 4. Memoize
+
+### Question
+
+Create a caching utility that remembers previous function results.
+
+### Code
+
+```js
+function memoize(fn) {
+  var cache = {};
+
+  return function () {
+    var key = JSON.stringify(arguments);
+
+    if (cache.hasOwnProperty(key)) {
+      return cache[key];
+    }
+
+    var result = fn.apply(this, arguments);
+    cache[key] = result;
+    return result;
+  };
+}
+
+var slowAdd = memoize(function (a, b) {
+  console.log('Calculating...');
+  return a + b;
+});
+
+console.log(slowAdd(2, 3));
+console.log(slowAdd(2, 3));
+```
+
+### Explanation
+
+The first call calculates the result.
+
+The second call returns the saved result from cache.
+
+---
+
+## 5. Once
+
+### Question
+
+Allow a function to execute only once.
+
+### Code
+
+```js
+function once(fn) {
+  var called = false;
+  var result;
+
+  return function () {
+    if (!called) {
+      called = true;
+      result = fn.apply(this, arguments);
+    }
+
+    return result;
+  };
+}
+
+var initialize = once(function () {
+  console.log('Initialized');
+  return true;
+});
+
+initialize();
+initialize();
+```
+
+### Explanation
+
+The first call runs the function.
+
+Later calls return the saved result.
+
+---
+
+## 6. Compose
+
+### Question
+
+Build a functional pipeline that runs functions from right to left.
+
+### Code
+
+```js
+function compose() {
+  var fns = arguments;
+
+  return function (value) {
+    var result = value;
+
+    for (var i = fns.length - 1; i >= 0; i--) {
+      result = fns[i](result);
+    }
+
+    return result;
+  };
+}
+
+function double(num) {
+  return num * 2;
+}
+
+function square(num) {
+  return num * num;
+}
+
+var doubleThenSquare = compose(square, double);
+
+console.log(doubleThenSquare(3));
+```
+
+### Output
+
+```js
+36
+```
+
+### Explanation
+
+`compose(square, double)(3)` runs:
+
+```js
+square(double(3))
+```
+
+---
+
+## 7. Partial Application
+
+### Question
+
+Fix some arguments inside a function and return a new function for the remaining arguments.
+
+### Code
+
+```js
+function partial(fn) {
+  var fixedArgs = Array.prototype.slice.call(arguments, 1);
+
+  return function () {
+    var remainingArgs = Array.prototype.slice.call(arguments);
+    return fn.apply(this, fixedArgs.concat(remainingArgs));
+  };
+}
+
+function multiply(a, b, c) {
+  return a * b * c;
+}
+
+var multiplyByTwo = partial(multiply, 2);
+
+console.log(multiplyByTwo(3, 4));
+```
+
+### Output
+
+```js
+24
+```
+
+### Explanation
+
+The first argument is fixed as `2`.
+
+The returned function accepts the remaining arguments.
+
+---
+
+# Asynchronous JavaScript And Promises
+
+## 1. Promise.all Polyfill
+
+### Question
+
+Recreate native `Promise.all`.
+
+### Code
+
+```js
+function customPromiseAll(promises) {
+  return new Promise(function (resolve, reject) {
+    var result = [];
+    var completed = 0;
+
+    if (promises.length === 0) {
+      resolve(result);
+      return;
+    }
+
+    for (var i = 0; i < promises.length; i++) {
+      (function (index) {
+        Promise.resolve(promises[index])
+          .then(function (value) {
+            result[index] = value;
+            completed++;
+
+            if (completed === promises.length) {
+              resolve(result);
+            }
+          })
+          .catch(function (error) {
+            reject(error);
+          });
+      })(i);
+    }
+  });
+}
+
+customPromiseAll([Promise.resolve(1), Promise.resolve(2)]).then(console.log);
+```
+
+### Output
+
+```js
+[1, 2]
+```
+
+### Explanation
+
+Resolve only when all promises are fulfilled.
+
+Reject immediately if any promise fails.
+
+---
+
+## 2. Promise.race Polyfill
+
+### Question
+
+Return the result or error of the first promise that settles.
+
+### Code
+
+```js
+function customPromiseRace(promises) {
+  return new Promise(function (resolve, reject) {
+    for (var i = 0; i < promises.length; i++) {
+      Promise.resolve(promises[i])
+        .then(resolve)
+        .catch(reject);
+    }
+  });
+}
+
+customPromiseRace([
+  new Promise(function (resolve) {
+    setTimeout(function () {
+      resolve('first');
+    }, 500);
+  }),
+  new Promise(function (resolve) {
+    setTimeout(function () {
+      resolve('second');
+    }, 1000);
+  })
+]).then(console.log);
+```
+
+### Output
+
+```js
+'first'
+```
+
+### Explanation
+
+Whichever promise settles first decides the final result.
+
+---
+
+## 3. Async Auto-Retry
+
+### Question
+
+Retry a failing asynchronous action a specific number of times.
+
+### Code
+
+```js
+async function retryAsync(fn, attempts) {
+  var lastError;
+
+  for (var i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError;
+}
+
+var count = 0;
+
+function unstableApi() {
+  return new Promise(function (resolve, reject) {
+    count++;
+
+    if (count < 3) {
+      reject('Failed');
+    } else {
+      resolve('Success');
+    }
+  });
+}
+
+retryAsync(unstableApi, 3).then(console.log).catch(console.log);
+```
+
+### Output
+
+```js
+'Success'
+```
+
+### Explanation
+
+Try the async function.
+
+If it fails, try again until attempts are over.
+
+---
+
+## 4. Asynchronous Queue Or Pool
+
+### Question
+
+Run async tasks with a maximum concurrency limit.
+
+### Code
+
+```js
+function asyncPool(tasks, limit) {
+  return new Promise(function (resolve, reject) {
+    var results = [];
+    var running = 0;
+    var index = 0;
+    var completed = 0;
+
+    function runNext() {
+      if (completed === tasks.length) {
+        resolve(results);
+        return;
+      }
+
+      while (running < limit && index < tasks.length) {
+        var currentIndex = index;
+        var task = tasks[currentIndex];
+
+        index++;
+        running++;
+
+        task()
+          .then(function (result) {
+            results[currentIndex] = result;
+            running--;
+            completed++;
+            runNext();
+          })
+          .catch(reject);
+      }
+    }
+
+    runNext();
+  });
+}
+
+var tasks = [
+  function () {
+    return Promise.resolve('Task 1');
+  },
+  function () {
+    return Promise.resolve('Task 2');
+  },
+  function () {
+    return Promise.resolve('Task 3');
+  }
+];
+
+asyncPool(tasks, 2).then(console.log);
+```
+
+### Output
+
+```js
+['Task 1', 'Task 2', 'Task 3']
+```
+
+### Explanation
+
+Only `limit` number of tasks can run at the same time.
+
+When one task finishes, the next task starts.
+
+---
+
+## 5. Sleep Or Delay Helper
+
+### Question
+
+Pause code execution for a specific duration using Promise and `setTimeout`.
+
+### Code
+
+```js
+function sleep(ms) {
+  return new Promise(function (resolve) {
+    setTimeout(resolve, ms);
+  });
+}
+
+async function run() {
+  console.log('Start');
+  await sleep(1000);
+  console.log('After 1 second');
+}
+
+run();
+```
+
+### Explanation
+
+`sleep` returns a promise that resolves after the given time.
+
+---
+
+# Native Polyfills And Data Structures
+
+## 1. Custom Array map, filter, and reduce
+
+### Question
+
+Write custom prototype implementations of `map`, `filter`, and `reduce`.
+
+### Code
+
+```js
+Array.prototype.customMap = function (callback) {
+  var result = [];
+
+  for (var i = 0; i < this.length; i++) {
+    result.push(callback(this[i], i, this));
+  }
+
+  return result;
+};
+
+Array.prototype.customFilter = function (callback) {
+  var result = [];
+
+  for (var i = 0; i < this.length; i++) {
+    if (callback(this[i], i, this)) {
+      result.push(this[i]);
+    }
+  }
+
+  return result;
+};
+
+Array.prototype.customReduce = function (callback, initialValue) {
+  var accumulator = initialValue;
+  var startIndex = 0;
+
+  if (accumulator === undefined) {
+    accumulator = this[0];
+    startIndex = 1;
+  }
+
+  for (var i = startIndex; i < this.length; i++) {
+    accumulator = callback(accumulator, this[i], i, this);
+  }
+
+  return accumulator;
+};
+
+console.log([1, 2, 3].customMap(function (num) {
+  return num * 2;
+}));
+
+console.log([1, 2, 3, 4].customFilter(function (num) {
+  return num > 2;
+}));
+
+console.log([1, 2, 3].customReduce(function (sum, num) {
+  return sum + num;
+}, 0));
+```
+
+### Output
+
+```js
+[2, 4, 6]
+[3, 4]
+6
+```
+
+### Explanation
+
+These methods loop through the array and call the callback manually.
+
+---
+
+## 2. Linked List Implementation
+
+### Question
+
+Create a basic linked list with insertion, removal, and traversal.
+
+### Code
+
+```js
+class Node {
+  constructor(value) {
+    this.value = value;
+    this.next = null;
+  }
+}
+
+class LinkedList {
+  constructor() {
+    this.head = null;
+  }
+
+  insert(value) {
+    var newNode = new Node(value);
+
+    if (this.head === null) {
+      this.head = newNode;
+      return;
+    }
+
+    var current = this.head;
+
+    while (current.next !== null) {
+      current = current.next;
+    }
+
+    current.next = newNode;
+  }
+
+  remove(value) {
+    if (this.head === null) {
+      return;
+    }
+
+    if (this.head.value === value) {
+      this.head = this.head.next;
+      return;
+    }
+
+    var current = this.head;
+
+    while (current.next !== null && current.next.value !== value) {
+      current = current.next;
+    }
+
+    if (current.next !== null) {
+      current.next = current.next.next;
+    }
+  }
+
+  print() {
+    var result = [];
+    var current = this.head;
+
+    while (current !== null) {
+      result.push(current.value);
+      current = current.next;
+    }
+
+    return result;
+  }
+}
+
+var list = new LinkedList();
+list.insert(10);
+list.insert(20);
+list.insert(30);
+list.remove(20);
+
+console.log(list.print());
+```
+
+### Output
+
+```js
+[10, 30]
+```
+
+### Explanation
+
+Each node stores a value and a pointer to the next node.
+
+---
+
+## 3. Custom Event Emitter
+
+### Question
+
+Build a pub/sub event system with `on`, `off`, and `emit`.
+
+### Code
+
+```js
+class EventEmitter {
+  constructor() {
+    this.events = {};
+  }
+
+  on(eventName, callback) {
+    if (!this.events[eventName]) {
+      this.events[eventName] = [];
+    }
+
+    this.events[eventName].push(callback);
+  }
+
+  off(eventName, callback) {
+    if (!this.events[eventName]) {
+      return;
+    }
+
+    var filtered = [];
+
+    for (var i = 0; i < this.events[eventName].length; i++) {
+      if (this.events[eventName][i] !== callback) {
+        filtered.push(this.events[eventName][i]);
+      }
+    }
+
+    this.events[eventName] = filtered;
+  }
+
+  emit(eventName, data) {
+    if (!this.events[eventName]) {
+      return;
+    }
+
+    for (var i = 0; i < this.events[eventName].length; i++) {
+      this.events[eventName][i](data);
+    }
+  }
+}
+
+var emitter = new EventEmitter();
+
+function greet(name) {
+  console.log('Hello ' + name);
+}
+
+emitter.on('welcome', greet);
+emitter.emit('welcome', 'Paras');
+emitter.off('welcome', greet);
+emitter.emit('welcome', 'Amit');
+```
+
+### Output
+
+```js
+'Hello Paras'
+```
+
+### Explanation
+
+`on` registers a function.
+
+`emit` calls all registered functions.
+
+`off` removes a function from the event list.
 
 ---
 
@@ -2261,3 +3761,33 @@ Practice these without looking at the solution:
 - convert object to array
 - merge objects
 - find highest object value
+- recursive reverse string
+- clean palindrome checker
+- first unique character index
+- truncate string
+- fibonacci series
+- prime number checker
+- FizzBuzz
+- factorial
+- deep clone object
+- deep equality comparison
+- object inversion
+- filter collection
+- generic group by
+- query string parser
+- object flattening
+- debounce
+- throttle
+- currying
+- memoize
+- once
+- compose
+- partial application
+- Promise.all polyfill
+- Promise.race polyfill
+- async auto-retry
+- async queue or pool
+- sleep/delay helper
+- custom map/filter/reduce
+- linked list
+- event emitter
