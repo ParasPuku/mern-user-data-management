@@ -220,6 +220,141 @@ becomes:
 React.createElement('h1', null, 'Hello');
 ```
 
+#### What is the difference between `createElement` and `cloneElement`?
+
+`React.createElement` creates a new React element from scratch.
+
+It is what JSX becomes after compilation.
+
+Example:
+
+```tsx
+const element = React.createElement(
+  'button',
+  { className: 'primary' },
+  'Click Me'
+);
+```
+
+This is similar to writing:
+
+```tsx
+const element = <button className="primary">Click Me</button>;
+```
+
+`React.cloneElement` takes an existing React element and returns a new element with extra or changed props.
+
+Example:
+
+```tsx
+const button = <button>Save</button>;
+
+const disabledButton = React.cloneElement(button, {
+  disabled: true,
+});
+```
+
+Now `disabledButton` behaves like:
+
+```tsx
+<button disabled>Save</button>
+```
+
+Comparison:
+
+| Point | createElement | cloneElement |
+|---|---|---|
+| Purpose | Creates a new element | Copies an existing element |
+| Input | Type, props, children | Existing element, new props, children |
+| Common use | JSX compilation | Advanced component composition |
+| Mutates original? | No | No |
+
+Interview answer:
+
+```text
+createElement creates a new React element from a type, props, and children. JSX is compiled into createElement calls. cloneElement takes an existing React element and returns a new element with merged or overridden props. cloneElement is useful in advanced composition cases, but it should be used carefully because it can make data flow less obvious.
+```
+
+#### What are React Fragments and when would you use them?
+
+React Fragment lets a component return multiple elements without adding an extra DOM node.
+
+Without Fragment, we may add an unnecessary wrapper:
+
+```tsx
+function UserInfo() {
+  return (
+    <div>
+      <h2>Paras</h2>
+      <p>Frontend Developer</p>
+    </div>
+  );
+}
+```
+
+With Fragment:
+
+```tsx
+function UserInfo() {
+  return (
+    <>
+      <h2>Paras</h2>
+      <p>Frontend Developer</p>
+    </>
+  );
+}
+```
+
+Long syntax:
+
+```tsx
+function UserInfo() {
+  return (
+    <React.Fragment>
+      <h2>Paras</h2>
+      <p>Frontend Developer</p>
+    </React.Fragment>
+  );
+}
+```
+
+Use Fragment when:
+
+- you need to return multiple sibling elements
+- you do not want an unnecessary `div`
+- extra DOM wrappers can break CSS layout
+- extra wrappers can break table structure
+
+Table example:
+
+```tsx
+function UserRow() {
+  return (
+    <>
+      <td>Paras</td>
+      <td>Admin</td>
+    </>
+  );
+}
+```
+
+If you need a `key`, use the long syntax:
+
+```tsx
+users.map((user) => (
+  <React.Fragment key={user.id}>
+    <h2>{user.name}</h2>
+    <p>{user.role}</p>
+  </React.Fragment>
+));
+```
+
+Interview answer:
+
+```text
+React Fragment lets us group multiple elements without adding an extra DOM node. It is useful when a component needs to return sibling elements but we do not want an unnecessary wrapper div. The short syntax is <>...</>, and the long syntax React.Fragment is used when we need to pass a key.
+```
+
 ### 6. Why do we use React?
 
 Reasons:
@@ -462,6 +597,7 @@ Common hooks:
 - `useCallback`
 - `useTransition`
 - `useDeferredValue`
+- `useId`
 - `useRef`
 - `useContext`
 - `useReducer`
@@ -588,7 +724,152 @@ console.log(count); // old value
 
 The state variable updates on next render.
 
-### 26. What is batching?
+### 26. What is the purpose of callback function argument format of setState, and when should it be used?
+
+The callback function argument format means passing a function to the state setter instead of passing a direct value.
+
+In functional components:
+
+```tsx
+setCount((prevCount) => prevCount + 1);
+```
+
+Here, `prevCount` is the latest pending state value provided by React.
+
+Simple meaning:
+
+```text
+Do not calculate next state from the old render value.
+Ask React for the latest previous state and calculate from that.
+```
+
+Direct value update:
+
+```tsx
+setCount(count + 1);
+```
+
+Functional update:
+
+```tsx
+setCount((prevCount) => prevCount + 1);
+```
+
+Why it is useful:
+
+- React batches state updates.
+- State values inside the current render are fixed.
+- Multiple updates may read the same old value.
+- Functional update always receives the latest pending state.
+
+Example: direct update problem
+
+```tsx
+const [count, setCount] = useState(0);
+
+function handleClick() {
+  setCount(count + 1);
+  setCount(count + 1);
+  setCount(count + 1);
+}
+```
+
+If `count` is `0`, all three calls become:
+
+```tsx
+setCount(1);
+setCount(1);
+setCount(1);
+```
+
+Final result:
+
+```text
+count = 1
+```
+
+Example: functional update solution
+
+```tsx
+const [count, setCount] = useState(0);
+
+function handleClick() {
+  setCount((prev) => prev + 1);
+  setCount((prev) => prev + 1);
+  setCount((prev) => prev + 1);
+}
+```
+
+React applies each update to the latest pending state:
+
+```text
+0 -> 1
+1 -> 2
+2 -> 3
+```
+
+Final result:
+
+```text
+count = 3
+```
+
+Use functional updates when:
+
+- next state depends on previous state
+- incrementing or decrementing counters
+- toggling boolean values
+- updating arrays based on previous array
+- updating objects based on previous object
+- calling multiple state updates in the same handler
+- updating state inside timers, promises, or event listeners where closures may become stale
+
+Toggle example:
+
+```tsx
+setIsOpen((prev) => !prev);
+```
+
+Array example:
+
+```tsx
+setTodos((prevTodos) => [...prevTodos, newTodo]);
+```
+
+Object example:
+
+```tsx
+setUser((prevUser) => ({
+  ...prevUser,
+  name: 'Paras',
+}));
+```
+
+Class component version:
+
+```tsx
+this.setState((prevState, props) => ({
+  count: prevState.count + props.step,
+}));
+```
+
+Do not confuse this with the second callback argument in class components:
+
+```tsx
+this.setState({ count: 1 }, () => {
+  console.log('State updated');
+});
+```
+
+In modern functional components, `useState` setter does not support a second callback argument. Use `useEffect` if you need to run logic after a state value changes.
+
+Interview answer:
+
+```text
+The callback function format of setState is used when the next state depends on the previous state. React may batch state updates, so reading the state variable directly can give the old render value. By passing a function like setCount(prev => prev + 1), React gives us the latest pending state and avoids stale state bugs. Use it for counters, toggles, array/object updates, multiple updates in one handler, and async callbacks.
+```
+
+### 27. What is batching?
 
 Batching means React groups multiple state updates into one render.
 
@@ -601,7 +882,7 @@ setRole('Admin');
 
 React can render once instead of twice.
 
-### 27. What is useEffect?
+### 28. What is useEffect?
 
 `useEffect` runs side effects after render.
 
@@ -621,7 +902,7 @@ useEffect(() => {
 }, []);
 ```
 
-### 28. useEffect dependency array?
+### 29. useEffect dependency array?
 
 No dependency array:
 
@@ -649,7 +930,7 @@ useEffect(() => {
 
 Runs when `userId` changes.
 
-### 29. What is cleanup in useEffect?
+### 30. What is cleanup in useEffect?
 
 Cleanup runs before effect re-runs or component unmounts.
 
@@ -674,7 +955,7 @@ Use cleanup for:
 - event listeners
 - aborting requests
 
-### 30. What is useLayoutEffect?
+### 31. What is useLayoutEffect?
 
 `useLayoutEffect` is a React hook that runs after React updates the DOM but before the browser paints the screen.
 
@@ -842,7 +1123,152 @@ Use useEffect for side effects after paint.
 Use useLayoutEffect only when you must read or change layout before paint.
 ```
 
-### 31. Difference between Webpack and Babel?
+### 32. How to use the `useId` hook to generate unique IDs?
+
+`useId` is a React hook used to generate a unique, stable ID for accessibility attributes.
+
+It is mainly useful when we need to connect form labels, inputs, descriptions, and error messages.
+
+Syntax:
+
+```tsx
+const id = useId();
+```
+
+Basic example:
+
+```tsx
+import { useId } from 'react';
+
+function EmailField() {
+  const emailId = useId();
+
+  return (
+    <div>
+      <label htmlFor={emailId}>Email</label>
+      <input id={emailId} type="email" />
+    </div>
+  );
+}
+```
+
+Here, React generates a unique ID and uses it in both places:
+
+```tsx
+<label htmlFor={emailId}>Email</label>
+<input id={emailId} type="email" />
+```
+
+This connects the label with the input.
+
+Real use case with error text:
+
+```tsx
+import { useId } from 'react';
+
+function PasswordField({ error }: { error?: string }) {
+  const passwordId = useId();
+  const errorId = `${passwordId}-error`;
+
+  return (
+    <div>
+      <label htmlFor={passwordId}>Password</label>
+
+      <input
+        id={passwordId}
+        type="password"
+        aria-describedby={error ? errorId : undefined}
+      />
+
+      {error ? (
+        <p id={errorId} role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+```
+
+Why `useId` is useful:
+
+- it avoids duplicate IDs when the same component is reused many times
+- it improves accessibility by connecting labels and inputs
+- it works well with server rendering and hydration
+- it gives stable IDs between renders
+- it avoids manually hardcoding IDs like `email`, `password`, or `input-1`
+
+Example with multiple fields:
+
+```tsx
+function TextField({ label }: { label: string }) {
+  const id = useId();
+
+  return (
+    <div>
+      <label htmlFor={id}>{label}</label>
+      <input id={id} />
+    </div>
+  );
+}
+
+function Form() {
+  return (
+    <>
+      <TextField label="First Name" />
+      <TextField label="Last Name" />
+      <TextField label="Email" />
+    </>
+  );
+}
+```
+
+Each `TextField` gets a different ID automatically.
+
+When not to use `useId`:
+
+- do not use it for list keys
+- do not use it for database IDs
+- do not use it for random IDs
+- do not use it when the ID must come from backend data
+
+#### Can we use `useId` while rendering map/listing elements?
+
+No, we should not use `useId` for list keys while rendering `.map()` lists.
+
+Bad:
+
+```tsx
+users.map((user) => <UserRow key={useId()} user={user} />);
+```
+
+This is wrong for two reasons.
+
+First, `useId` is a hook, and hooks cannot be called inside loops, conditions, or `.map()` callbacks.
+
+Second, React list keys should come from stable data, such as a database ID.
+
+Good:
+
+```tsx
+users.map((user) => <UserRow key={user.id} user={user} />);
+```
+
+If there is no stable ID, create one when the data is created or received, not during render.
+
+Important rule:
+
+```text
+useId is for accessibility IDs, not for React list keys.
+```
+
+Interview answer:
+
+```text
+useId is a React hook that generates a unique and stable ID for a component. It is mainly used for accessibility, such as connecting label with input using htmlFor and id, or connecting input with helper/error text using aria-describedby. We should not use useId for list keys because keys should come from stable data like database IDs. Also, hooks cannot be called inside map callbacks.
+```
+
+### 33. Difference between Webpack and Babel?
 
 Webpack and Babel solve different problems in a React app.
 
@@ -896,7 +1322,7 @@ Babel transpiles modern JavaScript or JSX into browser-compatible JavaScript. We
 
 In this project, we use Vite instead of Webpack. Vite handles development/build tooling, and the React plugin handles React/JSX transformation.
 
-### 32. What is React Fiber?
+### 34. What is React Fiber?
 
 React Fiber is React's internal rendering architecture.
 
@@ -915,7 +1341,7 @@ Interview answer:
 React Fiber is React's internal reconciliation engine. It breaks rendering work into units so React can prioritize updates and keep the UI responsive.
 ```
 
-### 33. What is hydration in React, and what role does hydration play in server-side rendering?
+### 35. What is hydration in React, and what role does hydration play in server-side rendering?
 
 Hydration is the process where React takes HTML that was already generated on the server and makes it interactive in the browser.
 
@@ -1028,7 +1454,7 @@ Important interview point:
 Hydration does not create HTML from scratch. It reuses server-rendered HTML and attaches React behavior to it.
 ```
 
-### 34. Difference between Server-Side Rendering and Client-Side Rendering?
+### 36. Difference between Server-Side Rendering and Client-Side Rendering?
 
 This is mainly a React/frontend architecture question, not a core JavaScript question.
 
@@ -1129,7 +1555,7 @@ Important interview point:
 SSR does not mean no JavaScript. If the page is interactive, React still needs JavaScript for hydration. CSR means JavaScript creates the UI in the browser from the beginning.
 ```
 
-### 35. How do you decide whether a component should be server-rendered or client-rendered?
+### 37. How do you decide whether a component should be server-rendered or client-rendered?
 
 This is a valid and important interview question, especially for Next.js, SSR, and React Server Components.
 
@@ -1184,7 +1610,7 @@ Important interview point:
 SSR improves the initial HTML and SEO, but the component still needs hydration if it is interactive. Client rendering is better for browser-only and interaction-heavy UI.
 ```
 
-### 36. What is infinite render loop?
+### 38. What is infinite render loop?
 
 An infinite render loop happens when state updates repeatedly during render or effect.
 
@@ -1198,7 +1624,7 @@ useEffect(() => {
 
 This changes `count`, effect runs again, and loop continues.
 
-### 37. What is useRef?
+### 39. What is useRef?
 
 `useRef` stores a mutable value that does not cause re-render.
 
@@ -1219,7 +1645,7 @@ const renderCount = useRef(0);
 renderCount.current += 1;
 ```
 
-### 38. useRef vs useState?
+### 40. useRef vs useState?
 
 `useState`:
 
@@ -1231,7 +1657,7 @@ renderCount.current += 1;
 - does not cause re-render
 - used for mutable values/DOM refs
 
-### 39. What is useMemo?
+### 41. What is useMemo?
 
 `useMemo` memoizes a calculated value.
 
@@ -1246,7 +1672,7 @@ const filteredUsers = useMemo(
 
 Use it when calculation is expensive or reference stability matters.
 
-### 40. What is useCallback?
+### 42. What is useCallback?
 
 `useCallback` memoizes a function reference.
 
@@ -1269,7 +1695,7 @@ useCallback memoizes the function, meaning React returns the same function insta
 - Including the function in dependency arrays of useEffect or other hooks.
 - Avoiding unnecessary re-renders caused by changing function references.
 
-### 41. What is useTransition?
+### 43. What is useTransition?
 
 `useTransition` is a React hook used to mark some state updates as non-urgent.
 
@@ -1353,7 +1779,7 @@ Final interview shortcut:
 useTransition is used when a state update is expensive and can be treated as low priority.
 ```
 
-### 42. What is useDeferredValue?
+### 44. What is useDeferredValue and why is React's useDeferredValue hook useful?
 
 `useDeferredValue` is a React hook that lets you defer updating a value until the browser has time to handle less urgent rendering.
 
@@ -1363,11 +1789,26 @@ Interview answer:
 useDeferredValue keeps the previous value visible while React prepares the updated value in the background. It is useful when a fast-changing value causes expensive rendering, such as typing into a search box that filters a large list.
 ```
 
+Simple meaning:
+
+```text
+Original value updates immediately.
+Deferred value updates later with lower priority.
+```
+
 Syntax:
 
 ```tsx
 const deferredValue = useDeferredValue(value);
 ```
+
+Why it is useful:
+
+- it keeps typing, clicking, and urgent UI interactions responsive
+- it lets expensive UI rendering lag slightly behind the latest value
+- it avoids blocking the browser while rendering a large list or heavy component
+- it keeps showing the previous UI until the new UI is ready
+- it is helpful when the value comes from props and we cannot wrap the original state update with `startTransition`
 
 Example:
 
@@ -1407,6 +1848,32 @@ What happens here:
 searchText updates immediately as the user types.
 deferredSearchText may lag behind slightly.
 The expensive filtered list uses deferredSearchText, so typing stays responsive.
+```
+
+Without `useDeferredValue`:
+
+```text
+User types
+searchText updates
+Large list filters immediately
+Rendering may feel slow or stuck
+```
+
+With `useDeferredValue`:
+
+```text
+User types
+searchText updates immediately
+Input stays responsive
+deferredSearchText updates slightly later
+Large list renders when React gets time
+```
+
+Real experience:
+
+```text
+Without useDeferredValue, typing in a search box can feel laggy if every keystroke renders thousands of rows.
+With useDeferredValue, the input updates immediately, and the results can update a moment later without blocking typing.
 ```
 
 Use `useDeferredValue` when:
@@ -1459,14 +1926,16 @@ Important considerations:
 - It helps make rendering feel smoother.
 - It should be used for UI rendering performance, not API rate limiting.
 - It works best with memoized expensive children or calculations.
+- It does not make the filtering/calculation itself faster.
+- It changes the priority of rendering work so urgent updates can appear first.
 
 Final interview shortcut:
 
 ```text
-useDeferredValue is useful when a fast-changing value causes expensive rendering and we want React to show the previous UI until the new UI is ready.
+useDeferredValue is useful when a fast-changing value causes expensive rendering and we want React to keep urgent UI responsive by showing the previous UI until the new UI is ready.
 ```
 
-### 43. useMemo vs useCallback?
+### 45. useMemo vs useCallback?
 
 `useMemo` memoizes a value.
 
@@ -1486,7 +1955,7 @@ This is roughly:
 useCallback(fn, deps) === useMemo(() => fn, deps)
 ```
 
-### 44. How useMemo and useCallback works behind the scene?
+### 46. How useMemo and useCallback works behind the scene?
 The reason they look different is because useCallback and useMemo are designed for different purposes, even though they're closely related.
 
 In fact, useCallback is essentially a special case of useMemo.
@@ -1978,7 +2447,7 @@ Easy way to remember
 - useCallback → Memoize a function.
 - PureComponent → Class component equivalent of React.memo with shallow prop and state comparison.
 
-### 45. What is useContext?
+### 47. What is useContext?
 
 `The useContext hook` in React is a built-in function that lets functional components read and subscribe to data from a context object without manually passing props through intermediate components. It provides an elegant solution to prop drilling, which is the tedious process of passing props down multiple levels of a component tree just to reach a deeply nested child.
 
@@ -2000,7 +2469,7 @@ Use Context for app-wide values like:
 
 Avoid putting frequently changing large state in Context if it causes unnecessary renders.
 
-### 46. What is useReducer?
+### 48. What is useReducer?
 
 `useReducer` manages complex local state using reducer function.
 
@@ -2024,7 +2493,7 @@ function reducer(state: State, action: Action): State {
 const [state, dispatch] = useReducer(reducer, { count: 0 });
 ```
 
-### 47. What is a custom hook?
+### 49. What is a custom hook?
 
 A custom hook is a reusable function that uses React hooks.
 
@@ -2055,7 +2524,7 @@ Custom hook name should start with `use`.
 
 ## Forms
 
-### 48. Controlled vs uncontrolled components?
+### 50. Controlled vs uncontrolled components?
 - Controlled components rely on React state to manage form data
 - Controlled input: 
 
@@ -2078,7 +2547,7 @@ const inputRef = useRef<HTMLInputElement | null>(null);
 
 DOM controls the value.
 
-### 49. Which is better: controlled or uncontrolled?
+### 51. Which is better: controlled or uncontrolled?
 
 Controlled is better when:
 
@@ -2093,7 +2562,7 @@ Uncontrolled is useful when:
 - file inputs
 - integration with non-React libraries
 
-### 50. How to handle form validation?
+### 52. How to handle form validation?
 
 Common approach:
 
@@ -2112,7 +2581,7 @@ For large apps:
 
 ## Component Communication
 
-### 51. How parent passes data to child?
+### 53. How parent passes data to child?
 
 Using props.
 
@@ -2120,7 +2589,7 @@ Using props.
 <UserCard user={user} />
 ```
 
-### 52. How child sends data to parent?
+### 54. How child sends data to parent?
 
 Using callback prop.
 
@@ -2142,7 +2611,7 @@ const Child = ({ onSelect }: { onSelect: (id: string) => void }) => {
 };
 ```
 
-### 53. What is prop drilling?
+### 55. What is prop drilling?
 
 Prop drilling means passing props through many levels just to reach a deeply nested component.
 
@@ -2153,9 +2622,11 @@ Solutions:
 - component composition
 - custom hooks
 
-### 54. What is lifting state up?
+### 56. What is lifting state up?
 
 Moving shared state to the nearest common parent.
+
+Lifting state up is a pattern used when several components need to share the same changing data. Instead of keeping the state in child components, you move it up to their closest common ancestor.
 
 Example:
 
@@ -2168,7 +2639,7 @@ Pass value/callback to both
 
 ## Routing
 
-### 55. What is React Router?
+### 57. What is React Router?
 
 React Router is a routing library for React apps.
 
@@ -2183,7 +2654,7 @@ Example:
 </Routes>
 ```
 
-### 56. What is protected route?
+### 58. What is protected route?
 
 Protected route allows access only when user is authenticated.
 
@@ -2199,7 +2670,7 @@ In this app:
 frontend/src/components/ProtectedRoute.tsx
 ```
 
-### 57. What is public route?
+### 59. What is public route?
 
 Public route is accessible without login.
 
@@ -2211,7 +2682,7 @@ In this app:
 frontend/src/components/PublicRoute.tsx
 ```
 
-### 58. What is Navigate?
+### 60. What is Navigate?
 
 `Navigate` redirects user to another route.
 
@@ -2223,7 +2694,7 @@ Example:
 
 ## State Management
 
-### 59. When to use local state?
+### 61. When to use local state?
 
 Use local state when data belongs to one component.
 
@@ -2234,7 +2705,7 @@ Examples:
 - selected tab
 - local loading state
 
-### 60. When to use global state?
+### 62. When to use global state?
 
 Use global state when many parts of app need same data.
 
@@ -2246,7 +2717,7 @@ Examples:
 - skills
 - notifications/toasts
 
-### 61. What is Redux?
+### 63. What is Redux?
 
 Redux is a predictable state management library.
 
@@ -2260,7 +2731,7 @@ Core ideas:
 - dispatch
 - selectors
 
-### 62. What is Redux Toolkit?
+### 64. What is Redux Toolkit?
 
 Redux Toolkit is the recommended way to write Redux.
 
@@ -2290,7 +2761,7 @@ export const store = configureStore({
 });
 ```
 
-### 63. What is Thunk in Redux?
+### 65. What is Thunk in Redux?
 In Redux Toolkit (RTK), a thunk is a function that contains delayed, asynchronous logic. Because a standard Redux store can only handle synchronous data flow, Redux Toolkit automatically includes the Redux Thunk middleware by default to let you perform side effects like fetching API data.
 
 - How createAsyncThunk Works
@@ -2302,7 +2773,7 @@ When you create an async thunk, you provide an action type prefix and a payload 
 
 - rejected: Dispatched if the Promise fails or rejects.
 
-### 64. Difference between Thunk and Saga in Redux?
+### 66. Difference between Thunk and Saga in Redux?
 
 Thunk and Saga are both Redux middleware used to handle side effects like API calls, async flows, and delayed actions.
 
@@ -2452,7 +2923,7 @@ Final answer:
 For most Redux Toolkit applications, I choose Thunk because it is simple and built in. I choose Saga only when the async flow becomes complex enough that Saga's generator-based control flow provides real value.
 ```
 
-### 65. What is reducer?
+### 67. What is reducer?
 
 Reducer is a pure function that calculates next state from current state and action.
 
@@ -2462,7 +2933,7 @@ Concept:
 nextState = reducer(currentState, action);
 ```
 
-### 66. What is action?
+### 68. What is action?
 
 An action is an object describing what happened.
 
@@ -2475,7 +2946,7 @@ Example:
 }
 ```
 
-### 67. What is dispatch?
+### 69. What is dispatch?
 
 Dispatch sends an action to Redux store.
 
@@ -2485,7 +2956,7 @@ Example:
 dispatch(fetchUsers());
 ```
 
-### 68. What is selector?
+### 70. What is selector?
 
 Selector reads data from Redux state.
 
@@ -2501,7 +2972,7 @@ Usage:
 const users = useAppSelector(selectUsers);
 ```
 
-### 69. What is createAsyncThunk?
+### 71. What is createAsyncThunk?
 
 `createAsyncThunk` handles async Redux logic.
 
@@ -2519,7 +2990,7 @@ It creates:
 - fulfilled action
 - rejected action
 
-### 70. What is Redux middleware?
+### 72. What is Redux middleware?
 
 Middleware runs between dispatching action and reducer.
 
@@ -2536,7 +3007,7 @@ In this app:
 frontend/src/app/toastMiddleware.ts
 ```
 
-### 71. What is Immer?
+### 73. What is Immer?
 
 Immer lets us write mutable-looking reducer code while keeping state immutable internally.
 
@@ -2548,7 +3019,7 @@ state.items.push(user);
 
 Redux Toolkit uses Immer behind the scenes.
 
-### 72. What is selector stability warning?
+### 74. What is selector stability warning?
 
 React Redux warns when a selector returns a new reference for same input.
 
@@ -2571,7 +3042,7 @@ This issue happened in this app in the skills selector and was fixed by using a 
 
 ## Performance Optimization
 
-### 73. How to secure the React APP?
+### 75. How to secure the React APP?
 Securing a React app requires layers of protection at both the client level and the server level. The most critical step is preventing Cross-Site Scripting (XSS) by allowing React to auto-escape data, avoiding dangerouslySetInnerHTML, and sanitizing user inputs. Always treat the frontend as untrusted.
 
 - Prevent Cross-Site Scripting (XSS)
@@ -2580,7 +3051,7 @@ Securing a React app requires layers of protection at both the client level and 
 - Rely on the Backend for Security
 - Keep Dependencies Updated [Vulnerability]
 
-### 74. How to optimize React performance?
+### 76. How to optimize React performance?
 
 Common ways:
 
@@ -2595,7 +3066,7 @@ Common ways:
 - split code with lazy loading
 - avoid unnecessary global state changes
 
-### 75. What is React.memo?
+### 77. What is React.memo?
 
 `React.memo` prevents re-render if props did not change.
 
@@ -2609,13 +3080,13 @@ const UserRow = React.memo(({ user }: { user: User }) => {
 
 Useful for expensive child components.
 
-### 76. React.memo vs useMemo?
+### 78. React.memo vs useMemo?
 
 `React.memo` memoizes a component render based on props.
 
 `useMemo` memoizes a calculated value inside a component.
 
-### 77. What causes unnecessary re-render?
+### 79. What causes unnecessary re-render?
 
 Common causes:
 
@@ -2626,7 +3097,7 @@ Common causes:
 - selector returning new array/object every time
 - unstable keys
 
-### 78. Difference between `npm create vite@latest my-react-app -- --template react` and `npx create-react-app my-react-app`?
+### 80. Difference between `npm create vite@latest my-react-app -- --template react` and `npx create-react-app my-react-app`?
 
 Both commands create a new React project, but they use different project setup tools.
 
@@ -2705,7 +3176,7 @@ You can see that from:
 "build": "tsc -b && vite build"
 ```
 
-### 79. What happens behind the scenes when we create a React project using Vite or Create React App?
+### 81. What happens behind the scenes when we create a React project using Vite or Create React App?
 
 When you run a project setup command, it does not magically create React by itself.
 
@@ -2777,7 +3248,55 @@ Mount the React App component inside that element
 
 So the setup command creates the project structure, but React starts running when the browser loads the entry file and React renders `<App />`.
 
-### 80. How to avoid new object prop each render?
+### 82. What is Suspense and what is the use of Suspense?
+
+`Suspense` is a React component that lets us show fallback UI while part of the UI is not ready yet.
+
+Most common use:
+
+- lazy loading components
+- showing loader while a code chunk is loading
+- waiting for async data in frameworks/libraries that support Suspense
+
+Example with lazy loading:
+
+```tsx
+import { lazy, Suspense } from 'react';
+
+const AdminPage = lazy(() => import('./AdminPage'));
+
+function App() {
+  return (
+    <Suspense fallback={<p>Loading admin page...</p>}>
+      <AdminPage />
+    </Suspense>
+  );
+}
+```
+
+How it works:
+
+```text
+AdminPage code is not loaded yet
+-> Suspense shows fallback
+-> AdminPage code finishes loading
+-> Suspense replaces fallback with AdminPage
+```
+
+Important points:
+
+- `Suspense` is not an error handler.
+- For errors, use Error Boundary.
+- `Suspense` is commonly used with `React.lazy`.
+- The fallback should be small and useful.
+
+Interview answer:
+
+```text
+Suspense is used to show fallback UI while a component or resource is not ready. In normal React apps, it is commonly used with React.lazy for lazy loading components. While the lazy component is loading, Suspense shows a loader, and once the component code is loaded, React renders the actual component.
+```
+
+### 83. How to avoid new object prop each render?
 
 Bad:
 
@@ -2793,25 +3312,126 @@ const filters = useMemo(() => ({ status: 'active' }), []);
 <Table filters={filters} />;
 ```
 
-### 81. What is lazy loading in React?
+### 84. When should we use Lazy Loading in React?
 
-Lazy loading loads components only when needed.
+Lazy loading means loading a component only when it is needed instead of loading it in the initial JavaScript bundle.
+
+Use lazy loading when:
+
+- a page is not needed on initial load
+- a component is heavy
+- a route is visited only sometimes
+- a modal, chart, editor, or admin page is rarely opened
+- you want to reduce initial bundle size
+- you want the first page load to be faster
 
 Example:
 
 ```tsx
+import { lazy, Suspense } from 'react';
+
 const AdminPage = lazy(() => import('./AdminPage'));
+
+function App() {
+  return (
+    <Suspense fallback={<p>Loading...</p>}>
+      <AdminPage />
+    </Suspense>
+  );
+}
 ```
 
-Use with:
+Route-based lazy loading example:
 
 ```tsx
-<Suspense fallback={<Loader />}>
-  <AdminPage />
-</Suspense>
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Reports = lazy(() => import('./pages/Reports'));
+
+function AppRoutes() {
+  return (
+    <Suspense fallback={<p>Loading page...</p>}>
+      <Routes>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/reports" element={<Reports />} />
+      </Routes>
+    </Suspense>
+  );
+}
 ```
 
-### 82. What is code splitting?
+When not to use lazy loading:
+
+- for very small components
+- for components needed immediately on first screen
+- when lazy loading creates too many tiny network requests
+
+Interview answer:
+
+```text
+We should use lazy loading for components or routes that are not required immediately, especially heavy or rarely used parts like admin pages, reports, charts, editors, or modals. It helps reduce the initial bundle size and improves first load performance. In React, lazy loading is usually done with React.lazy and Suspense.
+```
+
+### 85. Difference between Suspense and Manual Loader?
+
+Both `Suspense` and manual loaders show loading UI, but they are used for different waiting situations.
+
+`Suspense` is used when React is waiting for a component or supported resource to become ready.
+
+Manual loader is used when we manually manage loading state, usually for API calls.
+
+Suspense example:
+
+```tsx
+const ProfilePage = lazy(() => import('./ProfilePage'));
+
+function App() {
+  return (
+    <Suspense fallback={<p>Loading profile page...</p>}>
+      <ProfilePage />
+    </Suspense>
+  );
+}
+```
+
+Manual loader example:
+
+```tsx
+function Users() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/users')
+      .then((res) => res.json())
+      .then((data) => setUsers(data))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <p>Loading users...</p>;
+  }
+
+  return <UserList users={users} />;
+}
+```
+
+Comparison:
+
+| Point | Suspense | Manual Loader |
+|---|---|---|
+| Loading state | Managed by React boundary | Managed by our state |
+| Common use | Lazy component loading | API calls with `useEffect` |
+| Example | `React.lazy` | `loading` state |
+| Fallback | `fallback` prop | Conditional rendering |
+| Error handling | Needs Error Boundary | Usually handled with `error` state |
+
+Interview answer:
+
+```text
+Suspense shows fallback UI while a lazy component or supported async resource is not ready. Manual loader means we create our own loading state, usually for API calls. Suspense is declarative and boundary-based, while manual loaders are state-based and controlled by our component logic.
+```
+
+### 86. What is code splitting?
 
 Code splitting breaks app bundle into smaller chunks.
 
@@ -2820,7 +3440,7 @@ Benefits:
 - faster initial load
 - load feature code only when needed
 
-### 83. What is list virtualization?
+### 87. What is list virtualization?
 
 Virtualization renders only visible rows in a large list.
 
@@ -2837,7 +3457,7 @@ Libraries:
 
 ## API Calls
 
-### 84. Where should API calls be made?
+### 88. Where should API calls be made?
 
 Common places:
 
@@ -2853,7 +3473,7 @@ In this app:
 API calls are mostly handled through Redux thunks and service files.
 ```
 
-### 85. How to fetch data in useEffect?
+### 89. How to fetch data in useEffect?
 
 ```tsx
 useEffect(() => {
@@ -2875,7 +3495,7 @@ useEffect(() => {
 }, []);
 ```
 
-### 86. Why avoid directly making useEffect callback async?
+### 90. Why avoid directly making useEffect callback async?
 
 Bad:
 
@@ -2899,7 +3519,7 @@ useEffect(() => {
 }, []);
 ```
 
-### 87. How to handle loading and error state?
+### 91. How to handle loading and error state?
 
 Example:
 
@@ -2921,7 +3541,7 @@ In Redux apps, common statuses are:
 'idle' | 'loading' | 'succeeded' | 'failed'
 ```
 
-### 88. How to cancel API request?
+### 92. How to cancel API request?
 
 Use `AbortController`.
 
@@ -2943,7 +3563,7 @@ useEffect(() => {
 
 ## Authentication in React
 
-### 89. How does React know user is logged in?
+### 93. How does React know user is logged in?
 
 Usually by auth state.
 
@@ -2962,7 +3582,7 @@ dispatch(bootstrapAuth());
 
 Backend checks HTTP-only cookie and returns session/account.
 
-### 90. Can React read HTTP-only cookie?
+### 94. Can React read HTTP-only cookie?
 
 No.
 
@@ -2976,7 +3596,7 @@ Example:
 GET /api/auth/session
 ```
 
-### 91. Why use credentials: include?
+### 95. Why use credentials: include?
 
 In fetch:
 
@@ -2992,7 +3612,7 @@ In this app:
 frontend/src/services/http.ts
 ```
 
-### 92. How protected route works in this app?
+### 96. How protected route works in this app?
 
 Concept:
 
@@ -3006,7 +3626,7 @@ return children;
 
 The route guard uses Redux auth state.
 
-### 93. How role-based UI works?
+### 97. How role-based UI works?
 
 Example:
 
@@ -3022,7 +3642,7 @@ Backend must also enforce authorization.
 
 ## TypeScript With React
 
-### 94. Why use TypeScript with React?
+### 98. Why use TypeScript with React?
 
 Benefits:
 
@@ -3032,7 +3652,7 @@ Benefits:
 - better autocomplete
 - safer refactoring
 
-### 95. How to type component props?
+### 99. How to type component props?
 
 ```tsx
 type UserCardProps = {
@@ -3045,7 +3665,7 @@ const UserCard = ({ name, email }: UserCardProps) => {
 };
 ```
 
-### 96. How to type useState?
+### 100. How to type useState?
 
 ```tsx
 const [user, setUser] = useState<User | null>(null);
@@ -3057,7 +3677,7 @@ For inferred values:
 const [count, setCount] = useState(0);
 ```
 
-### 97. How to type event handlers?
+### 101. How to type event handlers?
 
 Input change:
 
@@ -3075,7 +3695,7 @@ const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
 };
 ```
 
-### 98. How to type useRef?
+### 102. How to type useRef?
 
 ```tsx
 const inputRef = useRef<HTMLInputElement | null>(null);
@@ -3089,7 +3709,7 @@ inputRef.current?.focus();
 
 ## React Patterns
 
-### 99. What is composition?
+### 103. What is composition?
 
 Composition means building components by combining smaller components.
 
@@ -3109,7 +3729,118 @@ Usage:
 </Card>
 ```
 
-### 100. Controlled modal pattern?
+### 104. What are Higher-Order Components (HOCs)?
+
+A Higher-Order Component, or HOC, is a function that takes a component as input and returns a new enhanced component.
+
+Simple definition:
+
+```text
+HOC = function that receives a component and returns another component with extra behavior.
+```
+
+Basic syntax:
+
+```tsx
+const EnhancedComponent = higherOrderComponent(OriginalComponent);
+```
+
+HOCs are used when we want to reuse component logic across multiple components, such as:
+
+- authentication checks
+- role-based access
+- loading state handling
+- logging
+- analytics tracking
+- adding common props
+- permission-based rendering
+
+Example: `withAuth` HOC
+
+```tsx
+import React from 'react';
+import { Navigate } from 'react-router-dom';
+
+type User = {
+  id: string;
+  name: string;
+};
+
+type WithAuthProps = {
+  user: User | null;
+};
+
+function withAuth<P extends object>(
+  WrappedComponent: React.ComponentType<P>
+) {
+  return function AuthenticatedComponent(props: P & WithAuthProps) {
+    const { user, ...restProps } = props;
+
+    if (!user) {
+      return <Navigate to="/login" replace />;
+    }
+
+    return <WrappedComponent {...(restProps as P)} />;
+  };
+}
+```
+
+Using the HOC:
+
+```tsx
+type DashboardProps = {
+  title: string;
+};
+
+function Dashboard({ title }: DashboardProps) {
+  return <h1>{title}</h1>;
+}
+
+const ProtectedDashboard = withAuth(Dashboard);
+
+export default function App() {
+  const user = { id: '1', name: 'Paras' };
+
+  return <ProtectedDashboard user={user} title="Dashboard" />;
+}
+```
+
+If `user` exists, it renders:
+
+```tsx
+<Dashboard title="Dashboard" />
+```
+
+If `user` is `null`, it redirects:
+
+```tsx
+<Navigate to="/login" replace />
+```
+
+Important points:
+
+- HOCs do not modify the original component.
+- HOCs return a new component.
+- HOCs are based on composition.
+- HOC names usually start with `with`, like `withAuth`, `withLogger`, `withRole`.
+- In modern React, many HOC use cases can also be solved with custom hooks.
+
+HOC vs custom hook:
+
+| Topic | HOC | Custom Hook |
+|---|---|---|
+| What it reuses | Component behavior/wrapping | Stateful logic |
+| Input | Component | Values/functions |
+| Output | New component | Data/functions |
+| Example | `withAuth(Component)` | `useAuth()` |
+
+Interview answer:
+
+```text
+A Higher-Order Component is a function that takes a component and returns a new component with extra behavior. It is useful for reusing common component logic like authentication, permissions, logging, or loading UI. HOCs follow composition and do not mutate the original component. In modern React, custom hooks are often preferred for sharing stateful logic, but HOCs are still important to understand.
+```
+
+### 105. Controlled modal pattern?
 
 Parent controls open/close state.
 
@@ -3119,7 +3850,7 @@ const [isOpen, setIsOpen] = useState(false);
 {isOpen ? <Modal onClose={() => setIsOpen(false)} /> : null}
 ```
 
-### 101. Container vs presentational components?
+### 106. Container vs presentational components?
 
 Container component:
 
@@ -3140,7 +3871,7 @@ UserManagementPage -> container
 UserTable -> presentational
 ```
 
-### 102. What is children prop?
+### 107. What is children prop?
 
 `children` lets component render nested content.
 
@@ -3154,7 +3885,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
 ## Error Handling
 
-### 103. What is Error Boundary?
+### 108. What is Error Boundary?
 
 Error Boundary catches rendering errors in child component tree.
 
@@ -3188,7 +3919,7 @@ Error boundaries do not catch:
 - async errors
 - server errors
 
-### 104. How to handle API errors?
+### 109. How to handle API errors?
 
 Common pattern:
 
@@ -3204,7 +3935,7 @@ In this app, toast middleware also shows success/error messages.
 
 ## React Strict Mode
 
-### 105. What is StrictMode?
+### 110. What is StrictMode?
 
 StrictMode helps find problems during development.
 
@@ -3226,13 +3957,13 @@ StrictMode is a development-only tool that helps detect unsafe side effects and 
 
 ## Common Tricky Questions
 
-### 106. Why does useEffect run twice in development?
+### 111. Why does useEffect run twice in development?
 
 Because React StrictMode intentionally mounts/unmounts/remounts components in development to detect unsafe effects.
 
 Production does not behave the same way.
 
-### 107. Why not update state directly?
+### 112. Why not update state directly?
 
 Bad:
 
@@ -3249,11 +3980,11 @@ Good:
 setUser({ ...user, name: 'New Name' });
 ```
 
-### 108. Why state should be immutable?
+### 113. Why state should be immutable?
 
 Immutability helps React detect changes and makes updates predictable.
 
-### 109. Why component names should start with capital letter?
+### 114. Why component names should start with capital letter?
 
 React treats lowercase tags as HTML elements.
 
@@ -3269,13 +4000,13 @@ Bad:
 <userCard />
 ```
 
-### 110. Why hooks cannot be conditional?
+### 115. Why hooks cannot be conditional?
 
 React relies on hook call order.
 
 If hooks are conditional, order can change between renders and React cannot match hook state correctly.
 
-### 111. What is stale closure?
+### 116. What is stale closure?
 
 Stale closure happens when a function captures old state/props.
 
@@ -3299,7 +4030,7 @@ Fix:
 - use functional update
 - use ref for latest value
 
-### 112. Why use functional state update?
+### 117. Why use functional state update?
 
 Use when new state depends on previous state.
 
@@ -3309,7 +4040,7 @@ setCount((current) => current + 1);
 
 This avoids stale state issues.
 
-### 113. Why not use array index as key?
+### 118. Why not use array index as key?
 
 Index key can break UI when list order changes.
 
@@ -3321,7 +4052,7 @@ Problems:
 
 Use stable ID instead.
 
-### 114. What is client-side rendering?
+### 119. What is client-side rendering?
 
 Client-side rendering means browser receives minimal HTML and JavaScript builds the UI in the browser.
 
@@ -3329,7 +4060,7 @@ Vite React apps are usually client-side rendered.
 
 ## Testing
 
-### 115. What should we test in React?
+### 120. What should we test in React?
 
 Test user behavior, not implementation details.
 
@@ -3341,7 +4072,7 @@ Examples:
 - route protection
 - role-based UI
 
-### 116. What is React Testing Library?
+### 121. What is React Testing Library?
 
 React Testing Library helps test components from user perspective.
 
@@ -3353,7 +4084,7 @@ expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
 
 ## React App Architecture
 
-### 117. How is this app structured?
+### 122. How is this app structured?
 
 This app uses feature-based structure:
 
@@ -3374,7 +4105,7 @@ Benefits:
 - easier scaling
 - easier maintenance
 
-### 118. What is feature-based folder structure?
+### 123. What is feature-based folder structure?
 
 Feature-based structure groups code by business feature instead of file type.
 
@@ -3389,7 +4120,7 @@ features/users/types.ts
 
 This is better for medium/large apps.
 
-### 119. What is reusable component?
+### 124. What is reusable component?
 
 A reusable component is generic enough to be used in many places.
 
@@ -3406,7 +4137,7 @@ PublicRoute
 
 ## Interview Questions Based on This App
 
-### 120. How does auth bootstrap work in this app?
+### 125. How does auth bootstrap work in this app?
 
 On app load:
 
@@ -3422,7 +4153,7 @@ If cookie is valid, user becomes authenticated.
 
 If not, user is unauthenticated.
 
-### 121. How does session refresh work in this app?
+### 126. How does session refresh work in this app?
 
 The app listens to user activity and periodically verifies/refreshes session.
 
@@ -3433,7 +4164,7 @@ User active -> refresh session
 No activity -> verify session without extending it
 ```
 
-### 122. How does role-based UI work in this app?
+### 127. How does role-based UI work in this app?
 
 Admin route is visible only when:
 
@@ -3449,7 +4180,7 @@ Important interview answer:
 Frontend role checks are for UX. Backend authorization is the real security.
 ```
 
-### 123. How are API calls centralized?
+### 128. How are API calls centralized?
 
 This app uses:
 
@@ -3465,7 +4196,7 @@ It centralizes:
 - `credentials: 'include'`
 - error parsing
 
-### 124. How are toasts handled?
+### 129. How are toasts handled?
 
 This app uses Redux listener middleware.
 
@@ -3475,79 +4206,79 @@ This keeps toast logic centralized instead of duplicating it in every component.
 
 ## Most Important Short Answers
 
-### 125. React in one line
+### 130. React in one line
 
 ```text
 React is a JavaScript library for building reusable, state-driven UI components.
 ```
 
-### 126. Component in one line
+### 131. Component in one line
 
 ```text
 A component is a reusable function/class that returns UI.
 ```
 
-### 127. Props in one line
+### 132. Props in one line
 
 ```text
 Props are read-only inputs passed from parent to child.
 ```
 
-### 128. State in one line
+### 133. State in one line
 
 ```text
 State is component-managed data that triggers re-render when changed.
 ```
 
-### 129. useEffect in one line
+### 134. useEffect in one line
 
 ```text
 useEffect runs side effects after render and can clean them up.
 ```
 
-### 130. useLayoutEffect in one line
+### 135. useLayoutEffect in one line
 
 ```text
 useLayoutEffect runs after DOM updates but before browser paint, mainly for layout measurement or pre-paint visual fixes.
 ```
 
-### 131. useTransition in one line
+### 136. useTransition in one line
 
 ```text
 useTransition marks expensive state updates as non-urgent so urgent UI like typing can stay responsive.
 ```
 
-### 132. useDeferredValue in one line
+### 137. useDeferredValue in one line
 
 ```text
 useDeferredValue defers a fast-changing value so expensive rendering can update later without blocking urgent UI.
 ```
 
-### 133. Virtual DOM in one line
+### 138. Virtual DOM in one line
 
 ```text
 Virtual DOM is a lightweight representation of UI used to calculate efficient real DOM updates.
 ```
 
-### 134. Redux in one line
+### 139. Redux in one line
 
 ```text
 Redux is a centralized state management library where state changes through actions and reducers.
 ```
 
-### 135. React Router in one line
+### 140. React Router in one line
 
 ```text
 React Router maps URL paths to React components.
 ```
 
-### 136. Controlled component in one line
+### 141. Controlled component in one line
 
 ```text
 A controlled component is a form element whose value is controlled by React state.
 ```
 
-### 137. Custom hook in one line
+### 142. Custom hook in one line
 
 ```text
 A custom hook is a reusable function that uses React hooks to share stateful logic.

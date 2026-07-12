@@ -2045,3 +2045,713 @@ React.memo does shallow comparison of props. Primitive props like strings and nu
 ```text
 In React StrictMode during development, React may run render and effect logic more than once to detect side effects. In interviews, explain the normal production mental model first, then mention StrictMode if duplicate logs appear in development.
 ```
+
+## 10. Using var With count++ Inside setState
+
+### Question
+
+What will happen if we declare React state variable with `var` and call `setCount(count++)` three times?
+
+### Code
+
+```jsx
+import React from 'react';
+import { useState } from 'react';
+
+function App() {
+  var [count, setCount] = useState(0);
+
+  const handleCount = () => {
+    console.log('inside state update');
+    setCount(count++);
+    setCount(count++);
+    setCount(count++);
+    console.log('count1: ', count);
+  };
+
+  console.log('count2: ', count);
+
+  return (
+    <div>
+      <button onClick={handleCount}>
+        count3::: {count}
+      </button>
+    </div>
+  );
+}
+
+export default App;
+```
+
+### Initial Render
+
+Console:
+
+```text
+count2: 0
+```
+
+Button value:
+
+```text
+count3::: 0
+```
+
+### First Button Click
+
+Console:
+
+```text
+inside state update
+count1: 3
+count2: 2
+```
+
+Button value after re-render:
+
+```text
+count3::: 2
+```
+
+### Second Button Click
+
+Console:
+
+```text
+inside state update
+count1: 5
+count2: 4
+```
+
+Button value after re-render:
+
+```text
+count3::: 4
+```
+
+### Third Button Click
+
+Console:
+
+```text
+inside state update
+count1: 7
+count2: 6
+```
+
+Button value after re-render:
+
+```text
+count3::: 6
+```
+
+### Why This Happens
+
+This line uses post-increment:
+
+```jsx
+setCount(count++);
+```
+
+`count++` means:
+
+```text
+First use current count value.
+Then increase the local count variable by 1.
+```
+
+On the first click, `count` starts as `0`.
+
+So these three calls become:
+
+```jsx
+setCount(0); // count becomes 1 after this
+setCount(1); // count becomes 2 after this
+setCount(2); // count becomes 3 after this
+```
+
+That is why this log prints `3`:
+
+```text
+count1: 3
+```
+
+But React state receives these queued values:
+
+```text
+0, 1, 2
+```
+
+React batches the updates and the final state becomes the last queued value:
+
+```text
+2
+```
+
+That is why the next render logs:
+
+```text
+count2: 2
+```
+
+### Important Point About var
+
+This works differently from `const` because `var` allows reassignment.
+
+With `const`, this would throw an error:
+
+```text
+TypeError: Assignment to constant variable.
+```
+
+But using `var` is still not recommended.
+
+React state should not be mutated directly.
+
+### Important Interview Answer
+
+```text
+Using count++ mutates only the local variable from the current render. It does not directly mutate React state. Because count++ returns the old value first, the three setCount calls become setCount(0), setCount(1), and setCount(2). React batches them and keeps the last value, so the UI becomes 2 after the first click. Always avoid count++ with React state and use functional updates instead.
+```
+
+### Correct Way
+
+```jsx
+setCount((prev) => prev + 1);
+setCount((prev) => prev + 1);
+setCount((prev) => prev + 1);
+```
+
+Or:
+
+```jsx
+setCount((prev) => prev + 3);
+```
+
+## 11. Using var With setCount(count + 1) Three Times
+
+### Question
+
+What will happen if we call `setCount(count + 1)` three times in the same click handler?
+
+### Code
+
+```jsx
+import React from 'react';
+import { useState } from 'react';
+
+function App() {
+  var [count, setCount] = useState(0);
+
+  const handleCount = () => {
+    console.log('inside state update');
+    setCount(count + 1);
+    setCount(count + 1);
+    setCount(count + 1);
+    console.log('count1: ', count);
+  };
+
+  console.log('count2: ', count);
+
+  return (
+    <div>
+      <button onClick={handleCount}>
+        count3::: {count}
+      </button>
+    </div>
+  );
+}
+
+export default App;
+```
+
+### Initial Render
+
+Console:
+
+```text
+count2: 0
+```
+
+Button value:
+
+```text
+count3::: 0
+```
+
+### First Button Click
+
+Console:
+
+```text
+inside state update
+count1: 0
+count2: 1
+```
+
+Button value after re-render:
+
+```text
+count3::: 1
+```
+
+### Second Button Click
+
+Console:
+
+```text
+inside state update
+count1: 1
+count2: 2
+```
+
+Button value after re-render:
+
+```text
+count3::: 2
+```
+
+### Third Button Click
+
+Console:
+
+```text
+inside state update
+count1: 2
+count2: 3
+```
+
+Button value after re-render:
+
+```text
+count3::: 3
+```
+
+### Why Count Increases Only By 1
+
+On the first click, `count` is `0`.
+
+So all three calls calculate the same value:
+
+```jsx
+setCount(count + 1); // setCount(1)
+setCount(count + 1); // setCount(1)
+setCount(count + 1); // setCount(1)
+```
+
+React batches these updates.
+
+Since all three updates are setting the same value, the final state becomes:
+
+```text
+1
+```
+
+That is why the count increases by only `1`, not `3`.
+
+### Why count1 Logs Old Value
+
+This line runs before React finishes the state update and re-render:
+
+```jsx
+console.log('count1: ', count);
+```
+
+So it logs the value from the current render.
+
+On the first click:
+
+```text
+count1: 0
+```
+
+Then React re-renders with:
+
+```text
+count2: 1
+```
+
+### Does var Change Anything Here?
+
+No.
+
+In this example, `var` does not change the result because we are not mutating `count`.
+
+This:
+
+```jsx
+setCount(count + 1);
+```
+
+only reads `count`.
+
+It does not change the local `count` variable immediately.
+
+### Important Interview Answer
+
+```text
+Calling setCount(count + 1) three times uses the same count value from the current render. If count is 0, all three calls become setCount(1). React batches them, so the final state is 1. The count1 log still shows the old value because state updates are applied after the event handler completes.
+```
+
+### Correct Way To Increase By 3
+
+Use functional updates:
+
+```jsx
+setCount((prev) => prev + 1);
+setCount((prev) => prev + 1);
+setCount((prev) => prev + 1);
+```
+
+React applies each function to the latest pending state.
+
+So the count increases by `3`.
+
+### Important StrictMode Note
+
+```text
+In React StrictMode during development, render logs may appear more than once. The state behavior is still the same: count++ creates confusing local mutation, while count + 1 reads the same render value each time.
+```
+
+## 12. Using let With count++ Inside setState
+
+### Question
+
+What will happen if we declare React state variable with `let` and call `setCount(count++)` three times?
+
+### Code
+
+```jsx
+import React from 'react';
+import { useState } from 'react';
+
+function App() {
+  let [count, setCount] = useState(0);
+
+  const handleCount = () => {
+    console.log('inside state update');
+    setCount(count++);
+    setCount(count++);
+    setCount(count++);
+    console.log('count1: ', count);
+  };
+
+  console.log('count2: ', count);
+
+  return (
+    <div>
+      <button onClick={handleCount}>
+        count3::: {count}
+      </button>
+    </div>
+  );
+}
+
+export default App;
+```
+
+### Initial Render
+
+Console:
+
+```text
+count2: 0
+```
+
+Button value:
+
+```text
+count3::: 0
+```
+
+### First Button Click
+
+Console:
+
+```text
+inside state update
+count1: 3
+count2: 2
+```
+
+Button value after re-render:
+
+```text
+count3::: 2
+```
+
+### Second Button Click
+
+Console:
+
+```text
+inside state update
+count1: 5
+count2: 4
+```
+
+Button value after re-render:
+
+```text
+count3::: 4
+```
+
+### Third Button Click
+
+Console:
+
+```text
+inside state update
+count1: 7
+count2: 6
+```
+
+Button value after re-render:
+
+```text
+count3::: 6
+```
+
+### Why This Happens
+
+`let` allows reassignment, so this line does not throw an error:
+
+```jsx
+setCount(count++);
+```
+
+On the first click, `count` starts as `0`.
+
+These three calls become:
+
+```jsx
+setCount(0); // count becomes 1
+setCount(1); // count becomes 2
+setCount(2); // count becomes 3
+```
+
+So this log prints:
+
+```text
+count1: 3
+```
+
+React batches the queued state updates:
+
+```text
+0, 1, 2
+```
+
+The last queued value is `2`, so the UI becomes:
+
+```text
+count3::: 2
+```
+
+### Difference Between let and const
+
+With `let`, this works because `count` can be reassigned:
+
+```jsx
+count++;
+```
+
+With `const`, it throws:
+
+```text
+TypeError: Assignment to constant variable.
+```
+
+### Difference Between let and var
+
+For this specific example, `let` and `var` give the same output.
+
+The main JavaScript difference is:
+
+- `let` is block-scoped
+- `var` is function-scoped
+
+But for React state, the best practice is still to use `const`:
+
+```jsx
+const [count, setCount] = useState(0);
+```
+
+### Important Interview Answer
+
+```text
+let allows count++ because let variables can be reassigned. So setCount(count++) does not throw an error like const. However, it still mutates only the local render variable, not React state directly. The three calls become setCount(0), setCount(1), and setCount(2), so after batching the final UI becomes 2. This is still bad React practice; use functional updates instead.
+```
+
+### Correct Way
+
+```jsx
+setCount((prev) => prev + 1);
+setCount((prev) => prev + 1);
+setCount((prev) => prev + 1);
+```
+
+Or:
+
+```jsx
+setCount((prev) => prev + 3);
+```
+
+## 13. Using let With setCount(count + 1) Three Times
+
+### Question
+
+What will happen if we declare state with `let` and call `setCount(count + 1)` three times?
+
+### Code
+
+```jsx
+import React from 'react';
+import { useState } from 'react';
+
+function App() {
+  let [count, setCount] = useState(0);
+
+  const handleCount = () => {
+    console.log('inside state update');
+    setCount(count + 1);
+    setCount(count + 1);
+    setCount(count + 1);
+    console.log('count1: ', count);
+  };
+
+  console.log('count2: ', count);
+
+  return (
+    <div>
+      <button onClick={handleCount}>
+        count3::: {count}
+      </button>
+    </div>
+  );
+}
+
+export default App;
+```
+
+### Initial Render
+
+Console:
+
+```text
+count2: 0
+```
+
+Button value:
+
+```text
+count3::: 0
+```
+
+### First Button Click
+
+Console:
+
+```text
+inside state update
+count1: 0
+count2: 1
+```
+
+Button value after re-render:
+
+```text
+count3::: 1
+```
+
+### Second Button Click
+
+Console:
+
+```text
+inside state update
+count1: 1
+count2: 2
+```
+
+Button value after re-render:
+
+```text
+count3::: 2
+```
+
+### Third Button Click
+
+Console:
+
+```text
+inside state update
+count1: 2
+count2: 3
+```
+
+Button value after re-render:
+
+```text
+count3::: 3
+```
+
+### Why This Happens
+
+On the first click, `count` is `0`.
+
+All three calls read the same value from the current render:
+
+```jsx
+setCount(count + 1); // setCount(1)
+setCount(count + 1); // setCount(1)
+setCount(count + 1); // setCount(1)
+```
+
+React batches the updates, and the final state becomes:
+
+```text
+1
+```
+
+So the count increases by `1`, not by `3`.
+
+### Does let Change Anything Here?
+
+No.
+
+This line only reads `count`:
+
+```jsx
+setCount(count + 1);
+```
+
+It does not mutate or reassign `count`.
+
+So `let`, `var`, and `const` all behave the same for this specific `count + 1` example.
+
+### Important Interview Answer
+
+```text
+Using let does not change the behavior of setCount(count + 1). Each call reads the same count value from the current render. If count is 0, all three updates become setCount(1), and React batches them into one final state value of 1. To increment three times, use functional updates.
+```
+
+### Correct Way To Increase By 3
+
+```jsx
+setCount((prev) => prev + 1);
+setCount((prev) => prev + 1);
+setCount((prev) => prev + 1);
+```
+
+Or:
+
+```jsx
+setCount((prev) => prev + 3);
+```
+
+### Important StrictMode Note
+
+```text
+In React StrictMode during development, render logs may appear more than once. The normal state behavior is still the same.
+```
