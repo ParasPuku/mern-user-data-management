@@ -1672,9 +1672,11 @@ In this project, we use Vite instead of Webpack. Vite handles development/build 
 
 ### 36. What is React Fiber?
 
+Earlier React used to do all rendering task in one single go. If the task was heavy to filter/Search the record, UI used to get freeze.
+
 React Fiber is React's internal rendering architecture.
 
-It lets React split rendering work into smaller units so it can pause, resume, prioritize, or discard work when needed.
+React Fiber breaking/split rendering work into smaller units/chunks so it can pause, resume, prioritize, or discard work when needed.
 
 Why Fiber matters:
 
@@ -1687,6 +1689,50 @@ Interview answer:
 
 ```text
 React Fiber is React's internal reconciliation engine. It breaks rendering work into units so React can prioritize updates and keep the UI responsive.
+```
+
+A real-world example of React Fiber’s ability to pause, resume, prioritize, and discard rendering work is the Search-and-Filter Data Grid.
+
+Imagine typing into a filter input while rendering 10,000 complex rows. Fiber manages this through Concurrent Rendering and useDeferredValue.
+
+How Fiber Manages the Operations 
+- Pause: As you start typing a letter, React begins rendering the filtered grid. If the render takes too long, React pauses midway to let the browser paint the screen and handle your next keystroke.
+- Resume: Once the user pauses typing and the main thread is idle, React resumes the pending rendering task exactly where it left off.
+- Priority: User keystrokes are assigned High Priority to keep the UI smooth. Off-screen or background updates (like calculating the new grid) are Low Priority.
+- Discard: If you quickly delete your search term and type a new one, the previous search's rendering is now obsolete. React discards the stalled rendering work to immediately focus on calculating and displaying the newest search results.
+
+Code Example
+
+Using useDeferredValue, you tell React to de-prioritize the heavy grid's update, allowing the text input to remain snappy:
+```jsx
+import { useState, useDeferredValue, useMemo } from 'react';
+
+function ProductList({ products }) {
+  const [filterQuery, setFilterQuery] = useState('');
+  
+  // React can pause/discard work on this heavy list because it's deferred
+  const deferredQuery = useDeferredValue(filterQuery);
+
+  const filteredProducts = useMemo(() => {
+    return products.filter(product => 
+      product.name.toLowerCase().includes(deferredQuery)
+    );
+  }, [deferredQuery, products]);
+
+  return (
+    <div>
+      <input 
+        type="text" 
+        value={filterQuery} 
+        onChange={(e) => setFilterQuery(e.target.value)}
+        placeholder="Search products..."
+      />
+      
+      {/* Heavy grid rendering */}
+      <Grid items={filteredProducts} />
+    </div>
+  );
+}
 ```
 
 ### 37. What is hydration in React, and what role does hydration play in server-side rendering?
