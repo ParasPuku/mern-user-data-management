@@ -59,6 +59,7 @@ Quick navigation:
 - DEEP Understanding TOPICS
 - Low Priority SSR and Hydration Questions
 - Additional Low Priority React Questions
+- React 19 Features
 
 ## Fast Revision Path
 
@@ -568,7 +569,73 @@ const App = () => {
 
 React runs `App()` to know what UI should be.
 
-### 15. What causes a re-render?
+### 15. Difference between Render phase and Commit phase in React?
+
+React update has two main phases:
+
+```text
+Render phase -> Commit phase
+```
+
+Render phase means React calculates what the UI should look like.
+
+Commit phase means React applies the required changes to the real DOM.
+
+Simple difference:
+
+| Point | Render phase | Commit phase |
+|---|---|---|
+| What happens | React calls components and creates new UI description | React updates the real DOM |
+| DOM changed? | No | Yes, if something changed |
+| Can be interrupted? | Yes, in concurrent rendering | No, commit is synchronous |
+| Should be pure? | Yes | Side effects are allowed after commit |
+| Examples | calling component functions, comparing elements | DOM updates, refs updated, effects scheduled |
+
+Example:
+
+```tsx
+function Counter() {
+  const [count, setCount] = useState(0);
+
+  console.log('Render phase:', count);
+
+  useEffect(() => {
+    console.log('Effect after commit:', count);
+  }, [count]);
+
+  return (
+    <button onClick={() => setCount((prev) => prev + 1)}>
+      Count: {count}
+    </button>
+  );
+}
+```
+
+When button is clicked:
+
+```text
+setCount runs
+-> React enters render phase
+-> Counter function runs
+-> React calculates new UI
+-> React enters commit phase
+-> DOM button text updates
+-> useEffect runs after commit
+```
+
+Important point:
+
+```text
+Render does not mean DOM update. React may render a component, compare the result, and decide that no real DOM change is needed.
+```
+
+Interview answer:
+
+```text
+In the render phase, React calls component functions and calculates the next UI tree. This phase should be pure and does not change the real DOM. In the commit phase, React applies the necessary changes to the real DOM, updates refs, and runs layout/effect lifecycles. Render can be paused or discarded in modern React, but commit is applied synchronously.
+```
+
+### 16. What causes a re-render?
 
 Common causes:
 
@@ -580,7 +647,7 @@ Common causes:
 
 Note - Yes, by default in React, if a parent component re-renders, the child component will also re-render.
 
-### 16. What is conditional rendering?
+### 17. What is conditional rendering?
 
 Conditional rendering means showing UI based on condition.
 
@@ -596,7 +663,7 @@ Another example:
 {error ? <p>{error}</p> : null}
 ```
 
-### 17. What is list rendering?
+### 18. What is list rendering?
 
 Rendering array items using `map`.
 
@@ -606,7 +673,7 @@ Example:
 users.map((user) => <UserRow key={user.id} user={user} />);
 ```
 
-### 18. Why is key important in list rendering?
+### 19. Why is key important in list rendering?
 
 `key` helps React identify which list item changed, added, or removed.
 
@@ -626,7 +693,7 @@ Using index can cause bugs when list order changes.
 
 ## Virtual DOM and Reconciliation
 
-### 19. What is Virtual DOM?
+### 20. What is Virtual DOM?
 
 Virtual DOM is a lightweight, and in-memory representation of the real DOM.
 
@@ -636,7 +703,7 @@ When state changes:
 2. React compares it with previous virtual DOM.
 3. React updates only necessary real DOM parts.
 
-### 20. What is reconciliation?
+### 21. What is reconciliation?
 
 Reconciliation is React's process of comparing old and new element trees to decide what needs to update.
 
@@ -646,7 +713,7 @@ Interview answer:
 Reconciliation is the process where React compares previous and next UI trees and efficiently updates the real DOM.
 ```
 
-### 21. Does React always update the real DOM on render?
+### 22. Does React always update the real DOM on render?
 
 No.
 
@@ -654,7 +721,7 @@ React may re-render components but only update the real DOM if output changes.
 
 ## Hooks
 
-### 22. What are hooks?
+### 23. What are hooks?
 
 Hooks are functions that let functional components use React features like state, effects, refs, and context.
 
@@ -668,11 +735,12 @@ Common hooks:
 - `useTransition`
 - `useDeferredValue`
 - `useId`
+- `use` React 19 API
 - `useRef`
 - `useContext`
 - `useReducer`
 
-### 23. Rules of hooks?
+### 24. Rules of hooks?
 
 Rules:
 
@@ -696,6 +764,216 @@ useEffect(() => {
     return;
   }
 }, [isLoggedIn]);
+```
+
+### 25. What is the `use()` API in React 19?
+
+The React `use()` API is a React 19 feature that lets a component read a resource directly during render.
+
+The resource can be:
+
+- a Promise
+- a Context
+
+Important difference from normal hooks:
+
+```text
+Normal hooks like useState and useEffect must be called at the top level.
+The use() API can be called inside conditions and loops.
+```
+
+Example:
+
+```tsx
+if (shouldLoadData) {
+  const data = use(dataPromise);
+}
+```
+
+When we pass a Promise to `use()`, React suspends the component until the Promise resolves.
+
+That means we need a `Suspense` boundary to show fallback UI while waiting.
+
+#### Example with React 19 `use()`
+
+```tsx
+import { Suspense, use } from 'react';
+
+const dataPromise = fetch('https://example.com')
+  .then((res) => res.json());
+
+function DataComponent() {
+  const data = use(dataPromise);
+
+  return <div>Data: {data.message}</div>;
+}
+
+export default function App() {
+  return (
+    <Suspense fallback={<p>Loading...</p>}>
+      <DataComponent />
+    </Suspense>
+  );
+}
+```
+
+What happens here:
+
+```text
+DataComponent renders
+-> use(dataPromise) reads the promise
+-> promise is still pending
+-> React suspends DataComponent
+-> Suspense shows Loading...
+-> promise resolves
+-> DataComponent renders with data
+```
+
+Why `use()` is useful:
+
+- it reduces `useState + useEffect` boilerplate for some async reads
+- it works naturally with `Suspense`
+- it lets React control loading fallback UI
+- it can make async rendering code easier to read
+- it can read Context conditionally
+
+Important considerations:
+
+- `use()` is not exactly the same as normal hooks.
+- It can be called conditionally, unlike `useState` or `useEffect`.
+- Promise usage should be stable/cached, not recreated on every render.
+- Errors from the Promise should be handled with an Error Boundary.
+- In real apps, frameworks and data libraries often manage the cache around `use()`.
+
+Bad pattern:
+
+```tsx
+function DataComponent() {
+  const data = use(fetch('/api/users').then((res) => res.json()));
+
+  return <div>{data.length}</div>;
+}
+```
+
+Why bad?
+
+```text
+This creates a new Promise on every render.
+It can cause repeated fetching or unstable behavior.
+```
+
+Better:
+
+```tsx
+const usersPromise = fetch('/api/users').then((res) => res.json());
+
+function Users() {
+  const users = use(usersPromise);
+
+  return <p>Total users: {users.length}</p>;
+}
+```
+
+#### Traditional API Calls with `useEffect` and `fetch`
+
+In React projects before React 19, or when using traditional client-side fetching, we usually use `fetch` or Axios with `useState` and `useEffect`.
+
+Example:
+
+```tsx
+import { useEffect, useState } from 'react';
+
+type User = {
+  id: number;
+  name: string;
+};
+
+function UserList() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetch('https://jsonplaceholder.typicode.com/users')
+      .then((response) => response.json())
+      .then((data) => {
+        setUsers(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError('Failed to load users');
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return <p>Loading users...</p>;
+  }
+
+  if (error) {
+    return <p>{error}</p>;
+  }
+
+  return (
+    <ul>
+      {users.map((user) => (
+        <li key={user.id}>{user.name}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+Traditional approach:
+
+```text
+useEffect starts API call
+-> useState stores loading/data/error
+-> component re-renders when state changes
+```
+
+React 19 `use()` approach:
+
+```text
+Promise is read during render
+-> component suspends while pending
+-> Suspense shows fallback
+-> component renders when data is ready
+```
+
+#### Industry Best Practices for External APIs
+
+For real-world apps, plain `fetch + useEffect` is often not enough.
+
+Dedicated server-state libraries handle common problems automatically:
+
+- caching
+- loading state
+- error state
+- retries
+- background refetching
+- pagination
+- stale data
+- request deduplication
+
+Common choices:
+
+- [TanStack Query / React Query](https://tanstack.com/query/latest)
+- [SWR by Vercel](https://swr.vercel.app/)
+- RTK Query if the project already uses Redux Toolkit
+
+When to choose:
+
+```text
+Use fetch + useEffect for simple one-off calls.
+Use React Query or SWR when the app needs caching, refetching, retries, pagination, or shared server state.
+Use RTK Query when the app already uses Redux Toolkit and API state should live with Redux.
+```
+
+Interview answer:
+
+```text
+The React 19 use() API lets a component read a Promise or Context during render. When a Promise is passed to use(), React suspends the component until the Promise resolves, so we wrap it with Suspense to show fallback UI. It can reduce useState and useEffect boilerplate for async data, but promises should be stable or cached. For large real-world apps, React Query, SWR, or RTK Query are often better for external API server-state management.
 ```
 
 ### [{}], [[]], [true], [1], ["hello"], [{id: 1}], [0], [4354] - How it checks behind the scene and render and re-render?
@@ -755,7 +1033,7 @@ Summary Checklist
 - Primitives are compared by Value. Same value = No re-run.
 - Objects/Arrays are compared by Reference. New reference = Re-runs every time.
 
-### 24. What is useState?
+### 26. What is useState?
 
 `useState` stores local component state.
 
@@ -779,7 +1057,7 @@ setCount((current) => current + 1);
 
 Use functional update when next value depends on previous value.
 
-### 25. Why state updates are asynchronous?
+### 27. Why state updates are asynchronous?
 
 React batches state updates for performance.
 
@@ -794,7 +1072,7 @@ console.log(count); // old value
 
 The state variable updates on next render.
 
-### 26. What is the purpose of callback function argument format of setState, and when should it be used?
+### 28. What is the purpose of callback function argument format of setState, and when should it be used?
 
 The callback function argument format means passing a function to the state setter instead of passing a direct value.
 
@@ -939,7 +1217,7 @@ Interview answer:
 The callback function format of setState is used when the next state depends on the previous state. React may batch state updates, so reading the state variable directly can give the old render value. By passing a function like setCount(prev => prev + 1), React gives us the latest pending state and avoids stale state bugs. Use it for counters, toggles, array/object updates, multiple updates in one handler, and async callbacks.
 ```
 
-### 27. What is batching?
+### 29. What is batching?
 
 Batching means React groups multiple state updates into one render.
 
@@ -952,7 +1230,7 @@ setRole('Admin');
 
 React can render once instead of twice.
 
-### 28. What is useEffect?
+### 30. What is useEffect?
 
 `useEffect` runs side effects after render.
 
@@ -972,7 +1250,7 @@ useEffect(() => {
 }, []);
 ```
 
-### 29. useEffect dependency array?
+### 31. useEffect dependency array?
 
 No dependency array:
 
@@ -1000,7 +1278,7 @@ useEffect(() => {
 
 Runs when `userId` changes.
 
-### 30. What is cleanup in useEffect?
+### 32. What is cleanup in useEffect?
 
 Cleanup runs before effect re-runs or component unmounts.
 
@@ -1025,7 +1303,7 @@ Use cleanup for:
 - event listeners
 - aborting requests
 
-### 31. What is useLayoutEffect?
+### 33. What is useLayoutEffect?
 
 `useLayoutEffect` is a React hook that runs after React updates the DOM but before the browser paints the screen.
 
@@ -1193,7 +1471,7 @@ Use useEffect for side effects after paint.
 Use useLayoutEffect only when you must read or change layout before paint.
 ```
 
-### 32. How to use the `useId` hook to generate unique IDs?
+### 34. How to use the `useId` hook to generate unique IDs?
 
 `useId` is a React hook used to generate a unique, stable ID for accessibility attributes.
 
@@ -1338,7 +1616,7 @@ Interview answer:
 useId is a React hook that generates a unique and stable ID for a component. It is mainly used for accessibility, such as connecting label with input using htmlFor and id, or connecting input with helper/error text using aria-describedby. We should not use useId for list keys because keys should come from stable data like database IDs. Also, hooks cannot be called inside map callbacks.
 ```
 
-### 33. Difference between Webpack and Babel?
+### 35. Difference between Webpack and Babel?
 
 Webpack and Babel solve different problems in a React app.
 
@@ -1392,7 +1670,7 @@ Babel transpiles modern JavaScript or JSX into browser-compatible JavaScript. We
 
 In this project, we use Vite instead of Webpack. Vite handles development/build tooling, and the React plugin handles React/JSX transformation.
 
-### 34. What is React Fiber?
+### 36. What is React Fiber?
 
 React Fiber is React's internal rendering architecture.
 
@@ -1411,7 +1689,7 @@ Interview answer:
 React Fiber is React's internal reconciliation engine. It breaks rendering work into units so React can prioritize updates and keep the UI responsive.
 ```
 
-### 35. What is hydration in React, and what role does hydration play in server-side rendering?
+### 37. What is hydration in React, and what role does hydration play in server-side rendering?
 
 Hydration is the process where React takes HTML that was already generated on the server and makes it interactive in the browser.
 
@@ -1524,7 +1802,7 @@ Important interview point:
 Hydration does not create HTML from scratch. It reuses server-rendered HTML and attaches React behavior to it.
 ```
 
-### 36. Difference between Server-Side Rendering and Client-Side Rendering?
+### 38. Difference between Server-Side Rendering and Client-Side Rendering?
 
 This is mainly a React/frontend architecture question, not a core JavaScript question.
 
@@ -1625,7 +1903,7 @@ Important interview point:
 SSR does not mean no JavaScript. If the page is interactive, React still needs JavaScript for hydration. CSR means JavaScript creates the UI in the browser from the beginning.
 ```
 
-### 37. How do you decide whether a component should be server-rendered or client-rendered?
+### 39. How do you decide whether a component should be server-rendered or client-rendered?
 
 This is a valid and important interview question, especially for Next.js, SSR, and React Server Components.
 
@@ -1680,7 +1958,7 @@ Important interview point:
 SSR improves the initial HTML and SEO, but the component still needs hydration if it is interactive. Client rendering is better for browser-only and interaction-heavy UI.
 ```
 
-### 38. What is infinite render loop?
+### 40. What is infinite render loop?
 
 An infinite render loop happens when state updates repeatedly during render or effect.
 
@@ -1694,7 +1972,7 @@ useEffect(() => {
 
 This changes `count`, effect runs again, and loop continues.
 
-### 39. What is useRef?
+### 41. What is useRef?
 
 `useRef` stores a mutable value that does not cause re-render.
 
@@ -1715,7 +1993,7 @@ const renderCount = useRef(0);
 renderCount.current += 1;
 ```
 
-### 40. useRef vs useState?
+### 42. useRef vs useState?
 
 `useState`:
 
@@ -1727,7 +2005,7 @@ renderCount.current += 1;
 - does not cause re-render
 - used for mutable values/DOM refs
 
-### 41. What is useMemo?
+### 43. What is useMemo?
 
 `useMemo` memoizes a calculated value.
 
@@ -1742,7 +2020,7 @@ const filteredUsers = useMemo(
 
 Use it when calculation is expensive or reference stability matters.
 
-### 42. What is useCallback?
+### 44. What is useCallback?
 
 `useCallback` memoizes a function reference.
 
@@ -1765,7 +2043,7 @@ useCallback memoizes the function, meaning React returns the same function insta
 - Including the function in dependency arrays of useEffect or other hooks.
 - Avoiding unnecessary re-renders caused by changing function references.
 
-### 43. What is useTransition?
+### 45. What is useTransition?
 
 `useTransition` is a React hook used to mark some state updates as non-urgent.
 
@@ -1849,7 +2127,7 @@ Final interview shortcut:
 useTransition is used when a state update is expensive and can be treated as low priority.
 ```
 
-### 44. What is useDeferredValue and why is React's useDeferredValue hook useful?
+### 46. What is useDeferredValue and why is React's useDeferredValue hook useful?
 
 `useDeferredValue` is a React hook that lets you defer updating a value until the browser has time to handle less urgent rendering.
 
@@ -1918,6 +2196,57 @@ What happens here:
 searchText updates immediately as the user types.
 deferredSearchText may lag behind slightly.
 The expensive filtered list uses deferredSearchText, so typing stays responsive.
+```
+
+Same mental model as `useTransition`:
+
+```text
+searchText         -> urgent value, used by input
+deferredSearchText -> non-urgent value, used by expensive UI
+```
+
+Example in a simpler form:
+
+```tsx
+import { useDeferredValue, useState } from 'react';
+
+function SearchPage({ users }) {
+  const [searchText, setSearchText] = useState('');
+  const deferredSearchText = useDeferredValue(searchText);
+
+  const filteredUsers = users.filter((user) =>
+    user.name.toLowerCase().includes(deferredSearchText.toLowerCase())
+  );
+
+  return (
+    <>
+      <input
+        value={searchText}
+        onChange={(event) => setSearchText(event.target.value)}
+      />
+
+      {searchText !== deferredSearchText ? <p>Updating list...</p> : null}
+
+      {filteredUsers.map((user) => (
+        <p key={user.id}>{user.name}</p>
+      ))}
+    </>
+  );
+}
+```
+
+Here:
+
+```text
+Input uses searchText, so typing updates immediately.
+List uses deferredSearchText, so expensive rendering can wait.
+```
+
+Important difference from `useTransition`:
+
+```text
+useTransition marks a state update as low priority.
+useDeferredValue marks a value as low priority after it has already changed.
 ```
 
 Without `useDeferredValue`:
@@ -2005,7 +2334,7 @@ Final interview shortcut:
 useDeferredValue is useful when a fast-changing value causes expensive rendering and we want React to keep urgent UI responsive by showing the previous UI until the new UI is ready.
 ```
 
-### 45. useMemo vs useCallback?
+### 47. useMemo vs useCallback?
 
 `useMemo` memoizes a value.
 
@@ -2025,7 +2354,7 @@ This is roughly:
 useCallback(fn, deps) === useMemo(() => fn, deps)
 ```
 
-### 46. How useMemo and useCallback works behind the scene?
+### 48. How useMemo and useCallback works behind the scene?
 The reason they look different is because useCallback and useMemo are designed for different purposes, even though they're closely related.
 
 In fact, useCallback is essentially a special case of useMemo.
@@ -2517,7 +2846,7 @@ Easy way to remember
 - useCallback → Memoize a function.
 - PureComponent → Class component equivalent of React.memo with shallow prop and state comparison.
 
-### 47. What is useContext?
+### 49. What is useContext?
 
 `The useContext hook` in React is a built-in function that lets functional components read and subscribe to data from a context object without manually passing props through intermediate components. It provides an elegant solution to prop drilling, which is the tedious process of passing props down multiple levels of a component tree just to reach a deeply nested child.
 
@@ -2539,7 +2868,7 @@ Use Context for app-wide values like:
 
 Avoid putting frequently changing large state in Context if it causes unnecessary renders.
 
-### 48. What is useReducer?
+### 50. What is useReducer?
 
 `useReducer` manages complex local state using reducer function.
 
@@ -2563,7 +2892,7 @@ function reducer(state: State, action: Action): State {
 const [state, dispatch] = useReducer(reducer, { count: 0 });
 ```
 
-### 49. What is a custom hook?
+### 51. What is a custom hook?
 
 A custom hook is a reusable function that uses React hooks.
 
@@ -2594,7 +2923,7 @@ Custom hook name should start with `use`.
 
 ## Forms
 
-### 50. Controlled vs uncontrolled components?
+### 52. Controlled vs uncontrolled components?
 - Controlled components rely on React state to manage form data
 - Controlled input: 
 
@@ -2617,7 +2946,7 @@ const inputRef = useRef<HTMLInputElement | null>(null);
 
 DOM controls the value.
 
-### 51. Which is better: controlled or uncontrolled?
+### 53. Which is better: controlled or uncontrolled?
 
 Controlled is better when:
 
@@ -2632,7 +2961,7 @@ Uncontrolled is useful when:
 - file inputs
 - integration with non-React libraries
 
-### 52. How to handle form validation?
+### 54. How to handle form validation?
 
 Common approach:
 
@@ -2651,7 +2980,7 @@ For large apps:
 
 ## Component Communication
 
-### 53. How parent passes data to child?
+### 55. How parent passes data to child?
 
 Using props.
 
@@ -2659,7 +2988,7 @@ Using props.
 <UserCard user={user} />
 ```
 
-### 54. How child sends data to parent?
+### 56. How child sends data to parent?
 
 Using callback prop.
 
@@ -2681,7 +3010,7 @@ const Child = ({ onSelect }: { onSelect: (id: string) => void }) => {
 };
 ```
 
-### 55. What is prop drilling?
+### 57. What is prop drilling?
 
 Prop drilling means passing props through many levels just to reach a deeply nested component.
 
@@ -2692,7 +3021,7 @@ Solutions:
 - component composition
 - custom hooks
 
-### 56. What is lifting state up?
+### 58. What is lifting state up?
 
 Moving shared state to the nearest common parent.
 
@@ -2709,7 +3038,7 @@ Pass value/callback to both
 
 ## Routing
 
-### 57. What is React Router?
+### 59. What is React Router?
 
 React Router is a routing library for React apps.
 
@@ -2724,7 +3053,7 @@ Example:
 </Routes>
 ```
 
-### 58. What is protected route?
+### 60. What is protected route?
 
 Protected route allows access only when user is authenticated.
 
@@ -2740,7 +3069,7 @@ In this app:
 frontend/src/components/ProtectedRoute.tsx
 ```
 
-### 59. What is public route?
+### 61. What is public route?
 
 Public route is accessible without login.
 
@@ -2752,7 +3081,7 @@ In this app:
 frontend/src/components/PublicRoute.tsx
 ```
 
-### 60. What is Navigate?
+### 62. What is Navigate?
 
 `Navigate` redirects user to another route.
 
@@ -2764,7 +3093,7 @@ Example:
 
 ## State Management
 
-### 61. When to use local state?
+### 63. When to use local state?
 
 Use local state when data belongs to one component.
 
@@ -2775,7 +3104,7 @@ Examples:
 - selected tab
 - local loading state
 
-### 62. When to use global state?
+### 64. When to use global state?
 
 Use global state when many parts of app need same data.
 
@@ -2787,7 +3116,7 @@ Examples:
 - skills
 - notifications/toasts
 
-### 63. What is Redux?
+### 65. What is Redux?
 
 Redux is a predictable state management library.
 
@@ -2801,7 +3130,7 @@ Core ideas:
 - dispatch
 - selectors
 
-### 64. What is Redux Toolkit?
+### 66. What is Redux Toolkit?
 
 Redux Toolkit is the recommended way to write Redux.
 
@@ -2831,7 +3160,7 @@ export const store = configureStore({
 });
 ```
 
-### 65. What is Thunk in Redux?
+### 67. What is Thunk in Redux?
 In Redux Toolkit (RTK), a thunk is a function that contains delayed, asynchronous logic. Because a standard Redux store can only handle synchronous data flow, Redux Toolkit automatically includes the Redux Thunk middleware by default to let you perform side effects like fetching API data.
 
 - How createAsyncThunk Works
@@ -2843,7 +3172,7 @@ When you create an async thunk, you provide an action type prefix and a payload 
 
 - rejected: Dispatched if the Promise fails or rejects.
 
-### 66. Difference between Thunk and Saga in Redux?
+### 68. Difference between Thunk and Saga in Redux?
 
 Thunk and Saga are both Redux middleware used to handle side effects like API calls, async flows, and delayed actions.
 
@@ -2993,7 +3322,7 @@ Final answer:
 For most Redux Toolkit applications, I choose Thunk because it is simple and built in. I choose Saga only when the async flow becomes complex enough that Saga's generator-based control flow provides real value.
 ```
 
-### 67. What is reducer?
+### 69. What is reducer?
 
 Reducer is a pure function that calculates next state from current state and action.
 
@@ -3003,7 +3332,7 @@ Concept:
 nextState = reducer(currentState, action);
 ```
 
-### 68. What is action?
+### 70. What is action?
 
 An action is an object describing what happened.
 
@@ -3016,7 +3345,7 @@ Example:
 }
 ```
 
-### 69. What is dispatch?
+### 71. What is dispatch?
 
 Dispatch sends an action to Redux store.
 
@@ -3026,7 +3355,7 @@ Example:
 dispatch(fetchUsers());
 ```
 
-### 70. What is selector?
+### 72. What is selector?
 
 Selector reads data from Redux state.
 
@@ -3042,7 +3371,7 @@ Usage:
 const users = useAppSelector(selectUsers);
 ```
 
-### 71. What is createAsyncThunk?
+### 73. What is createAsyncThunk?
 
 `createAsyncThunk` handles async Redux logic.
 
@@ -3060,7 +3389,7 @@ It creates:
 - fulfilled action
 - rejected action
 
-### 72. What is Redux middleware?
+### 74. What is Redux middleware?
 
 Middleware runs between dispatching action and reducer.
 
@@ -3077,7 +3406,7 @@ In this app:
 frontend/src/app/toastMiddleware.ts
 ```
 
-### 73. What is Immer?
+### 75. What is Immer?
 
 Immer lets us write mutable-looking reducer code while keeping state immutable internally.
 
@@ -3089,7 +3418,7 @@ state.items.push(user);
 
 Redux Toolkit uses Immer behind the scenes.
 
-### 74. What is selector stability warning?
+### 76. What is selector stability warning?
 
 React Redux warns when a selector returns a new reference for same input.
 
@@ -3112,7 +3441,7 @@ This issue happened in this app in the skills selector and was fixed by using a 
 
 ## Performance Optimization
 
-### 75. How to secure the React APP?
+### 77. How to secure the React APP?
 Securing a React app requires layers of protection at both the client level and the server level. The most critical step is preventing Cross-Site Scripting (XSS) by allowing React to auto-escape data, avoiding dangerouslySetInnerHTML, and sanitizing user inputs. Always treat the frontend as untrusted.
 
 - Prevent Cross-Site Scripting (XSS)
@@ -3121,7 +3450,7 @@ Securing a React app requires layers of protection at both the client level and 
 - Rely on the Backend for Security
 - Keep Dependencies Updated [Vulnerability]
 
-### 76. How to optimize React performance?
+### 78. How to optimize React performance?
 
 Common ways:
 
@@ -3136,7 +3465,7 @@ Common ways:
 - split code with lazy loading
 - avoid unnecessary global state changes
 
-### 77. What is React.memo?
+### 79. What is React.memo?
 
 `React.memo` prevents re-render if props did not change.
 
@@ -3150,13 +3479,13 @@ const UserRow = React.memo(({ user }: { user: User }) => {
 
 Useful for expensive child components.
 
-### 78. React.memo vs useMemo?
+### 80. React.memo vs useMemo?
 
 `React.memo` memoizes a component render based on props.
 
 `useMemo` memoizes a calculated value inside a component.
 
-### 79. What causes unnecessary re-render?
+### 81. What causes unnecessary re-render?
 
 Common causes:
 
@@ -3167,7 +3496,7 @@ Common causes:
 - selector returning new array/object every time
 - unstable keys
 
-### 80. Difference between `npm create vite@latest my-react-app -- --template react` and `npx create-react-app my-react-app`?
+### 82. Difference between `npm create vite@latest my-react-app -- --template react` and `npx create-react-app my-react-app`?
 
 Both commands create a new React project, but they use different project setup tools.
 
@@ -3246,7 +3575,7 @@ You can see that from:
 "build": "tsc -b && vite build"
 ```
 
-### 81. What happens behind the scenes when we create a React project using Vite or Create React App?
+### 83. What happens behind the scenes when we create a React project using Vite or Create React App?
 
 When you run a project setup command, it does not magically create React by itself.
 
@@ -3318,7 +3647,412 @@ Mount the React App component inside that element
 
 So the setup command creates the project structure, but React starts running when the browser loads the entry file and React renders `<App />`.
 
-### 82. What is Suspense and what is the use of Suspense?
+### 84. What is the new root API using `createRoot` in React 18?
+
+React 18 introduced the new root API using `createRoot`.
+
+Before React 18, apps commonly used:
+
+```tsx
+ReactDOM.render(<App />, document.getElementById('root'));
+```
+
+In React 18 and newer, we use:
+
+```tsx
+import { createRoot } from 'react-dom/client';
+```
+
+This modern root API enables React 18 features like:
+
+- automatic batching
+- concurrent rendering foundation
+- better scheduling
+- modern hydration/rendering behavior
+
+Core implementation:
+
+```tsx
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App';
+
+const domNode = document.getElementById('root');
+
+if (!domNode) {
+  throw new Error('Root element not found');
+}
+
+const root = createRoot(domNode);
+
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+```
+
+What happens here:
+
+```text
+Find root DOM node
+-> create React root container
+-> render App inside that root
+```
+
+#### Difference from legacy `ReactDOM.render`
+
+Legacy API:
+
+```tsx
+import ReactDOM from 'react-dom';
+
+ReactDOM.render(<App />, document.getElementById('root'));
+```
+
+Modern API:
+
+```tsx
+import { createRoot } from 'react-dom/client';
+
+const root = createRoot(document.getElementById('root')!);
+root.render(<App />);
+```
+
+Comparison:
+
+| Point | Legacy `ReactDOM.render` | Modern `createRoot` |
+|---|---|---|
+| React version | React 17 and older style | React 18+ |
+| Root creation | Container passed directly to render | Root object is created first |
+| Concurrent features | Not enabled | Enabled |
+| Render callback | Supported | Removed |
+| SSR hydration | Used `hydrate` separately | Use `hydrateRoot` |
+
+#### Callback removal
+
+Old API allowed an optional callback:
+
+```tsx
+ReactDOM.render(<App />, container, () => {
+  console.log('Rendered');
+});
+```
+
+In React 18 `createRoot`, this callback is removed because modern rendering can be asynchronous and timing can be unpredictable with Suspense/concurrent features.
+
+Use effects inside components instead:
+
+```tsx
+useEffect(() => {
+  console.log('App mounted');
+}, []);
+```
+
+#### Hydration separation
+
+For normal client-side rendering:
+
+```tsx
+createRoot(rootElement).render(<App />);
+```
+
+For server-side rendered apps:
+
+```tsx
+import { hydrateRoot } from 'react-dom/client';
+
+hydrateRoot(rootElement, <App />);
+```
+
+Important:
+
+```text
+Use createRoot for client-side rendering.
+Use hydrateRoot for server-rendered HTML.
+```
+
+#### Important constraints
+
+- call `createRoot` only once for the same DOM node
+- do not call `createRoot` repeatedly during re-renders
+- keep the root object if you need to unmount later
+- use `root.unmount()` to remove the React tree cleanly
+
+Unmount example:
+
+```tsx
+root.unmount();
+```
+
+Interview answer:
+
+```text
+createRoot is the React 18 root API used to mount a React application. Instead of calling ReactDOM.render directly, we first create a root object using createRoot(container), then call root.render(<App />). This enables React 18 features like automatic batching and concurrent rendering foundation. For SSR, we should use hydrateRoot instead of createRoot.
+```
+
+### 85. How can we render multiple separate React roots on a single web page?
+
+We can render multiple separate React roots by calling `createRoot` independently for each target DOM container.
+
+This is useful when:
+
+- adding React widgets to an existing non-React page
+- building micro-frontends
+- injecting independent UI islands
+- migrating a legacy app to React slowly
+- rendering separate dashboard widgets
+
+Example HTML:
+
+```html
+<div id="global-header"></div>
+<main>Static or legacy HTML content</main>
+<div id="sidebar-widget"></div>
+```
+
+Core implementation:
+
+```tsx
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import HeaderComponent from './HeaderComponent';
+import SidebarWidget from './SidebarWidget';
+
+const headerContainer = document.getElementById('global-header');
+const sidebarContainer = document.getElementById('sidebar-widget');
+
+if (headerContainer) {
+  const headerRoot = createRoot(headerContainer);
+  headerRoot.render(<HeaderComponent />);
+}
+
+if (sidebarContainer) {
+  const sidebarRoot = createRoot(sidebarContainer);
+  sidebarRoot.render(<SidebarWidget />);
+}
+```
+
+#### Key architectural behavior
+
+Each root is a separate React application tree.
+
+That means:
+
+- each root has its own render lifecycle
+- each root has isolated component state
+- each root has its own Context tree
+- one root re-rendering does not automatically re-render another root
+- React Context does not cross root boundaries
+
+Example:
+
+```text
+Header root updates
+-> Header root re-renders
+-> Sidebar root does not re-render
+```
+
+#### Event bubbling
+
+Browser DOM events still bubble normally through the DOM.
+
+Example:
+
+```text
+Click inside sidebar root
+-> event bubbles through sidebar container
+-> event can continue to parent DOM nodes
+```
+
+But React state/context is still separate between roots.
+
+#### Cross-root communication strategies
+
+Because separate roots cannot share one React Context provider directly, use external communication strategies.
+
+Common options:
+
+- Custom DOM Events
+- external state store like Zustand, Redux, or Nanostores
+- browser storage events
+- URL/query params
+- shared backend/API state
+- global functions only when necessary
+
+Custom DOM Event example:
+
+```tsx
+window.dispatchEvent(
+  new CustomEvent('cart:update', {
+    detail: { totalItems: 3 },
+  })
+);
+```
+
+Listening in another root:
+
+```tsx
+useEffect(() => {
+  function handleCartUpdate(event) {
+    console.log(event.detail.totalItems);
+  }
+
+  window.addEventListener('cart:update', handleCartUpdate);
+
+  return () => {
+    window.removeEventListener('cart:update', handleCartUpdate);
+  };
+}, []);
+```
+
+Interview answer:
+
+```text
+To render multiple React roots on one page, we call createRoot separately for each DOM container. Each root is isolated, with its own state, context, and lifecycle. This is useful for widgets, micro-frontends, or gradual migration from legacy apps. If roots need to communicate, we use external stores, custom DOM events, URL state, or backend state because React Context does not cross root boundaries.
+```
+
+### 86. How do we implement Micro-Frontend Architecture in React?
+
+Micro-frontend architecture means splitting a frontend application into smaller independently owned and independently deployable frontend apps.
+
+Simple meaning:
+
+```text
+Microservices split backend by business domain.
+Micro-frontends split frontend by business domain.
+```
+
+Example domains:
+
+- Auth app
+- Dashboard app
+- User management app
+- Billing app
+- Reports app
+
+Each micro-frontend can be owned by a different team and can be built/deployed independently.
+
+#### Common implementation approaches
+
+| Approach | Meaning |
+|---|---|
+| Build-time integration | Apps are imported during build |
+| Runtime integration | Apps are loaded dynamically in browser |
+| Module Federation | Webpack/Vite plugin exposes and consumes remote modules |
+| iframe-based | Each app runs inside iframe |
+| Web Components | Micro-apps expose custom elements |
+| Multiple React roots | Different roots mounted into different DOM nodes |
+
+#### Basic shell/container architecture
+
+```text
+Shell App
+  -> handles routing/layout/auth
+  -> loads Auth micro-frontend
+  -> loads Dashboard micro-frontend
+  -> loads Billing micro-frontend
+```
+
+Shell example:
+
+```tsx
+function AppShell() {
+  return (
+    <Layout>
+      <Routes>
+        <Route path="/dashboard/*" element={<DashboardApp />} />
+        <Route path="/billing/*" element={<BillingApp />} />
+        <Route path="/users/*" element={<UserManagementApp />} />
+      </Routes>
+    </Layout>
+  );
+}
+```
+
+#### Multiple roots approach
+
+For simple micro-frontend/widget scenarios, each micro-app can mount itself into its own DOM node:
+
+```tsx
+import { createRoot } from 'react-dom/client';
+import BillingWidget from './BillingWidget';
+
+const container = document.getElementById('billing-widget');
+
+if (container) {
+  createRoot(container).render(<BillingWidget />);
+}
+```
+
+#### Communication between micro-frontends
+
+Micro-frontends should avoid tight coupling.
+
+Common communication options:
+
+- URL state for route-level communication
+- shared backend APIs
+- shared auth token/session
+- custom browser events
+- external state store if apps run in the same page
+- message bus/event bus
+
+Example with custom event:
+
+```tsx
+window.dispatchEvent(
+  new CustomEvent('user:changed', {
+    detail: { userId: 'U101' },
+  })
+);
+```
+
+#### Shared concerns
+
+Micro-frontends need clear standards for:
+
+- authentication
+- routing
+- design system
+- shared dependencies
+- error handling
+- logging/monitoring
+- deployment/versioning
+- performance budgets
+
+#### Benefits
+
+- independent team ownership
+- independent deployment
+- easier scaling for large organizations
+- isolated business domains
+- gradual migration from legacy frontend
+
+#### Challenges
+
+- more architecture complexity
+- shared dependency/version conflicts
+- duplicated bundle size
+- routing coordination
+- cross-app communication
+- consistent design system
+- testing and monitoring across apps
+
+When to use:
+
+```text
+Use micro-frontends for large products with multiple teams and independent release needs.
+Do not use micro-frontends for small or medium apps where normal modular React architecture is enough.
+```
+
+Interview answer:
+
+```text
+Micro-frontend architecture splits a large frontend into smaller independently owned and deployable applications. A shell/container app usually handles layout, routing, authentication, and loads domain-specific micro-apps like dashboard, billing, or users. Communication should happen through URL state, browser events, shared APIs, or external stores. It is useful for large teams and large products, but it adds complexity, so I would not use it for small apps.
+```
+
+### 87. What is Suspense and what is the use of Suspense?
 
 `Suspense` is a React component that lets us show fallback UI while part of the UI is not ready yet.
 
@@ -3366,7 +4100,7 @@ Interview answer:
 Suspense is used to show fallback UI while a component or resource is not ready. In normal React apps, it is commonly used with React.lazy for lazy loading components. While the lazy component is loading, Suspense shows a loader, and once the component code is loaded, React renders the actual component.
 ```
 
-### 83. How to avoid new object prop each render?
+### 88. How to avoid new object prop each render?
 
 Bad:
 
@@ -3382,7 +4116,7 @@ const filters = useMemo(() => ({ status: 'active' }), []);
 <Table filters={filters} />;
 ```
 
-### 84. When should we use Lazy Loading in React?
+### 89. When should we use Lazy Loading in React?
 
 Lazy loading means loading a component only when it is needed instead of loading it in the initial JavaScript bundle.
 
@@ -3441,7 +4175,7 @@ Interview answer:
 We should use lazy loading for components or routes that are not required immediately, especially heavy or rarely used parts like admin pages, reports, charts, editors, or modals. It helps reduce the initial bundle size and improves first load performance. In React, lazy loading is usually done with React.lazy and Suspense.
 ```
 
-### 85. Difference between Suspense and Manual Loader?
+### 90. Difference between Suspense and Manual Loader?
 
 Both `Suspense` and manual loaders show loading UI, but they are used for different waiting situations.
 
@@ -3501,7 +4235,7 @@ Interview answer:
 Suspense shows fallback UI while a lazy component or supported async resource is not ready. Manual loader means we create our own loading state, usually for API calls. Suspense is declarative and boundary-based, while manual loaders are state-based and controlled by our component logic.
 ```
 
-### 86. What is code splitting?
+### 91. What is code splitting?
 
 Code splitting breaks app bundle into smaller chunks.
 
@@ -3510,7 +4244,7 @@ Benefits:
 - faster initial load
 - load feature code only when needed
 
-### 87. What is list virtualization?
+### 92. What is list virtualization?
 
 Virtualization renders only visible rows in a large list.
 
@@ -3527,7 +4261,7 @@ Libraries:
 
 ## API Calls
 
-### 88. Where should API calls be made?
+### 93. Where should API calls be made?
 
 Common places:
 
@@ -3543,7 +4277,7 @@ In this app:
 API calls are mostly handled through Redux thunks and service files.
 ```
 
-### 89. How to fetch data in useEffect?
+### 94. How to fetch data in useEffect?
 
 ```tsx
 useEffect(() => {
@@ -3565,7 +4299,7 @@ useEffect(() => {
 }, []);
 ```
 
-### 90. Why avoid directly making useEffect callback async?
+### 95. Why avoid directly making useEffect callback async?
 
 Bad:
 
@@ -3589,7 +4323,7 @@ useEffect(() => {
 }, []);
 ```
 
-### 91. How to handle loading and error state?
+### 96. How to handle loading and error state?
 
 Example:
 
@@ -3611,7 +4345,7 @@ In Redux apps, common statuses are:
 'idle' | 'loading' | 'succeeded' | 'failed'
 ```
 
-### 92. How to cancel API request?
+### 97. How to cancel API request?
 
 Use `AbortController`.
 
@@ -3633,7 +4367,7 @@ useEffect(() => {
 
 ## Authentication in React
 
-### 93. How does React know user is logged in?
+### 98. How does React know user is logged in?
 
 Usually by auth state.
 
@@ -3652,7 +4386,7 @@ dispatch(bootstrapAuth());
 
 Backend checks HTTP-only cookie and returns session/account.
 
-### 94. Can React read HTTP-only cookie?
+### 99. Can React read HTTP-only cookie?
 
 No.
 
@@ -3666,7 +4400,7 @@ Example:
 GET /api/auth/session
 ```
 
-### 95. Why use credentials: include?
+### 100. Why use credentials: include?
 
 In fetch:
 
@@ -3682,7 +4416,7 @@ In this app:
 frontend/src/services/http.ts
 ```
 
-### 96. How protected route works in this app?
+### 101. How protected route works in this app?
 
 Concept:
 
@@ -3696,7 +4430,7 @@ return children;
 
 The route guard uses Redux auth state.
 
-### 97. How role-based UI works?
+### 102. How role-based UI works?
 
 Example:
 
@@ -3712,7 +4446,7 @@ Backend must also enforce authorization.
 
 ## TypeScript With React
 
-### 98. Why use TypeScript with React?
+### 103. Why use TypeScript with React?
 
 Benefits:
 
@@ -3722,7 +4456,7 @@ Benefits:
 - better autocomplete
 - safer refactoring
 
-### 99. How to type component props?
+### 104. How to type component props?
 
 ```tsx
 type UserCardProps = {
@@ -3735,7 +4469,7 @@ const UserCard = ({ name, email }: UserCardProps) => {
 };
 ```
 
-### 100. How to type useState?
+### 105. How to type useState?
 
 ```tsx
 const [user, setUser] = useState<User | null>(null);
@@ -3747,7 +4481,7 @@ For inferred values:
 const [count, setCount] = useState(0);
 ```
 
-### 101. How to type event handlers?
+### 106. How to type event handlers?
 
 Input change:
 
@@ -3765,7 +4499,7 @@ const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
 };
 ```
 
-### 102. How to type useRef?
+### 107. How to type useRef?
 
 ```tsx
 const inputRef = useRef<HTMLInputElement | null>(null);
@@ -3779,7 +4513,7 @@ inputRef.current?.focus();
 
 ## React Patterns
 
-### 103. What is composition?
+### 108. What is composition?
 
 Composition means building components by combining smaller components.
 
@@ -3799,7 +4533,7 @@ Usage:
 </Card>
 ```
 
-### 104. What are Higher-Order Components (HOCs)?
+### 109. What are Higher-Order Components (HOCs)?
 
 A Higher-Order Component, or HOC, is a function that takes a component as input and returns a new enhanced component.
 
@@ -3910,7 +4644,7 @@ Interview answer:
 A Higher-Order Component is a function that takes a component and returns a new component with extra behavior. It is useful for reusing common component logic like authentication, permissions, logging, or loading UI. HOCs follow composition and do not mutate the original component. In modern React, custom hooks are often preferred for sharing stateful logic, but HOCs are still important to understand.
 ```
 
-### 105. Controlled modal pattern?
+### 110. Controlled modal pattern?
 
 Parent controls open/close state.
 
@@ -3920,7 +4654,7 @@ const [isOpen, setIsOpen] = useState(false);
 {isOpen ? <Modal onClose={() => setIsOpen(false)} /> : null}
 ```
 
-### 106. Container vs presentational components?
+### 111. Container vs presentational components?
 
 Container component:
 
@@ -3941,7 +4675,7 @@ UserManagementPage -> container
 UserTable -> presentational
 ```
 
-### 107. What is children prop?
+### 112. What is children prop?
 
 `children` lets component render nested content.
 
@@ -3955,7 +4689,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
 ## Error Handling
 
-### 108. What is Error Boundary?
+### 113. What is Error Boundary?
 
 Error Boundary catches rendering errors in child component tree.
 
@@ -3989,7 +4723,7 @@ Error boundaries do not catch:
 - async errors
 - server errors
 
-### 109. How to handle API errors?
+### 114. How to handle API errors?
 
 Common pattern:
 
@@ -4005,7 +4739,7 @@ In this app, toast middleware also shows success/error messages.
 
 ## React Strict Mode
 
-### 110. What is StrictMode?
+### 115. What is StrictMode?
 
 StrictMode helps find problems during development.
 
@@ -4027,13 +4761,13 @@ StrictMode is a development-only tool that helps detect unsafe side effects and 
 
 ## Common Tricky Questions
 
-### 111. Why does useEffect run twice in development?
+### 116. Why does useEffect run twice in development?
 
 Because React StrictMode intentionally mounts/unmounts/remounts components in development to detect unsafe effects.
 
 Production does not behave the same way.
 
-### 112. Why not update state directly?
+### 117. Why not update state directly?
 
 Bad:
 
@@ -4050,11 +4784,11 @@ Good:
 setUser({ ...user, name: 'New Name' });
 ```
 
-### 113. Why state should be immutable?
+### 118. Why state should be immutable?
 
 Immutability helps React detect changes and makes updates predictable.
 
-### 114. Why component names should start with capital letter?
+### 119. Why component names should start with capital letter?
 
 React treats lowercase tags as HTML elements.
 
@@ -4070,13 +4804,13 @@ Bad:
 <userCard />
 ```
 
-### 115. Why hooks cannot be conditional?
+### 120. Why hooks cannot be conditional?
 
 React relies on hook call order.
 
 If hooks are conditional, order can change between renders and React cannot match hook state correctly.
 
-### 116. What is stale closure?
+### 121. What is stale closure?
 
 Stale closure happens when a function captures old state/props.
 
@@ -4100,7 +4834,7 @@ Fix:
 - use functional update
 - use ref for latest value
 
-### 117. Why use functional state update?
+### 122. Why use functional state update?
 
 Use when new state depends on previous state.
 
@@ -4110,7 +4844,7 @@ setCount((current) => current + 1);
 
 This avoids stale state issues.
 
-### 118. Why not use array index as key?
+### 123. Why not use array index as key?
 
 Index key can break UI when list order changes.
 
@@ -4122,7 +4856,7 @@ Problems:
 
 Use stable ID instead.
 
-### 119. What is client-side rendering?
+### 124. What is client-side rendering?
 
 Client-side rendering means browser receives minimal HTML and JavaScript builds the UI in the browser.
 
@@ -4130,7 +4864,7 @@ Vite React apps are usually client-side rendered.
 
 ## Testing
 
-### 120. What should we test in React?
+### 125. What should we test in React?
 
 Test user behavior, not implementation details.
 
@@ -4142,7 +4876,7 @@ Examples:
 - route protection
 - role-based UI
 
-### 121. What is React Testing Library?
+### 126. What is React Testing Library?
 
 React Testing Library helps test components from user perspective.
 
@@ -4154,7 +4888,7 @@ expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
 
 ## React App Architecture
 
-### 122. How is this app structured?
+### 127. How is this app structured?
 
 This app uses feature-based structure:
 
@@ -4175,7 +4909,7 @@ Benefits:
 - easier scaling
 - easier maintenance
 
-### 123. What is feature-based folder structure?
+### 128. What is feature-based folder structure?
 
 Feature-based structure groups code by business feature instead of file type.
 
@@ -4190,7 +4924,7 @@ features/users/types.ts
 
 This is better for medium/large apps.
 
-### 124. What is reusable component?
+### 129. What is reusable component?
 
 A reusable component is generic enough to be used in many places.
 
@@ -4207,7 +4941,7 @@ PublicRoute
 
 ## Interview Questions Based on This App
 
-### 125. How does auth bootstrap work in this app?
+### 130. How does auth bootstrap work in this app?
 
 On app load:
 
@@ -4223,7 +4957,7 @@ If cookie is valid, user becomes authenticated.
 
 If not, user is unauthenticated.
 
-### 126. How does session refresh work in this app?
+### 131. How does session refresh work in this app?
 
 The app listens to user activity and periodically verifies/refreshes session.
 
@@ -4234,7 +4968,7 @@ User active -> refresh session
 No activity -> verify session without extending it
 ```
 
-### 127. How does role-based UI work in this app?
+### 132. How does role-based UI work in this app?
 
 Admin route is visible only when:
 
@@ -4250,7 +4984,7 @@ Important interview answer:
 Frontend role checks are for UX. Backend authorization is the real security.
 ```
 
-### 128. How are API calls centralized?
+### 133. How are API calls centralized?
 
 This app uses:
 
@@ -4266,7 +5000,7 @@ It centralizes:
 - `credentials: 'include'`
 - error parsing
 
-### 129. How are toasts handled?
+### 134. How are toasts handled?
 
 This app uses Redux listener middleware.
 
@@ -4276,79 +5010,79 @@ This keeps toast logic centralized instead of duplicating it in every component.
 
 ## Most Important Short Answers
 
-### 130. React in one line
+### 135. React in one line
 
 ```text
 React is a JavaScript library for building reusable, state-driven UI components.
 ```
 
-### 131. Component in one line
+### 136. Component in one line
 
 ```text
 A component is a reusable function/class that returns UI.
 ```
 
-### 132. Props in one line
+### 137. Props in one line
 
 ```text
 Props are read-only inputs passed from parent to child.
 ```
 
-### 133. State in one line
+### 138. State in one line
 
 ```text
 State is component-managed data that triggers re-render when changed.
 ```
 
-### 134. useEffect in one line
+### 139. useEffect in one line
 
 ```text
 useEffect runs side effects after render and can clean them up.
 ```
 
-### 135. useLayoutEffect in one line
+### 140. useLayoutEffect in one line
 
 ```text
 useLayoutEffect runs after DOM updates but before browser paint, mainly for layout measurement or pre-paint visual fixes.
 ```
 
-### 136. useTransition in one line
+### 141. useTransition in one line
 
 ```text
 useTransition marks expensive state updates as non-urgent so urgent UI like typing can stay responsive.
 ```
 
-### 137. useDeferredValue in one line
+### 142. useDeferredValue in one line
 
 ```text
 useDeferredValue defers a fast-changing value so expensive rendering can update later without blocking urgent UI.
 ```
 
-### 138. Virtual DOM in one line
+### 143. Virtual DOM in one line
 
 ```text
 Virtual DOM is a lightweight representation of UI used to calculate efficient real DOM updates.
 ```
 
-### 139. Redux in one line
+### 144. Redux in one line
 
 ```text
 Redux is a centralized state management library where state changes through actions and reducers.
 ```
 
-### 140. React Router in one line
+### 145. React Router in one line
 
 ```text
 React Router maps URL paths to React components.
 ```
 
-### 141. Controlled component in one line
+### 146. Controlled component in one line
 
 ```text
 A controlled component is a form element whose value is controlled by React state.
 ```
 
-### 142. Custom hook in one line
+### 147. Custom hook in one line
 
 ```text
 A custom hook is a reusable function that uses React hooks to share stateful logic.
@@ -4384,6 +5118,7 @@ Revise these first:
 Revise these after the Must Know list:
 
 - React 18 vs React 19
+- React 19 `use()` API
 - `useLayoutEffect`
 - `useTransition`
 - `useDeferredValue`
@@ -4505,6 +5240,66 @@ Rendering has two important parts:
 
 - render phase: React calls components and creates the next React element tree.
 - commit phase: React applies the necessary changes to the real DOM and runs effects.
+
+#### Render phase vs Commit phase
+
+Render phase is the calculation phase.
+
+React asks:
+
+```text
+What should the UI look like now?
+```
+
+During render phase:
+
+- React calls component functions
+- React reads props and state
+- React creates React elements
+- React compares new tree with old tree
+- React decides what needs to change
+- React should not touch the real DOM yet
+
+Commit phase is the application phase.
+
+React applies the result of render to the real browser DOM.
+
+During commit phase:
+
+- React updates the real DOM
+- React updates refs
+- `useLayoutEffect` runs before browser paint
+- browser paints the updated UI
+- `useEffect` runs after browser paint
+
+Comparison:
+
+| Point | Render phase | Commit phase |
+|---|---|---|
+| Main job | Calculate next UI | Apply changes |
+| Calls component function? | Yes | No |
+| Updates real DOM? | No | Yes |
+| Runs `useEffect`? | No | After commit |
+| Runs `useLayoutEffect`? | No | During commit before paint |
+| Can be interrupted? | Yes in concurrent rendering | No |
+| Should be pure? | Yes | Effects/DOM work happen here |
+
+Flow:
+
+```text
+State/props change
+-> render phase calculates new UI
+-> reconciliation finds differences
+-> commit phase updates DOM
+-> browser paints
+-> useEffect runs
+```
+
+Important interview point:
+
+```text
+React may render without committing if the work is abandoned, interrupted, or produces no DOM changes. That is why render logic must be pure and should not perform side effects.
+```
 
 #### Initial render vs re-render
 
@@ -5131,6 +5926,117 @@ Common mistake:
 
 ```text
 Do not store UI data in refs. If changing the value should update the screen, use state.
+```
+
+#### What are cleanup functions for refs?
+
+In React 19, callback refs can return a cleanup function.
+
+This is useful when a ref callback sets up something related to a DOM node and we need to clean it up when the node is removed.
+
+Before this, cleanup was usually handled separately with `useEffect`.
+
+Basic callback ref:
+
+```tsx
+function SearchBox() {
+  return (
+    <input
+      ref={(node) => {
+        if (node) {
+          node.focus();
+        }
+      }}
+    />
+  );
+}
+```
+
+React 19 callback ref cleanup:
+
+```tsx
+function ResizeLogger() {
+  return (
+    <div
+      ref={(node) => {
+        if (!node) {
+          return;
+        }
+
+        const observer = new ResizeObserver(() => {
+          console.log('Element resized');
+        });
+
+        observer.observe(node);
+
+        return () => {
+          observer.disconnect();
+        };
+      }}
+    >
+      Resize me
+    </div>
+  );
+}
+```
+
+What happens here:
+
+```text
+DOM node is attached
+-> ref callback runs
+-> ResizeObserver starts observing
+-> DOM node is removed
+-> cleanup function runs
+-> observer disconnects
+```
+
+Old approach with `useEffect`:
+
+```tsx
+function ResizeLogger() {
+  const divRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!divRef.current) {
+      return;
+    }
+
+    const observer = new ResizeObserver(() => {
+      console.log('Element resized');
+    });
+
+    observer.observe(divRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  return <div ref={divRef}>Resize me</div>;
+}
+```
+
+When cleanup functions for refs are useful:
+
+- attaching DOM observers
+- setting up third-party widgets
+- subscribing to DOM-level events
+- measuring or tracking DOM nodes
+- cleaning up when a DOM node is removed
+
+Important points:
+
+- This is related to callback refs, not `useRef.current` assignment.
+- The cleanup runs when the ref is detached.
+- It helps keep setup and cleanup close together.
+- For normal values that do not touch the DOM, `useRef` cleanup is not needed.
+- For general side effects not directly tied to a DOM node, `useEffect` is still a good choice.
+
+Interview answer:
+
+```text
+In React 19, a callback ref can return a cleanup function. This lets us set up logic when a DOM node is attached and clean it up when that node is removed. It is useful for DOM observers, third-party widgets, and DOM event subscriptions. It keeps ref setup and cleanup together, but normal useRef values do not need cleanup.
 ```
 
 ### 5. useMemo
@@ -5836,6 +6742,80 @@ Older style:
 <ThemeContext.Consumer>
   {(theme) => <Header theme={theme} />}
 </ThemeContext.Consumer>
+```
+
+#### What does it mean that `<Context>` can be used directly as a provider?
+
+In React 19, a Context object can be used directly as a provider.
+
+Before React 19, we usually wrote:
+
+```tsx
+<ThemeContext.Provider value="dark">
+  <Layout />
+</ThemeContext.Provider>
+```
+
+In React 19, we can write:
+
+```tsx
+<ThemeContext value="dark">
+  <Layout />
+</ThemeContext>
+```
+
+Both examples provide the `dark` value to child components that read the context.
+
+Full example:
+
+```tsx
+import { createContext, useContext } from 'react';
+
+const ThemeContext = createContext('light');
+
+function App() {
+  return (
+    <ThemeContext value="dark">
+      <Header />
+    </ThemeContext>
+  );
+}
+
+function Header() {
+  const theme = useContext(ThemeContext);
+
+  return <h1>Current theme: {theme}</h1>;
+}
+```
+
+Important points:
+
+- This is a React 19 improvement.
+- The older `<ThemeContext.Provider>` syntax still works.
+- `useContext(ThemeContext)` is still used to read the value.
+- The direct `<ThemeContext>` syntax is shorter and cleaner.
+- The `value` prop is still required.
+
+React 18 style:
+
+```tsx
+<ThemeContext.Provider value={theme}>
+  <App />
+</ThemeContext.Provider>
+```
+
+React 19 style:
+
+```tsx
+<ThemeContext value={theme}>
+  <App />
+</ThemeContext>
+```
+
+Interview answer:
+
+```text
+In React 19, the Context object itself can be used directly as a provider. Instead of writing <ThemeContext.Provider value={theme}>, we can write <ThemeContext value={theme}>. It is mainly a cleaner syntax improvement. Consumers still read the value using useContext(ThemeContext), and the old Provider syntax still works.
 ```
 
 #### Why Context can cause many re-renders
@@ -7501,4 +8481,782 @@ Final answer:
 
 ```text
 In React, I make components accessible by using semantic HTML, proper form labels, keyboard-friendly controls, focus management for modals, alt text for images, and ARIA only when necessary.
+```
+
+## React 19 Features
+
+This section covers important React 19 features with legacy comparison, new syntax, examples, and interview-ready explanations.
+
+### 1. What are Actions for async form/state updates in React 19?
+
+Actions are functions that handle async updates, usually from forms or transitions.
+
+They help React manage:
+
+- pending state
+- form submission
+- optimistic updates
+- errors
+- automatic form reset after successful action
+
+#### Legacy approach before React 19
+
+Before React 19, we usually handled form submission manually:
+
+```tsx
+import { useState } from 'react';
+
+function UpdateName() {
+  const [name, setName] = useState('');
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPending(true);
+    setError('');
+
+    const formData = new FormData(event.currentTarget);
+    const nextName = String(formData.get('name'));
+
+    try {
+      await updateUserName(nextName);
+      setName(nextName);
+    } catch {
+      setError('Failed to update name');
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input name="name" />
+      <button disabled={pending}>Save</button>
+      {error ? <p>{error}</p> : null}
+      <p>{name}</p>
+    </form>
+  );
+}
+```
+
+#### React 19 Action approach
+
+In React 19, a form can receive an async function through the `action` prop:
+
+```tsx
+import { useState } from 'react';
+
+function UpdateName() {
+  const [name, setName] = useState('');
+
+  async function submitAction(formData: FormData) {
+    const nextName = String(formData.get('name'));
+
+    await updateUserName(nextName);
+    setName(nextName);
+  }
+
+  return (
+    <form action={submitAction}>
+      <input name="name" />
+      <button type="submit">Save</button>
+      <p>{name}</p>
+    </form>
+  );
+}
+```
+
+#### Main difference
+
+| Legacy | React 19 Actions |
+|---|---|
+| Use `onSubmit` manually | Use `action` function |
+| Manually call `event.preventDefault()` | React handles form submission |
+| Manually create `FormData` | Action receives `FormData` |
+| Manually manage pending/error state | Works well with `useActionState` and `useFormStatus` |
+
+Interview answer:
+
+```text
+Actions in React 19 let us pass async functions to forms or transitions. They simplify async form/state updates by letting React coordinate submission, pending states, errors, and UI updates. Instead of manually handling onSubmit, preventDefault, FormData, and loading state, we can use form action functions with hooks like useActionState and useFormStatus.
+```
+
+### 2. What is `useOptimistic` in React 19?
+
+`useOptimistic` lets the UI show an expected result immediately before the server confirms the change.
+
+It is useful for:
+
+- comments
+- likes
+- chat messages
+- todo creation
+- fast-feeling form submissions
+
+#### Legacy approach
+
+Without optimistic UI, the user waits for the API response:
+
+```tsx
+async function handleLike() {
+  await likePost(postId);
+  setLikes((prev) => prev + 1);
+}
+```
+
+The UI updates only after the server responds.
+
+#### React 19 `useOptimistic` approach
+
+```tsx
+import { useOptimistic } from 'react';
+
+function LikeButton({ initialLikes }: { initialLikes: number }) {
+  const [likes, addOptimisticLike] = useOptimistic(
+    initialLikes,
+    (currentLikes) => currentLikes + 1
+  );
+
+  async function likeAction() {
+    addOptimisticLike(null);
+    await likePost();
+  }
+
+  return (
+    <form action={likeAction}>
+      <button type="submit">Like</button>
+      <p>{likes} likes</p>
+    </form>
+  );
+}
+```
+
+#### Example with comments
+
+```tsx
+import { useOptimistic } from 'react';
+
+type Comment = {
+  id: string;
+  text: string;
+  pending?: boolean;
+};
+
+function CommentList({ comments }: { comments: Comment[] }) {
+  const [optimisticComments, addOptimisticComment] = useOptimistic(
+    comments,
+    (currentComments, text: string) => [
+      ...currentComments,
+      {
+        id: crypto.randomUUID(),
+        text,
+        pending: true,
+      },
+    ]
+  );
+
+  async function submitAction(formData: FormData) {
+    const text = String(formData.get('comment'));
+
+    addOptimisticComment(text);
+    await saveComment(text);
+  }
+
+  return (
+    <>
+      <form action={submitAction}>
+        <input name="comment" />
+        <button type="submit">Post</button>
+      </form>
+
+      {optimisticComments.map((comment) => (
+        <p key={comment.id}>
+          {comment.text} {comment.pending ? '(sending...)' : null}
+        </p>
+      ))}
+    </>
+  );
+}
+```
+
+Interview answer:
+
+```text
+useOptimistic lets us show an optimistic UI update before the server confirms the result. It improves perceived performance. For example, a comment can appear immediately with a sending state while the API request is still pending.
+```
+
+### 3. What is `useActionState` in React 19?
+
+`useActionState` helps manage state returned from an Action.
+
+It is useful for form submissions that need:
+
+- success message
+- error message
+- validation errors
+- pending state
+- returned server/action state
+
+#### Legacy approach
+
+Before React 19, we often used multiple `useState` values:
+
+```tsx
+const [error, setError] = useState('');
+const [success, setSuccess] = useState('');
+const [pending, setPending] = useState(false);
+```
+
+#### React 19 `useActionState` approach
+
+```tsx
+import { useActionState } from 'react';
+
+type FormState = {
+  message: string;
+};
+
+async function updateNameAction(
+  previousState: FormState,
+  formData: FormData
+) {
+  const name = String(formData.get('name'));
+
+  if (!name) {
+    return { message: 'Name is required' };
+  }
+
+  await updateUserName(name);
+
+  return { message: 'Name updated successfully' };
+}
+
+function UpdateName() {
+  const [state, formAction, isPending] = useActionState(
+    updateNameAction,
+    { message: '' }
+  );
+
+  return (
+    <form action={formAction}>
+      <input name="name" />
+      <button disabled={isPending}>Save</button>
+      <p>{state.message}</p>
+    </form>
+  );
+}
+```
+
+#### Main difference
+
+| Legacy | React 19 `useActionState` |
+|---|---|
+| Multiple local states | One action state |
+| Manual pending state | `isPending` provided |
+| Manual submit handler | `formAction` handles submission |
+| More boilerplate | Cleaner form flow |
+
+Interview answer:
+
+```text
+useActionState is used with React 19 Actions to manage the result of an async form action. It returns the latest action state, a form action function, and pending status. It is useful for validation messages, success messages, and form submission state.
+```
+
+### 4. What is `useFormStatus` in React 19?
+
+`useFormStatus` reads the status of the nearest parent form submission.
+
+It is useful when a child button component needs to know whether the form is currently submitting.
+
+#### Legacy approach
+
+Before React 19, pending state was passed manually:
+
+```tsx
+function SubmitButton({ pending }: { pending: boolean }) {
+  return <button disabled={pending}>Submit</button>;
+}
+```
+
+#### React 19 `useFormStatus` approach
+
+```tsx
+import { useFormStatus } from 'react-dom';
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button disabled={pending}>
+      {pending ? 'Saving...' : 'Save'}
+    </button>
+  );
+}
+
+function ProfileForm() {
+  async function submitAction(formData: FormData) {
+    await updateProfile(formData);
+  }
+
+  return (
+    <form action={submitAction}>
+      <input name="name" />
+      <SubmitButton />
+    </form>
+  );
+}
+```
+
+Important:
+
+```text
+useFormStatus must be used inside a child component of the form.
+It reads the status of the nearest parent form.
+```
+
+Interview answer:
+
+```text
+useFormStatus gives information about the nearest parent form submission, such as pending status. It is useful for reusable submit buttons because the button can disable itself or show loading text without receiving pending as a prop.
+```
+
+### 5. What is the `use()` API for reading Promises and Context?
+
+The React 19 `use()` API lets us read a resource during render.
+
+It can read:
+
+- Promise
+- Context
+
+Unlike normal hooks, `use()` can be called inside conditions and loops.
+
+#### Reading a Promise
+
+```tsx
+import { Suspense, use } from 'react';
+
+const userPromise = fetch('/api/user').then((res) => res.json());
+
+function UserProfile() {
+  const user = use(userPromise);
+
+  return <h1>{user.name}</h1>;
+}
+
+export default function App() {
+  return (
+    <Suspense fallback={<p>Loading user...</p>}>
+      <UserProfile />
+    </Suspense>
+  );
+}
+```
+
+When the Promise is pending:
+
+```text
+component suspends
+-> Suspense fallback shows
+-> Promise resolves
+-> component renders with data
+```
+
+#### Reading Context conditionally
+
+```tsx
+import { createContext, use } from 'react';
+
+const ThemeContext = createContext('light');
+
+function Button({ showTheme }: { showTheme: boolean }) {
+  if (showTheme) {
+    const theme = use(ThemeContext);
+    return <button className={theme}>Save</button>;
+  }
+
+  return <button>Save</button>;
+}
+```
+
+#### Legacy comparison
+
+Legacy data fetching:
+
+```tsx
+useEffect(() => {
+  fetch('/api/user')
+    .then((res) => res.json())
+    .then(setUser);
+}, []);
+```
+
+React 19 `use()`:
+
+```tsx
+const user = use(userPromise);
+```
+
+Interview answer:
+
+```text
+The React 19 use() API lets components read Promises or Context during render. When reading a Promise, React suspends the component until the Promise resolves, so we use Suspense for fallback UI. Unlike normal hooks, use() can be called conditionally or inside loops.
+```
+
+### 6. How can `ref` be passed as a normal prop in React 19?
+
+In React 19, `ref` can be passed as a normal prop to function components.
+
+Before React 19, function components needed `forwardRef`.
+
+#### Legacy `forwardRef` approach
+
+```tsx
+import { forwardRef } from 'react';
+
+const MyInput = forwardRef<HTMLInputElement, { placeholder: string }>(
+  function MyInput(props, ref) {
+    return <input ref={ref} placeholder={props.placeholder} />;
+  }
+);
+```
+
+#### React 19 approach
+
+```tsx
+function MyInput({
+  ref,
+  placeholder,
+}: {
+  ref: React.Ref<HTMLInputElement>;
+  placeholder: string;
+}) {
+  return <input ref={ref} placeholder={placeholder} />;
+}
+```
+
+Usage:
+
+```tsx
+function Form() {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  return (
+    <>
+      <MyInput ref={inputRef} placeholder="Email" />
+      <button onClick={() => inputRef.current?.focus()}>
+        Focus
+      </button>
+    </>
+  );
+}
+```
+
+Interview answer:
+
+```text
+React 19 allows ref to be passed as a normal prop to function components, reducing the need for forwardRef in many cases. The component can receive ref in its props and pass it to a DOM element.
+```
+
+### 7. What are cleanup functions for refs in React 19?
+
+In React 19, callback refs can return a cleanup function.
+
+This helps clean up DOM-related setup when the element is removed.
+
+#### Legacy approach with `useEffect`
+
+```tsx
+function ResizeBox() {
+  const divRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!divRef.current) {
+      return;
+    }
+
+    const observer = new ResizeObserver(() => {
+      console.log('resized');
+    });
+
+    observer.observe(divRef.current);
+
+    return () => observer.disconnect();
+  }, []);
+
+  return <div ref={divRef}>Resize me</div>;
+}
+```
+
+#### React 19 callback ref cleanup
+
+```tsx
+function ResizeBox() {
+  return (
+    <div
+      ref={(node) => {
+        if (!node) {
+          return;
+        }
+
+        const observer = new ResizeObserver(() => {
+          console.log('resized');
+        });
+
+        observer.observe(node);
+
+        return () => {
+          observer.disconnect();
+        };
+      }}
+    >
+      Resize me
+    </div>
+  );
+}
+```
+
+Interview answer:
+
+```text
+React 19 allows callback refs to return cleanup functions. This is useful when attaching observers, third-party widgets, or DOM event listeners to a DOM node. When the ref is detached, React runs the cleanup function.
+```
+
+### 8. What does `<Context>` can be used directly as a provider mean?
+
+In React 19, a Context object itself can be rendered directly as a provider.
+
+#### Legacy provider syntax
+
+```tsx
+<ThemeContext.Provider value="dark">
+  <App />
+</ThemeContext.Provider>
+```
+
+#### React 19 provider syntax
+
+```tsx
+<ThemeContext value="dark">
+  <App />
+</ThemeContext>
+```
+
+Full example:
+
+```tsx
+import { createContext, useContext } from 'react';
+
+const ThemeContext = createContext('light');
+
+function App() {
+  return (
+    <ThemeContext value="dark">
+      <Header />
+    </ThemeContext>
+  );
+}
+
+function Header() {
+  const theme = useContext(ThemeContext);
+  return <h1>{theme}</h1>;
+}
+```
+
+Interview answer:
+
+```text
+React 19 lets us use the Context object directly as a provider. Instead of writing <ThemeContext.Provider value={theme}>, we can write <ThemeContext value={theme}>. It is a cleaner syntax improvement, and useContext still reads the value.
+```
+
+### 9. What is document metadata support in React 19?
+
+React 19 supports rendering document metadata tags directly from components.
+
+Examples:
+
+- `<title>`
+- `<meta>`
+- `<link>`
+
+#### Legacy approach
+
+Before this, many apps used libraries like React Helmet or framework APIs.
+
+```tsx
+import { Helmet } from 'react-helmet';
+
+function ProductPage() {
+  return (
+    <>
+      <Helmet>
+        <title>Product Details</title>
+        <meta name="description" content="Product page" />
+      </Helmet>
+      <h1>Product</h1>
+    </>
+  );
+}
+```
+
+#### React 19 approach
+
+```tsx
+function ProductPage() {
+  return (
+    <>
+      <title>Product Details</title>
+      <meta name="description" content="Product page" />
+      <h1>Product</h1>
+    </>
+  );
+}
+```
+
+React can hoist these metadata tags into the document head.
+
+Interview answer:
+
+```text
+React 19 supports document metadata tags like title, meta, and link directly inside components. This makes page-specific metadata easier without always needing an external library. React handles placing the metadata correctly in the document.
+```
+
+### 10. What are stylesheet and async script handling improvements in React 19?
+
+React 19 improves how stylesheets and async scripts are handled during rendering.
+
+#### Stylesheet support
+
+React can understand stylesheet precedence so styles load in a predictable order.
+
+```tsx
+function Page() {
+  return (
+    <>
+      <link
+        rel="stylesheet"
+        href="/styles/page.css"
+        precedence="default"
+      />
+      <h1>Page</h1>
+    </>
+  );
+}
+```
+
+Why useful:
+
+- avoids style ordering bugs
+- helps React coordinate stylesheet loading
+- useful with streaming rendering and Suspense
+
+#### Async script support
+
+React can also handle async scripts more safely.
+
+```tsx
+function AnalyticsScript() {
+  return (
+    <script
+      async
+      src="https://example.com/analytics.js"
+    />
+  );
+}
+```
+
+React can avoid adding the same async script multiple times when rendered by multiple components.
+
+#### Legacy approach
+
+Before this, teams often manually inserted scripts/styles in `index.html` or inside effects.
+
+```tsx
+useEffect(() => {
+  const script = document.createElement('script');
+  script.src = 'https://example.com/analytics.js';
+  script.async = true;
+  document.body.appendChild(script);
+
+  return () => {
+    document.body.removeChild(script);
+  };
+}, []);
+```
+
+Interview answer:
+
+```text
+React 19 improves support for stylesheets and async scripts. Stylesheets can declare precedence so React can manage ordering, and async scripts can be rendered from components without manually appending script tags in useEffect. This is especially useful for streaming, Suspense, and component-based resource loading.
+```
+
+### 11. What are resource preloading APIs in React 19?
+
+React 19 provides resource loading APIs to help tell the browser about important resources early.
+
+Common APIs include:
+
+- `preload`
+- `preinit`
+- `preconnect`
+- `prefetchDNS`
+- `preloadModule`
+- `preinitModule`
+
+These are imported from `react-dom`.
+
+#### Example
+
+```tsx
+import {
+  preconnect,
+  prefetchDNS,
+  preinit,
+  preload,
+} from 'react-dom';
+
+function ProductPage() {
+  preconnect('https://cdn.example.com');
+  prefetchDNS('https://api.example.com');
+
+  preload('/fonts/inter.woff2', {
+    as: 'font',
+    type: 'font/woff2',
+    crossOrigin: '',
+  });
+
+  preinit('/styles/product.css', {
+    as: 'style',
+  });
+
+  return <h1>Product Page</h1>;
+}
+```
+
+#### Legacy approach
+
+Before this, resource hints were commonly written manually in HTML:
+
+```html
+<link rel="preconnect" href="https://cdn.example.com" />
+<link rel="dns-prefetch" href="https://api.example.com" />
+<link rel="preload" href="/fonts/inter.woff2" as="font" />
+```
+
+React 19 lets components declare important resources closer to where they are used.
+
+When to use:
+
+- important fonts
+- critical CSS
+- important scripts
+- CDN connections
+- route-level resources
+- module resources needed soon
+
+Interview answer:
+
+```text
+React 19 resource preloading APIs let components hint important resources to the browser early. APIs like preload, preinit, preconnect, and prefetchDNS help improve loading performance by preparing fonts, styles, scripts, modules, or network connections before they are needed.
 ```
