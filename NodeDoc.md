@@ -164,6 +164,274 @@ Interview answer:
 The event loop is the mechanism that allows Node.js to execute non-blocking asynchronous operations. It picks callbacks from queues and executes them when the call stack is empty.
 ```
 
+### 10.1. What is an event in Node.js?
+
+An event is a signal that something has happened in the application.
+
+Examples:
+
+- a request reached the server
+- a file read operation completed
+- a timer finished
+- a user was created
+- a database connection opened
+- a socket received a message
+
+Simple example:
+
+```text
+Something happens -> event is created -> handler runs
+```
+
+Interview answer:
+
+```text
+An event is a notification that something happened in the system. In Node.js, many operations are event-based, such as HTTP requests, file operations, timers, streams, and sockets.
+```
+
+### 10.2. What is an event handler?
+
+An event handler is a callback function that runs when a specific event happens.
+
+Example:
+
+```js
+button.on('click', () => {
+  console.log('Button clicked');
+});
+```
+
+Node.js style example:
+
+```js
+import { EventEmitter } from 'node:events';
+
+const emitter = new EventEmitter();
+
+emitter.on('userCreated', (user) => {
+  console.log('Send welcome email to:', user.email);
+});
+
+emitter.emit('userCreated', {
+  email: 'paras@example.com',
+});
+```
+
+Here:
+
+- `userCreated` is the event
+- the callback passed to `.on()` is the event handler
+- `.emit()` triggers the event
+
+Interview answer:
+
+```text
+An event handler is a function registered to run when an event occurs. In Node.js, event handlers are usually callback functions attached using methods like on() or once().
+```
+
+### 10.3. What is EventEmitter in Node.js?
+
+`EventEmitter` is a built-in Node.js class that allows objects to emit events and listen to events.
+
+It comes from the `events` module.
+
+Example:
+
+```js
+import { EventEmitter } from 'node:events';
+
+const notificationEmitter = new EventEmitter();
+
+notificationEmitter.on('orderPlaced', (order) => {
+  console.log('Send order confirmation email:', order.id);
+});
+
+notificationEmitter.on('orderPlaced', (order) => {
+  console.log('Notify warehouse:', order.id);
+});
+
+notificationEmitter.emit('orderPlaced', {
+  id: 'ORD123',
+});
+```
+
+Output:
+
+```text
+Send order confirmation email: ORD123
+Notify warehouse: ORD123
+```
+
+Important methods:
+
+- `.on(eventName, handler)` registers a handler
+- `.once(eventName, handler)` runs the handler only once
+- `.emit(eventName, data)` triggers an event
+- `.off(eventName, handler)` removes a handler
+
+Interview answer:
+
+```text
+EventEmitter is a Node.js class used to create event-driven behavior. It lets us register listeners for events and emit those events when something happens. It is commonly used internally by streams, HTTP servers, sockets, and many Node.js modules.
+```
+
+### 10.4. What is an event queue?
+
+An event queue is a waiting area where callbacks wait until the call stack is empty and the event loop is ready to execute them.
+
+Example flow:
+
+```text
+Timer completes
+Callback goes into queue
+Call stack becomes empty
+Event loop picks callback
+Callback executes
+```
+
+Example:
+
+```js
+console.log('Start');
+
+setTimeout(() => {
+  console.log('Timer callback');
+}, 0);
+
+console.log('End');
+```
+
+Output:
+
+```text
+Start
+End
+Timer callback
+```
+
+Why?
+
+```text
+setTimeout callback goes to the queue.
+Synchronous code runs first.
+Event loop runs the queued callback after the call stack is empty.
+```
+
+Important note:
+
+```text
+Node.js does not have only one queue. It has different queues/phases like timers, poll, check, close callbacks, microtask queue, and nextTick queue.
+```
+
+Interview answer:
+
+```text
+The event queue stores callbacks that are ready to run. The event loop picks callbacks from these queues and executes them when the JavaScript call stack is empty.
+```
+
+### 10.5. What is event-driven architecture?
+
+Event-driven architecture is a design pattern where different parts of the system communicate by producing and reacting to events.
+
+Instead of one function directly calling every next function, one part emits an event and other parts listen to it.
+
+Example:
+
+```text
+User registered
+-> send welcome email
+-> create audit log
+-> send notification
+-> update analytics
+```
+
+Code example:
+
+```js
+import { EventEmitter } from 'node:events';
+
+const appEvents = new EventEmitter();
+
+appEvents.on('userRegistered', (user) => {
+  console.log('Send welcome email:', user.email);
+});
+
+appEvents.on('userRegistered', (user) => {
+  console.log('Create audit log:', user.id);
+});
+
+function registerUser(user) {
+  console.log('User saved:', user.id);
+  appEvents.emit('userRegistered', user);
+}
+
+registerUser({
+  id: 'U101',
+  email: 'paras@example.com',
+});
+```
+
+Output:
+
+```text
+User saved: U101
+Send welcome email: paras@example.com
+Create audit log: U101
+```
+
+Benefits:
+
+- loose coupling
+- easier to add new behavior
+- good for real-time systems
+- good for background jobs
+- useful in microservices
+- easier to react to business events
+
+Real-world examples:
+
+- `orderPlaced` -> payment, inventory, invoice, email
+- `userRegistered` -> welcome email, audit log, notification
+- `paymentCompleted` -> receipt, shipment, analytics
+
+Important considerations:
+
+- handle failures and retries
+- avoid duplicate processing
+- make handlers idempotent
+- log events properly
+- monitor event processing
+
+Interview answer:
+
+```text
+Event-driven architecture is a system design style where components communicate through events. One component emits an event, and one or more listeners react to it. This makes the system loosely coupled and easier to extend, but we must handle retries, duplicate events, failures, and observability carefully.
+```
+
+### 10.6. Event, EventEmitter, Event Queue, Event Handler, Event Loop, and Event-Driven Architecture in one flow
+
+Simple flow:
+
+```text
+Event happens
+-> EventEmitter emits the event
+-> Event handler is registered to handle it
+-> Callback may wait in an event queue
+-> Event loop picks callback when call stack is empty
+-> Event-driven architecture uses this pattern at application/system level
+```
+
+Quick difference:
+
+| Concept | Meaning |
+|---|---|
+| Event | Something happened |
+| Event handler | Function that runs when event happens |
+| EventEmitter | Object/class that emits and listens to events |
+| Event queue | Place where callbacks wait before execution |
+| Event loop | Mechanism that picks callbacks from queues |
+| Event-driven architecture | System design where components communicate through events |
+
 ### 11. Event loop phases?
 
 Main phases:
@@ -374,6 +642,179 @@ Common module systems:
 
 - CommonJS
 - ES Modules
+
+### 16.1. What are the top 5 built-in modules commonly used in Node.js projects?
+
+Node.js has many built-in modules. Built-in means we do not need to install them from npm.
+
+We can import them directly:
+
+```js
+import fs from 'node:fs';
+import path from 'node:path';
+```
+
+The top 5 commonly used built-in modules are:
+
+| Module | Purpose |
+|---|---|
+| `fs` | Work with files and folders |
+| `path` | Work with file and folder paths safely |
+| `http` | Create HTTP servers and handle HTTP requests |
+| `crypto` | Hashing, encryption, random tokens, secure values |
+| `events` | Create and handle custom events using `EventEmitter` |
+
+#### 1. `fs` module
+
+`fs` stands for file system.
+
+It is used to read, write, update, and delete files.
+
+Example:
+
+```js
+import fs from 'node:fs/promises';
+
+const data = await fs.readFile('users.json', 'utf-8');
+console.log(data);
+```
+
+Common use cases:
+
+- reading config files
+- writing logs
+- handling uploaded files
+- reading templates
+- deleting temporary files
+
+#### 2. `path` module
+
+`path` is used to create safe file paths across operating systems.
+
+Example:
+
+```js
+import path from 'node:path';
+
+const filePath = path.join('uploads', 'profile', 'avatar.png');
+console.log(filePath);
+```
+
+Why useful:
+
+```text
+Windows uses backslash paths.
+Linux/Mac use slash paths.
+path module handles this safely.
+```
+
+Common use cases:
+
+- building file paths
+- getting file extension
+- getting file name
+- resolving absolute paths
+
+#### 3. `http` module
+
+`http` is used to create HTTP servers.
+
+Express internally works on top of Node's HTTP server.
+
+Example:
+
+```js
+import http from 'node:http';
+
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Hello from Node.js');
+});
+
+server.listen(3000, () => {
+  console.log('Server running on port 3000');
+});
+```
+
+Common use cases:
+
+- creating a basic server
+- understanding how Express works internally
+- handling raw HTTP requests
+
+#### 4. `crypto` module
+
+`crypto` is used for security-related operations.
+
+Example: generate random token
+
+```js
+import crypto from 'node:crypto';
+
+const token = crypto.randomBytes(32).toString('hex');
+console.log(token);
+```
+
+Example: hash a value
+
+```js
+import crypto from 'node:crypto';
+
+const hash = crypto
+  .createHash('sha256')
+  .update('secret-value')
+  .digest('hex');
+
+console.log(hash);
+```
+
+Common use cases:
+
+- generating reset tokens
+- generating OTP secrets
+- hashing values
+- creating secure random strings
+- encryption/decryption use cases
+
+Important note:
+
+```text
+For password hashing, prefer libraries like bcrypt or argon2 instead of plain crypto hashing.
+```
+
+#### 5. `events` module
+
+`events` is used to work with event-driven behavior using `EventEmitter`.
+
+Example:
+
+```js
+import { EventEmitter } from 'node:events';
+
+const emitter = new EventEmitter();
+
+emitter.on('userCreated', (user) => {
+  console.log('Send welcome email:', user.email);
+});
+
+emitter.emit('userCreated', {
+  email: 'paras@example.com',
+});
+```
+
+Common use cases:
+
+- custom app events
+- notification flows
+- logging/audit events
+- stream events
+- socket events
+
+Interview answer:
+
+```text
+The top commonly used built-in Node.js modules are fs, path, http, crypto, and events. fs is used for file operations, path for safe file paths, http for creating servers, crypto for security-related operations, and events for event-driven programming with EventEmitter.
+```
 
 ### 17. CommonJS vs ES Modules?
 

@@ -13,6 +13,76 @@ Use this file for:
 - explaining real app architecture
 - practicing tricky React behavior questions
 
+This document intentionally keeps both:
+
+- short interview-ready answers
+- longer explanations with examples
+
+Use the short answer for quick revision, then read the detailed explanation when the topic feels unclear.
+
+## Revision Priority Guide
+
+Use these priority levels while revising:
+
+| Priority | Meaning | How to revise |
+|---|---|---|
+| Must Know | Very common interview topics | Revise deeply and practice explaining aloud |
+| Frequently Asked | Asked often in practical interviews | Know definition, example, and common mistake |
+| Advanced | Useful for senior/deeper interviews | Understand concept and real-world use case |
+| Low Priority | Good to know but less frequently asked | Revise after core topics are strong |
+
+## Table of Contents
+
+Quick navigation:
+
+- React Basics
+- Props and State
+- Rendering
+- Virtual DOM and Reconciliation
+- Hooks
+- Forms
+- Component Communication
+- Routing
+- State Management
+- Performance Optimization
+- API Calls
+- Authentication in React
+- TypeScript With React
+- React Patterns
+- Error Handling
+- React Strict Mode
+- Common Tricky Questions
+- Testing
+- React App Architecture
+- Most Important Short Answers
+- Final React Interview Checklist
+- DEEP Understanding TOPICS
+- Low Priority SSR and Hydration Questions
+- Additional Low Priority React Questions
+
+## Fast Revision Path
+
+If you have only 1 hour:
+
+1. Read `Most Important Short Answers`.
+2. Read `Final React Interview Checklist`.
+3. Revise `Rendering`, `Props and State`, and `Hooks`.
+4. Read `React.memo`, `useMemo`, `useCallback`, and dependency arrays.
+5. Revise API calls, cleanup, and route-change/unmount scenarios.
+
+If you have 1 day:
+
+1. Finish all Must Know topics from `DEEP Understanding TOPICS`.
+2. Practice code-output questions from `ReactCodeSnippet.md`.
+3. Revise Redux, routing, auth, and performance sections.
+4. Review SSR, hydration, Suspense, lazy loading, and accessibility.
+
+Recommended interview answer format:
+
+```text
+Short definition -> Why it is used -> Example -> Common mistake -> Real-world use case
+```
+
 ## React Basics
 
 ### 1. What is React?
@@ -4284,6 +4354,80 @@ A controlled component is a form element whose value is controlled by React stat
 A custom hook is a reusable function that uses React hooks to share stateful logic.
 ```
 
+## Quick Revision Map
+
+### Must Know
+
+Revise these first:
+
+- React basics: component, JSX, props, state
+- rendering and re-rendering
+- state batching and functional updates
+- `useState`
+- `useEffect`
+- dependency arrays
+- cleanup functions
+- `useRef`
+- `useMemo`
+- `useCallback`
+- `React.memo`
+- shallow vs deep comparison
+- list keys
+- controlled vs uncontrolled forms
+- API calls and cleanup with `AbortController`
+- routing and protected routes
+- Redux Toolkit basics
+- Context API and re-render behavior
+
+### Frequently Asked
+
+Revise these after the Must Know list:
+
+- React 18 vs React 19
+- `useLayoutEffect`
+- `useTransition`
+- `useDeferredValue`
+- `useId`
+- custom hooks
+- `useReducer`
+- prop drilling and lifting state up
+- code splitting
+- lazy loading
+- Suspense
+- Suspense vs manual loader
+- error boundaries
+- StrictMode
+- stale closure
+- functional state update
+- avoiding new object/function props
+
+### Advanced
+
+Revise these for deeper rounds:
+
+- React Fiber
+- reconciliation
+- hydration
+- hydration mismatch
+- SSR vs CSR
+- server component vs client component
+- performance profiling
+- React Query vs RTK Query
+- accessibility in React
+- Higher-Order Components
+- portals
+- route change during API call
+- component unmount before API response
+
+### Low Priority
+
+Revise these after the above topics:
+
+- detailed Vite vs Create React App setup
+- Webpack vs Babel
+- low-priority SSR edge cases
+- extra architecture questions specific to this app
+
 ## Final React Interview Checklist
 
 Must know:
@@ -4333,6 +4477,19 @@ useEffect is a hook for side effects after render. For example, we use it to cal
 ```
 
 ## DEEP Understanding TOPICS
+
+Use this section for deeper explanations after you understand the short answers above.
+
+The main numbered section is for quick interview answers.
+
+The deep section is for:
+
+- explaining internals
+- answering follow-up questions
+- understanding real-world behavior
+- preparing for senior-level React discussions
+
+Do not skip the short answers. In interviews, start with the short answer first, then expand using the deep explanation if the interviewer asks follow-up questions.
 
 This section is for deeper interview answers. The goal is not only to define each concept, but to explain how React thinks internally and what mistakes developers usually make.
 

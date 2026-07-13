@@ -1678,6 +1678,33 @@ Since the child is inside the parent's JSX, React also renders the child again.
 
 After the DOM is updated, `useEffect` runs because `count` changed.
 
+1. The Initial Render Rule
+- A dependency array does not mean "only run when this changes from its previous value". Instead, it means "only run if this value is different from the previous render's value".
+
+On the very first render:
+- There is no previous render.
+- The dependency changes from "nothing" (non-existent) to 0.
+- Because this is a transition from non-existence to existence, React treats it as a change and triggers the effect.
+
+How to skip the initial render
+If you absolutely do not want your useEffect to run on the first load, you must track the initial mount using a useRef:
+
+```jsx
+import { useEffect, useState, useRef } from 'react';
+
+// Inside your component:
+const isFirstRender = useRef(true);
+
+useEffect(() => {
+  if (isFirstRender.current) {
+    isFirstRender.current = false; // Mark that first render is done
+    return; // Exit early and do nothing
+  }
+
+  console.log('This will ONLY run when count changes, NOT on load:', count);
+}, [count]);
+```
+
 ### Important Interview Answer
 
 ```text
@@ -2754,4 +2781,203 @@ setCount((prev) => prev + 3);
 
 ```text
 In React StrictMode during development, render logs may appear more than once. The normal state behavior is still the same.
+```
+
+## 14. Skipping First useEffect Run in Parent and Child With useRef
+
+### Question
+
+What will happen when both parent and child components use `useRef` to skip the first `useEffect` run?
+
+### Code
+
+```jsx
+import React, { useEffect, useRef, useState } from 'react';
+
+function Child({ count }) {
+  const isFirstRender = useRef(true);
+
+  console.log('Child render:', count);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    console.log('Child useEffect:', count);
+  }, [count]);
+
+  return <p>Child count: {count}</p>;
+}
+
+function App() {
+  const isFirstRender = useRef(true);
+  const [count, setCount] = useState(0);
+
+  console.log('Parent render:', count);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    console.log('Parent useEffect:', count);
+  }, [count]);
+
+  return (
+    <div>
+      <button onClick={() => setCount((prev) => prev + 1)}>
+        Increment Parent Count
+      </button>
+
+      <Child count={count} />
+    </div>
+  );
+}
+
+export default App;
+```
+
+### Initial Render Logs
+
+Console:
+
+```text
+Parent render: 0
+Child render: 0
+```
+
+UI:
+
+```text
+Child count: 0
+```
+
+### Why useEffect Does Not Log on Initial Render
+
+On initial render, both refs start as:
+
+```js
+isFirstRender.current = true;
+```
+
+So this condition is true:
+
+```jsx
+if (isFirstRender.current) {
+  isFirstRender.current = false;
+  return;
+}
+```
+
+Both effects exit early.
+
+That is why these logs do not print on initial render:
+
+```text
+Child useEffect: 0
+Parent useEffect: 0
+```
+
+### First Button Click Logs
+
+Console:
+
+```text
+Parent render: 1
+Child render: 1
+Child useEffect: 1
+Parent useEffect: 1
+```
+
+UI:
+
+```text
+Child count: 1
+```
+
+### Second Button Click Logs
+
+Console:
+
+```text
+Parent render: 2
+Child render: 2
+Child useEffect: 2
+Parent useEffect: 2
+```
+
+UI:
+
+```text
+Child count: 2
+```
+
+### Third Button Click Logs
+
+Console:
+
+```text
+Parent render: 3
+Child render: 3
+Child useEffect: 3
+Parent useEffect: 3
+```
+
+UI:
+
+```text
+Child count: 3
+```
+
+### Why Later useEffect Logs Run
+
+After the first render, both refs have been changed to:
+
+```js
+isFirstRender.current = false;
+```
+
+Changing `ref.current` does not cause a re-render.
+
+But the value is preserved between renders.
+
+So when `count` changes from `0` to `1`, the component renders again and then the effect runs.
+
+This time, the condition is false:
+
+```jsx
+if (isFirstRender.current) {
+  // does not enter here after first render
+}
+```
+
+So the logs run:
+
+```text
+Child useEffect: 1
+Parent useEffect: 1
+```
+
+### Important Points
+
+- `useEffect` normally runs after the initial render.
+- The `useRef` flag is used here to manually skip the first effect run.
+- Parent and child each have their own separate `isFirstRender` ref.
+- Updating `isFirstRender.current` does not trigger a re-render.
+- When parent state changes, parent renders again and child also renders again.
+- After render is committed, effects run because `count` changed.
+
+### Important Interview Answer
+
+```text
+useEffect runs after the initial render by default. If we want to skip the first effect run, we can store a flag in useRef. On the first effect execution, the ref is true, so we set it to false and return early. Because useRef persists across renders and updating ref.current does not trigger a re-render, later count changes can run the effect normally.
+```
+
+### Important StrictMode Note
+
+```text
+In React StrictMode during development, React may run effects more than once to detect side effects. So console logs can look different in development. The normal production concept is: first effect run is skipped, later count changes run the effect.
 ```
