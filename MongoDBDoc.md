@@ -265,30 +265,23 @@ By default, MongoDB returns all fields of a matching document during a find() op
 
 Core Rules of Projection
 
-Syntax: Passed as the optional second argument in the .find(query, projection) method.
-
-Inclusion (1 or true): Explicitly specifies the fields you want to return.
-
-Exclusion (0 or false): Explicitly specifies the fields you want to omit.
-
-The _id Exception: The _id field is always included by default. You must explicitly set _id: 0 to hide it.
-
-No Mixing: You cannot combine inclusion and exclusion integers in the same projection document (e.g., {name: 1, age: 0} is invalid). The only exception is suppressing the _id field while including other fields.
+- Syntax: Passed as the optional second argument in the .find(query, projection) method.
+- Inclusion (1 or true): Explicitly specifies the fields you want to return.
+- Exclusion (0 or false): Explicitly specifies the fields you want to omit.
+- The _id Exception: The _id field is always included by default. You must explicitly set _id: 0 to hide it.
+- No Mixing: You cannot combine inclusion and exclusion integers in the same projection document (e.g., {name: 1, age: 0} is invalid). The only exception is suppressing the _id field while including other fields.
 
 1. Inclusion Projection (Fetch specific fields)This query searches for all users but only returns their name and email fields (plus the default _id). Everything else is implicitly excluded.
 
 db.users.find({}, { name: 1, email: 1 })
 
-
 2. Excluding the _id FieldTo get a completely clean output containing only the name and email, suppress the _id field explicitly:
 
 db.users.find({}, { name: 1, email: 1, _id: 0 })
 
-
 3. Exclusion Projection (Drop specific fields)If a document has dozens of fields and you want all of them except sensitive data like passwords, use exclusion:
 
 db.users.find({}, { password: 0, ssn: 0 })
-
 
 ### 10. What are projection, pagination, and sorting?
 
