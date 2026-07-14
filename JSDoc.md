@@ -1983,6 +1983,11 @@ arr.splice(1, 1);
 console.log(arr); // [1, 3]
 ```
 
+The Splice Arguments
+The splice(start, deleteCount) method takes two primary numbers here:
+1 (First argument): The starting index. This tells JavaScript to start looking at index 1 (which is the number 2).
+1 (Second argument): The number of items to delete. This tells JavaScript to remove exactly 1 item starting from that position.
+
 ## ES6+ Features
 
 ### 56. What are template literals?

@@ -2,6 +2,10 @@
 
 This document explains JWT from the basics and connects it to the actual authentication flow in this MERN User Data Management app.
 
+Reference - https://medium.com/@aggarwalapurva89/jwt-questions-a2246ce1ae1b
+Reference - https://medium.com/@sanjeevanibhandari3/top-5-jwt-interview-questions-most-developers-get-wrong-part-1-easy-a376c06974f5
+
+
 ## What Is JWT
 
 JWT stands for JSON Web Token.
@@ -1252,6 +1256,367 @@ refresh token rotation
 Redis/session table for refresh token revocation
 ```
 
+### Access Token and Refresh Token Code Flow for Interview
+
+This is an easy interview explanation:
+
+```text
+Access token:
+  short-lived
+  used for protected APIs
+  expires quickly
+
+Refresh token:
+  longer-lived
+  used only to create a new access token
+  stored and tracked server-side
+```
+
+Recommended browser approach:
+
+```text
+accessToken -> HTTP-only cookie, short expiry
+refreshToken -> HTTP-only cookie, longer expiry, path restricted to refresh/logout APIs
+refreshToken id -> stored in Redis/database for revocation
+```
+
+Simple flow:
+
+```text
+1. User logs in.
+2. Backend creates accessToken and refreshToken.
+3. Backend stores refreshToken id in Redis/database.
+4. Backend sends both tokens as HTTP-only cookies.
+5. Frontend calls protected API with credentials: 'include'.
+6. If accessToken expires, API returns 401.
+7. Frontend calls /auth/refresh.
+8. Backend validates refreshToken.
+9. Backend rotates refreshToken and sends new cookies.
+10. Frontend retries original API once.
+```
+
+#### Backend code example
+
+For interview/demo clarity, this uses a `Map`.
+
+In production, use Redis or a database instead of `Map`.
+
+```js
+import express from 'express';
+import cookieParser from 'cookie-parser';
+import jwt from 'jsonwebtoken';
+import crypto from 'node:crypto';
+
+const app = express();
+
+app.use(express.json());
+app.use(cookieParser());
+
+const JWT_SECRET = process.env.JWT_SECRET || 'access-secret';
+const REFRESH_SECRET = process.env.REFRESH_SECRET || 'refresh-secret';
+
+const ACCESS_COOKIE = 'access_token';
+const REFRESH_COOKIE = 'refresh_token';
+
+// Demo store. Use Redis/database in production.
+const refreshTokenStore = new Map();
+```
+
+#### 1. Create token helpers
+
+```js
+function createAccessToken(user) {
+  return jwt.sign(
+    {
+      sub: user.id,
+      purpose: 'access',
+      role: user.role,
+    },
+    JWT_SECRET,
+    { expiresIn: '15m' }
+  );
+}
+
+function createRefreshToken(user, refreshTokenId) {
+  return jwt.sign(
+    {
+      sub: user.id,
+      purpose: 'refresh',
+      jti: refreshTokenId,
+    },
+    REFRESH_SECRET,
+    { expiresIn: '7d' }
+  );
+}
+```
+
+#### 2. Set secure cookies
+
+```js
+function setAuthCookies(res, accessToken, refreshToken) {
+  res.cookie(ACCESS_COOKIE, accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 15 * 60 * 1000,
+    path: '/',
+  });
+
+  res.cookie(REFRESH_COOKIE, refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: '/api/auth',
+  });
+}
+```
+
+Why `path: '/api/auth'` for refresh token?
+
+```text
+It reduces where the refresh token is sent.
+Protected APIs do not need the refresh token.
+Only auth routes like /api/auth/refresh and /api/auth/logout need it.
+```
+
+#### 3. Login API
+
+```js
+app.post('/api/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  // Demo user. In real app, verify email/password from DB.
+  const user = {
+    id: 'user-123',
+    email,
+    role: 'user',
+  };
+
+  const refreshTokenId = crypto.randomUUID();
+
+  refreshTokenStore.set(refreshTokenId, {
+    userId: user.id,
+    valid: true,
+  });
+
+  const accessToken = createAccessToken(user);
+  const refreshToken = createRefreshToken(user, refreshTokenId);
+
+  setAuthCookies(res, accessToken, refreshToken);
+
+  res.json({
+    message: 'Login successful',
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    },
+  });
+});
+```
+
+#### 4. Protected API middleware
+
+```js
+function authMiddleware(req, res, next) {
+  const token = req.cookies[ACCESS_COOKIE];
+
+  if (!token) {
+    return res.status(401).json({ message: 'Access token missing' });
+  }
+
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+
+    if (payload.purpose !== 'access') {
+      return res.status(401).json({ message: 'Invalid token purpose' });
+    }
+
+    req.user = {
+      id: payload.sub,
+      role: payload.role,
+    };
+
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: 'Access token expired or invalid' });
+  }
+}
+
+app.get('/api/profile', authMiddleware, (req, res) => {
+  res.json({
+    message: 'Protected profile data',
+    user: req.user,
+  });
+});
+```
+
+#### 5. Refresh API with refresh token rotation
+
+```js
+app.post('/api/auth/refresh', (req, res) => {
+  const token = req.cookies[REFRESH_COOKIE];
+
+  if (!token) {
+    return res.status(401).json({ message: 'Refresh token missing' });
+  }
+
+  try {
+    const payload = jwt.verify(token, REFRESH_SECRET);
+
+    if (payload.purpose !== 'refresh') {
+      return res.status(401).json({ message: 'Invalid token purpose' });
+    }
+
+    const storedToken = refreshTokenStore.get(payload.jti);
+
+    if (!storedToken || !storedToken.valid || storedToken.userId !== payload.sub) {
+      return res.status(401).json({ message: 'Refresh token revoked' });
+    }
+
+    // Rotate refresh token: invalidate old refresh token id.
+    refreshTokenStore.delete(payload.jti);
+
+    const user = {
+      id: payload.sub,
+      role: 'user',
+    };
+
+    const newRefreshTokenId = crypto.randomUUID();
+
+    refreshTokenStore.set(newRefreshTokenId, {
+      userId: user.id,
+      valid: true,
+    });
+
+    const newAccessToken = createAccessToken(user);
+    const newRefreshToken = createRefreshToken(user, newRefreshTokenId);
+
+    setAuthCookies(res, newAccessToken, newRefreshToken);
+
+    res.json({ message: 'Session refreshed' });
+  } catch (error) {
+    return res.status(401).json({ message: 'Refresh token expired or invalid' });
+  }
+});
+```
+
+Why rotation is important:
+
+```text
+Every time refreshToken is used, backend gives a new refreshToken and invalidates the old one.
+If the old refreshToken is used again, it may indicate token theft.
+```
+
+#### 6. Logout API
+
+```js
+app.post('/api/auth/logout', (req, res) => {
+  const token = req.cookies[REFRESH_COOKIE];
+
+  if (token) {
+    try {
+      const payload = jwt.verify(token, REFRESH_SECRET);
+      refreshTokenStore.delete(payload.jti);
+    } catch (error) {
+      // Ignore invalid token during logout.
+    }
+  }
+
+  res.clearCookie(ACCESS_COOKIE, { path: '/' });
+  res.clearCookie(REFRESH_COOKIE, { path: '/api/auth' });
+
+  res.json({ message: 'Logged out successfully' });
+});
+```
+
+#### Frontend code example
+
+The frontend does not read HTTP-only cookies.
+
+It only sends requests with:
+
+```js
+credentials: 'include'
+```
+
+#### 1. API helper that retries once after refresh
+
+```js
+async function apiFetch(url, options = {}) {
+  const response = await fetch(url, {
+    ...options,
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+  if (response.status !== 401) {
+    return response;
+  }
+
+  const refreshResponse = await fetch('/api/auth/refresh', {
+    method: 'POST',
+    credentials: 'include',
+  });
+
+  if (!refreshResponse.ok) {
+    throw new Error('Session expired. Please login again.');
+  }
+
+  // Retry original API only once after refresh.
+  return fetch(url, {
+    ...options,
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+}
+```
+
+#### 2. Use API helper
+
+```js
+async function loadProfile() {
+  try {
+    const response = await apiFetch('/api/profile');
+
+    if (!response.ok) {
+      throw new Error('Failed to load profile');
+    }
+
+    const data = await response.json();
+    console.log(data);
+  } catch (error) {
+    console.error(error.message);
+    // Redirect to login if refresh failed.
+  }
+}
+```
+
+#### Interview explanation script
+
+```text
+I use two tokens. The access token is short-lived and used for protected APIs. The refresh token is longer-lived and used only to get a new access token. On login, backend creates both tokens and stores the refresh token id in Redis or database. The access token and refresh token are sent as HTTP-only secure cookies. When the access token expires, protected APIs return 401. The frontend calls the refresh endpoint. Backend verifies the refresh token, checks it in Redis/database, rotates it, sends a new access token and refresh token, and the frontend retries the original API once. On logout, backend deletes the refresh token session and clears both cookies.
+```
+
+#### Important security points
+
+- Do not store refresh token in localStorage.
+- Keep access token expiry short.
+- Store refresh token id/hash in Redis/database.
+- Rotate refresh token on every refresh.
+- Revoke refresh token on logout/password change.
+- Detect refresh token reuse.
+- Use `httpOnly`, `secure`, and `sameSite` cookie flags.
+- Add CSRF protection for sensitive cookie-based mutations.
+- Avoid infinite retry loops on frontend.
+
 ## JWT Revocation
 
 JWT cannot be easily revoked if it is purely stateless.
@@ -1344,89 +1709,977 @@ This can be used to force logout everyone, but it is very broad.
 - Consider Redis/session store for logout/revocation.
 - Rotate secrets carefully.
 
+## Practical JWT Cookie and Session Interview Questions
+
+### JWT is not just a token, It's a system: 
+- signing
+- validation
+- storage
+- expiration
+- renewal
+
+### 0. What are the access tokens and refresh tokens?
+Access Tokens:
+- short lived
+- sent with every request
+- used to access protected APIs
+
+Refresh Tokens:
+- long lived
+- used only to get a new access token 
+- usually stored more securely
+
+why split then: 
+- limits damage if an access token leaks
+- allows controlled session renewal
+- improves security without hurting UX
+
+This pattern is extremly common in real system.
+
+### 0. What is a JWT, and how does it differ from a session-based cookie?
+
+A JWT, or JSON Web Token, is a signed token that contains claims about a user or session.
+
+Example claims:
+
+```json
+{
+  "sub": "user-id",
+  "purpose": "auth",
+  "iat": 1720000000,
+  "exp": 1720000900
+}
+```
+
+JWT has three parts:
+
+```text
+header.payload.signature
+```
+
+A session-based cookie usually stores only a random session id.
+
+Example:
+
+```text
+session_id=abc123
+```
+
+Then the server checks that session id in Redis, database, or memory.
+
+Difference:
+
+| Point | JWT | Session-based cookie |
+|---|---|---|
+| What browser stores | Signed token | Random session id |
+| Where user/session data lives | Mostly inside token claims | Server-side session store |
+| Server lookup required | Not always | Yes |
+| Revocation | Harder if stateless | Easier |
+| Scaling | Easier across services | Needs shared session store |
+| Token size | Larger | Smaller |
+
+Important:
+
+```text
+JWT and cookie are not opposites. A JWT can also be stored inside a cookie.
+```
+
+Interview answer:
+
+```text
+A JWT is a signed token containing claims like user id and expiry. A session-based cookie usually stores only a session id, while the actual session data is stored on the server. JWT can be stateless and verified by signature, but session cookies are easier to revoke because the server controls the session store.
+```
+
+### 1. How would you use a JWT in a web application for authentication?
+
+Common JWT authentication flow:
+
+```text
+User logs in
+  -> backend verifies credentials
+  -> backend creates JWT
+  -> backend sends JWT to browser
+  -> browser sends JWT on future requests
+  -> backend verifies JWT
+  -> protected API returns data
+```
+
+For browser-based apps, the safer approach is usually:
+
+```text
+Store JWT in HTTP-only secure cookie.
+Use credentials: 'include' from frontend.
+Verify JWT on backend middleware.
+```
+
+Example backend:
+
+```js
+const token = jwt.sign(
+  { sub: user.id, purpose: 'auth' },
+  process.env.JWT_SECRET,
+  { expiresIn: '15m' }
+);
+
+res.cookie('auth_token', token, {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'lax',
+  maxAge: 15 * 60 * 1000,
+});
+```
+
+Example frontend:
+
+```js
+fetch('/api/profile', {
+  credentials: 'include',
+});
+```
+
+Example backend middleware:
+
+```js
+function authMiddleware(req, res, next) {
+  const token = req.cookies.auth_token;
+
+  if (!token) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    req.userId = payload.sub;
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: 'Invalid or expired token' });
+  }
+}
+```
+
+Interview answer:
+
+```text
+After login, the backend signs a JWT with minimal claims like user id and expiry. For a browser app, I prefer storing it in an HTTP-only secure cookie. The frontend calls APIs with credentials included, and backend middleware verifies the JWT signature, expiry, and purpose before allowing protected routes.
+```
+
+### 2. A user reports being logged out frequently. What could be the issue?
+
+Frequent logout usually means the session/token lifecycle is not configured correctly.
+
+Common causes:
+
+- access token expiry is too short
+- refresh token flow is missing or failing
+- cookie `maxAge` is shorter than JWT `exp`
+- JWT `exp` is shorter than cookie expiry
+- frontend is not sending cookies because `credentials: 'include'` is missing
+- cookie `SameSite` setting blocks cookie on cross-site requests
+- cookie `secure: true` is used on local HTTP
+- backend `JWT_SECRET` changed, invalidating old tokens
+- server time and client time have clock skew
+- refresh/session endpoint returns 401
+- browser privacy settings or third-party cookie blocking
+- logout is triggered on API 401 without refresh retry
+
+Debug checklist:
+
+```text
+1. Check cookie expiry in browser devtools.
+2. Decode JWT and check exp.
+3. Check API response where logout happens.
+4. Check if cookies are sent in Network tab.
+5. Check backend logs for jwt expired, invalid signature, or missing token.
+6. Check refresh endpoint behavior.
+```
+
+Important mismatch:
+
+```text
+Cookie maxAge and JWT exp should match the intended session behavior.
+```
+
+Example issue:
+
+```text
+JWT expires in 15 minutes.
+Cookie lives for 7 days.
+Backend rejects token after 15 minutes.
+User feels logged out even though cookie still exists.
+```
+
+Interview answer:
+
+```text
+I would check whether the JWT expiry, cookie maxAge, refresh flow, and frontend credentials configuration are aligned. I would inspect the browser Network tab to confirm the cookie is being sent, decode the token to check exp, and check backend logs for expired token, invalid signature, missing cookie, or refresh failures.
+```
+
+### 3. What are the trade-offs between stateless JWT authentication and stateful session cookies?
+
+Stateless JWT authentication means the server does not store session state.
+
+Stateful session cookies mean the browser stores a session id, and the server stores session data.
+
+Comparison:
+
+| Point | Stateless JWT | Stateful session cookie |
+|---|---|---|
+| Server storage | Not required | Required |
+| Scalability | Easier across services | Needs Redis/shared store |
+| Logout/revocation | Harder | Easier |
+| Per-device control | Harder without `sid`/store | Easier |
+| Token size | Larger | Smaller |
+| User role changes | May need DB lookup/versioning | Server session can update |
+| Security after theft | Valid until expiry unless revocation is added | Server can invalidate session |
+
+When JWT is good:
+
+- APIs
+- microservices
+- short-lived access tokens
+- mobile/backend-to-backend auth
+- distributed systems
+
+When session cookies are good:
+
+- traditional web apps
+- strict logout requirements
+- admin dashboards
+- per-device session management
+- immediate revocation
+
+Best real-world approach:
+
+```text
+Short-lived access token
++ refresh token/session stored server-side
++ refresh token rotation
++ revocation on logout/password change
+```
+
+Interview answer:
+
+```text
+Stateless JWT authentication scales well because the server can verify the token without a session lookup, but revocation and immediate logout are harder. Stateful session cookies require a server-side session store, but logout, revocation, and per-device control are easier. In real systems, I often use short-lived access tokens with a stateful refresh token/session store.
+```
+
+### 4. How do you handle JWT expiration in long-lived sessions?
+
+Do not make one JWT valid for many days or months.
+
+Better approach:
+
+```text
+short-lived access token
++ longer-lived refresh token
++ refresh token rotation
++ server-side refresh token/session storage
+```
+
+Flow:
+
+```text
+1. User logs in.
+2. Backend issues short-lived access token.
+3. Backend issues longer-lived refresh token.
+4. Access token is used for API calls.
+5. When access token expires, frontend calls refresh endpoint.
+6. Backend verifies refresh token.
+7. Backend issues new access token.
+8. Backend rotates refresh token.
+```
+
+Session lifetime rules:
+
+- access token expiry: short, like 5-15 minutes
+- refresh token expiry: longer, like days/weeks depending on app risk
+- idle timeout: expire if user inactive for too long
+- absolute timeout: force login after maximum lifetime
+- revoke on logout/password change/suspicious activity
+
+Important:
+
+```text
+Refresh tokens should be protected more strongly than access tokens.
+```
+
+Secure refresh token handling:
+
+- store in HTTP-only secure cookie
+- rotate refresh token after use
+- store refresh token id/hash in Redis/database
+- detect refresh token reuse
+- revoke all sessions if reuse is detected
+
+Interview answer:
+
+```text
+For long-lived sessions, I avoid long-lived access tokens. I use a short-lived access token and a longer-lived refresh token stored securely, usually in an HTTP-only secure cookie. The refresh token is rotated and tracked server-side so it can be revoked on logout, password change, or suspicious activity.
+```
+
+### 5. How can you prevent CSRF attacks when using JWTs in cookies?
+
+CSRF matters when authentication is stored in cookies because the browser sends cookies automatically.
+
+Example risk:
+
+```text
+User is logged in to bank.com.
+User visits attacker.com.
+attacker.com submits a hidden form to bank.com/transfer.
+Browser automatically sends bank.com cookies.
+```
+
+Ways to reduce CSRF risk:
+
+1. Use `SameSite` cookies.
+
+```js
+res.cookie('auth_token', token, {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'lax',
+});
+```
+
+`SameSite` options:
+
+| Option | Meaning |
+|---|---|
+| `strict` | Cookie is not sent on cross-site navigation |
+| `lax` | Cookie is sent on safe top-level navigation, not most cross-site POSTs |
+| `none` | Cookie can be sent cross-site, must use `secure: true` |
+
+2. Use CSRF token for state-changing requests.
+
+```text
+Client sends CSRF token in a custom header.
+Backend compares it with expected token.
+```
+
+3. Check `Origin` or `Referer` header.
+
+```text
+Reject state-changing requests from unknown origins.
+```
+
+4. Do not change data using GET requests.
+
+Bad:
+
+```text
+GET /delete-account
+```
+
+Good:
+
+```text
+POST /delete-account
+```
+
+5. Configure CORS carefully.
+
+Important:
+
+```text
+CORS is not a complete CSRF protection by itself.
+```
+
+Interview answer:
+
+```text
+When JWT is stored in cookies, I prevent CSRF using SameSite cookies, CSRF tokens for state-changing requests, Origin/Referer validation, proper HTTP methods, and strict CORS configuration. Since cookies are sent automatically by the browser, CSRF must be considered for cookie-based JWT auth.
+```
+
+### 6. Compare the security implications of storing a JWT in a cookie versus local storage.
+
+JWT in HTTP-only cookie:
+
+Advantages:
+
+- JavaScript cannot read it if `httpOnly` is true
+- safer against token theft through XSS
+- browser sends it automatically
+- can use `secure`, `sameSite`, `maxAge`, `path`
+
+Disadvantages:
+
+- CSRF must be considered
+- cookie is automatically attached to matching requests
+- cross-site cookie behavior needs careful setup
+- frontend cannot manually attach/read token if HTTP-only
+
+JWT in localStorage:
+
+Advantages:
+
+- easy to implement
+- easy to manually add `Authorization: Bearer <token>`
+- not automatically sent, so CSRF risk is lower
+
+Disadvantages:
+
+- JavaScript can read it
+- XSS can steal it
+- stolen token can be reused until expiry
+- harder to protect in browser apps
+
+Comparison:
+
+| Storage | Main risk | Main benefit |
+|---|---|---|
+| HTTP-only cookie | CSRF | XSS cannot directly read token |
+| localStorage | XSS token theft | Simple Authorization header flow |
+
+Interview answer:
+
+```text
+Cookie storage with httpOnly is usually safer for browser apps because JavaScript cannot read the token, reducing token theft through XSS. But cookie-based auth needs CSRF protection because cookies are sent automatically. localStorage is easy to use with Authorization headers, but if XSS happens, the attacker can read and steal the JWT directly.
+```
+
+### 7. How do you ensure a JWT stored in a cookie is secure?
+
+Use secure cookie flags and short token lifetime.
+
+Example:
+
+```js
+res.cookie('auth_token', token, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  maxAge: 15 * 60 * 1000,
+  path: '/',
+});
+```
+
+Important cookie settings:
+
+- `httpOnly: true` prevents JavaScript from reading the cookie.
+- `secure: true` sends cookie only over HTTPS.
+- `sameSite: 'lax'` or `'strict'` reduces CSRF risk.
+- `maxAge` limits browser cookie lifetime.
+- `path` limits where cookie is sent.
+- avoid broad `domain` unless needed.
+
+JWT security practices:
+
+- keep access token expiry short
+- never store sensitive data in JWT payload
+- use strong signing secret or private key
+- verify token with `jwt.verify()`, not `decode()`
+- validate `purpose`, `aud`, or `iss` where applicable
+- rotate refresh tokens
+- revoke sessions on logout/password change
+- use HTTPS in production
+- add CSRF protection for state-changing requests
+
+Interview answer:
+
+```text
+To secure a JWT in a cookie, I use httpOnly, secure, SameSite, proper maxAge, HTTPS, short token expiry, and CSRF protection. I also avoid sensitive JWT payload data, verify the token on every protected request, and use refresh token rotation or server-side session tracking when immediate revocation is required.
+```
+
+### 8. Quick real-world recommendation
+
+For most browser-based production apps:
+
+```text
+Access token: short-lived
+Refresh token: HTTP-only secure cookie
+CSRF protection: SameSite + CSRF token for sensitive mutations
+Revocation: Redis/session store for refresh tokens
+Frontend API calls: credentials: 'include'
+```
+
+For this MERN app:
+
+```text
+The current approach uses an auth JWT in an HTTP-only cookie and refreshes the session when the user is active. This is a practical cookie-based JWT approach. For stricter enterprise-grade security, we can add separate access/refresh tokens, refresh token rotation, Redis-backed session tracking, and CSRF tokens for sensitive mutations.
+```
+
 ## JWT Interview Questions and Answers
 
-### 1. What is JWT?
+### 1. What is JWT and why is it used?
 
-JWT is a signed JSON token used to represent claims between client and server. It has header, payload, and signature.
+JWT stands for JSON Web Token.
 
-### 2. What are the three parts of JWT?
+It is a compact signed token used to securely represent claims between a client and a server.
 
-Header, payload, and signature.
+JWT is commonly used for authentication and authorization.
 
-### 3. Is JWT encrypted?
+Simple flow:
 
-No, normal JWT is signed, not encrypted. The payload can be decoded by anyone who has the token.
+```text
+User logs in
+  -> backend creates JWT
+  -> frontend/browser sends JWT on future requests
+  -> backend verifies JWT
+  -> protected API is allowed
+```
 
-### 4. Why is signature important?
+JWT has three parts:
 
-Signature proves the token was created by the trusted server and was not modified.
+```text
+header.payload.signature
+```
 
-### 5. What is `sub`?
+Why JWT is used:
+
+- to identify authenticated users
+- to protect APIs
+- to avoid sending username/password on every request
+- to carry small non-sensitive claims
+- to support stateless authentication
+- to work well with APIs, mobile apps, and microservices
+
+Interview answer:
+
+```text
+JWT is a signed JSON token used to represent user/session claims between client and server. It is mainly used for authentication and API authorization. After login, the backend creates a JWT, and on future requests the backend verifies that token before allowing protected resources.
+```
+
+### 2. Is JWT encrypted or encoded? What is the difference?
+
+A normal JWT is encoded and signed, not encrypted.
+
+Important:
+
+```text
+JWT payload is Base64URL encoded.
+Base64URL encoding is not encryption.
+Anyone with the token can decode and read the payload.
+```
+
+Encoding means converting data into another readable format.
+
+Example:
+
+```text
+JSON payload -> Base64URL encoded text
+```
+
+Encryption means hiding data so only someone with the correct key can read it.
+
+Difference:
+
+| Point | Encoding | Encryption |
+|---|---|---|
+| Purpose | Format conversion | Data secrecy |
+| Can anyone reverse it? | Yes | No, key is needed |
+| Used in normal JWT? | Yes | No |
+| Protects confidentiality? | No | Yes |
+
+JWT is usually:
+
+```text
+encoded + signed
+```
+
+Not:
+
+```text
+encrypted by default
+```
+
+That is why we should not store sensitive information in JWT payload.
+
+Bad payload:
+
+```json
+{
+  "password": "Password123"
+}
+```
+
+Good payload:
+
+```json
+{
+  "sub": "user-id",
+  "purpose": "auth"
+}
+```
+
+Interview answer:
+
+```text
+JWT is encoded and signed, not encrypted by default. Encoding only changes the format, so anyone can decode the payload. Encryption hides data using a key. JWT signature protects integrity, meaning the token cannot be modified without detection, but it does not hide the payload.
+```
+
+### 3. What is a claim in JWT? Name a few standard claims.
+
+A claim is a key-value statement inside the JWT payload.
+
+It tells something about the user, token, or session.
+
+Example payload:
+
+```json
+{
+  "sub": "user-id",
+  "iat": 1720000000,
+  "exp": 1720000900,
+  "purpose": "auth"
+}
+```
+
+Standard claims:
+
+| Claim | Meaning |
+|---|---|
+| `sub` | Subject, usually user id |
+| `iat` | Issued at |
+| `exp` | Expiration time |
+| `iss` | Issuer |
+| `aud` | Audience |
+| `nbf` | Not before |
+| `jti` | JWT unique id |
+
+Custom claims:
+
+```json
+{
+  "purpose": "auth",
+  "roleVersion": 2
+}
+```
+
+Important:
+
+```text
+Claims should be minimal and non-sensitive.
+```
+
+Interview answer:
+
+```text
+A claim is a piece of information inside the JWT payload. Standard claims include sub for subject/user id, iat for issued at, exp for expiry, iss for issuer, aud for audience, nbf for not before, and jti for token id. We can also add custom claims, but they should not contain sensitive data.
+```
+
+### 4. What is the role of the JWT signature?
+
+The JWT signature proves that the token was created by a trusted server and was not modified.
+
+JWT signature is created using:
+
+```text
+header + payload + secret/private key
+```
+
+Concept:
+
+```text
+signature = sign(header.payload, secret)
+```
+
+If someone changes the payload, the signature will no longer match.
+
+Example:
+
+```text
+Original payload:
+{ "sub": "user-1", "role": "user" }
+
+Attacker changes payload:
+{ "sub": "user-1", "role": "admin" }
+
+Result:
+Signature verification fails.
+```
+
+Important:
+
+```text
+Signature protects integrity, not confidentiality.
+```
+
+Meaning:
+
+- it proves token was not tampered with
+- it proves token came from a trusted signer
+- it does not hide the payload
+- backend must use `jwt.verify()`, not only `jwt.decode()`
+
+Interview answer:
+
+```text
+The JWT signature is used to verify token integrity and authenticity. It ensures the token was signed by the trusted backend and was not changed by anyone. If the payload is modified, signature verification fails. The signature does not encrypt the payload; it only proves the token is trusted and untampered.
+```
+
+### 5. How does the backend validate a JWT?
+
+The backend validates a JWT using `jwt.verify()`.
+
+Validation means the backend checks whether the token is trusted and still valid.
+
+Backend validation checks:
+
+- token exists
+- token format is correct
+- signature is valid
+- token is not expired
+- signing algorithm is expected
+- required claims are present
+- token purpose/audience is correct
+- user/account still exists
+- token/session is not revoked if using blacklist/session store
+
+Basic example:
+
+```js
+import jwt from 'jsonwebtoken';
+
+function authMiddleware(req, res, next) {
+  const token = req.cookies.auth_token;
+
+  if (!token) {
+    return res.status(401).json({ message: 'Token missing' });
+  }
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (payload.purpose !== 'auth') {
+      return res.status(401).json({ message: 'Invalid token purpose' });
+    }
+
+    req.userId = payload.sub;
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: 'Invalid or expired token' });
+  }
+}
+```
+
+More secure production validation:
+
+```text
+1. Read token from HTTP-only cookie or Authorization header.
+2. Verify token signature with secret/public key.
+3. Verify exp, nbf, issuer, audience, and purpose if used.
+4. Check user still exists in database.
+5. Check token version, jti blacklist, or session id if revocation is required.
+6. Attach user/account to request.
+```
+
+Important:
+
+```text
+jwt.decode() should not be used for authentication because it does not verify the signature.
+```
+
+Interview answer:
+
+```text
+The backend validates JWT using jwt.verify(). It checks the token signature, expiry, token format, and required claims like purpose, issuer, or audience. In secure apps, after verifying the JWT, the backend also loads the user from the database and checks revocation data like token version, jti blacklist, or session id.
+```
+
+### 6. Where should JWT be stored on the client and why?
+
+For browser-based web applications, prefer storing JWT in an HTTP-only secure cookie.
+
+Best browser storage:
+
+```text
+HTTP-only secure cookie
+```
+
+Why:
+
+- frontend JavaScript cannot read HTTP-only cookies
+- reduces token theft through XSS
+- browser sends cookie automatically
+- supports security flags like `secure`, `sameSite`, `maxAge`, and `path`
+
+Example:
+
+```js
+res.cookie('auth_token', token, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  maxAge: 15 * 60 * 1000,
+});
+```
+
+Frontend request:
+
+```js
+fetch('/api/profile', {
+  credentials: 'include',
+});
+```
+
+Why not localStorage?
+
+```text
+If an XSS attack happens, JavaScript can read localStorage and steal the JWT.
+```
+
+localStorage example:
+
+```js
+localStorage.getItem('token');
+```
+
+Cookie trade-off:
+
+```text
+Cookies reduce XSS token theft risk, but CSRF protection must be considered because cookies are sent automatically.
+```
+
+Storage comparison:
+
+| Storage | Benefit | Risk |
+|---|---|---|
+| HTTP-only cookie | JS cannot read token | Need CSRF protection |
+| localStorage | Easy Authorization header | XSS can steal token |
+| memory | Harder to steal persistently | Lost on refresh |
+
+Interview answer:
+
+```text
+For browser apps, I prefer storing JWT in an HTTP-only secure cookie because JavaScript cannot directly read it, reducing token theft through XSS. I also use secure, SameSite, maxAge, HTTPS, and CSRF protection. I avoid localStorage for sensitive JWTs because XSS can read and steal the token.
+```
+
+### 7. How do you handle JWT expiration and renewal?
+
+JWT expiration is handled using the `exp` claim.
+
+When token expires:
+
+```text
+jwt.verify() fails
+backend returns 401
+frontend should refresh token or send user to login
+```
+
+For short sessions:
+
+```text
+Use short-lived JWT and ask user to login again after expiry.
+```
+
+For long-lived sessions, use access token and refresh token.
+
+Recommended flow:
+
+```text
+1. User logs in.
+2. Backend issues short-lived access token.
+3. Backend issues longer-lived refresh token.
+4. Access token is used for protected APIs.
+5. Access token expires.
+6. Frontend calls refresh endpoint.
+7. Backend verifies refresh token.
+8. Backend creates new access token.
+9. Backend rotates refresh token if using refresh token rotation.
+```
+
+Example token lifetime:
+
+```text
+Access token: 5-15 minutes
+Refresh token: 7-30 days depending on app risk
+```
+
+Frontend behavior:
+
+```text
+If API returns 401 because access token expired:
+  -> call refresh endpoint
+  -> retry original API once
+  -> if refresh fails, logout user
+```
+
+Security practices:
+
+- keep access token short-lived
+- store refresh token in HTTP-only secure cookie
+- rotate refresh token after use
+- store refresh token id/session in Redis/database
+- revoke refresh token on logout/password change
+- detect refresh token reuse
+- avoid infinite refresh retry loops
+
+This app's approach:
+
+```text
+This app currently uses an auth JWT in an HTTP-only cookie and refreshes the session when the user is active. For stricter production systems, use separate access and refresh tokens with refresh token rotation and server-side revocation.
+```
+
+Interview answer:
+
+```text
+JWT expiration is handled using the exp claim. For long-lived sessions, I use short-lived access tokens and longer-lived refresh tokens. When the access token expires, the frontend calls a refresh endpoint, the backend validates the refresh token, issues a new access token, and ideally rotates the refresh token. If refresh fails, the user is logged out.
+```
+
+### 8. What is `sub`?
 
 `sub` means subject. It usually stores the user id.
 
-### 6. What is `exp`?
+### 9. What is `exp`?
 
 `exp` is token expiry time.
 
-### 7. What is `iat`?
+### 10. What is `iat`?
 
 `iat` means issued at. It records when token was created.
 
-### 8. Difference between `decode` and `verify`?
+### 11. Difference between `decode` and `verify`?
 
 `decode` only reads token payload. `verify` checks signature and expiry. Authentication should use `verify`.
 
-### 9. Where should JWT be stored in browser apps?
+### 12. Where should JWT be stored in browser apps?
 
 Prefer HTTP-only secure cookie. It prevents JavaScript from reading the token directly.
 
-### 10. Why not store JWT in localStorage?
+### 13. Why not store JWT in localStorage?
 
 Because JavaScript can read localStorage, and XSS can steal the token.
 
-### 11. Can JWT be revoked?
+### 14. Can JWT be revoked?
 
 Not easily in stateless mode. Use short expiry, Redis blacklist, token version, or server-side session store.
 
-### 12. What happens after logout?
+### 15. What happens after logout?
 
 In this app, backend clears the auth cookie. Browser stops sending JWT. For immediate server-side invalidation, add blacklist/session store.
 
-### 13. What is access token vs refresh token?
+### 16. What is access token vs refresh token?
 
 Access token is short-lived and used for APIs. Refresh token is longer-lived and used to get new access tokens.
 
-### 14. JWT vs session?
+### 17. JWT vs session?
 
 JWT can be stateless and verified by signature. Session requires server-side session storage. Sessions are easier to revoke; JWTs scale well but need revocation strategy.
 
-### 15. Why does this app load account from DB after verifying JWT?
+### 18. Why does this app load account from DB after verifying JWT?
 
 Because JWT only proves identity claim. Loading account confirms the account still exists and gets latest role/profile data.
 
-### 16. Why use token purpose?
+### 19. Why use token purpose?
 
 To prevent using one token type for another action. Example: password reset token should not work as auth token.
 
-### 17. What should be inside JWT payload?
+### 20. What should be inside JWT payload?
 
 Only minimal non-sensitive claims like user id, purpose, role version, session id, issued at, expiry.
 
-### 18. What should not be inside JWT payload?
+### 21. What should not be inside JWT payload?
 
 Password, OTP, password hash, secrets, credit card, or private personal data.
 
-### 19. What is HS256?
+### 22. What is HS256?
 
 HS256 is an HMAC signing algorithm using one shared secret.
 
-### 20. What is RS256?
+### 23. What is RS256?
 
 RS256 uses private/public key pair. Private key signs, public key verifies.
 
-### 21. How to invalidate or expire a JWT token if it is stolen?
+### 24. How to invalidate or expire a JWT token if it is stolen?
 
 Yes, this is a very valid security question.
 
@@ -1570,7 +2823,7 @@ Common mistake:
 Only clearing the token from the browser is not enough if the token was already stolen.
 ```
 
-### 22. How do refreshToken and accessToken work in JWT?
+### 25. How do refreshToken and accessToken work in JWT?
 
 Yes, this is also a very valid and common interview question.
 
@@ -1578,6 +2831,12 @@ Short interview answer:
 
 ```text
 An access token is short-lived and used to access protected APIs. A refresh token is longer-lived and used only to get a new access token when the old access token expires.
+```
+
+For complete backend and frontend code flow, see:
+
+```text
+Access Token and Refresh Token Code Flow for Interview
 ```
 
 Why use two tokens?
