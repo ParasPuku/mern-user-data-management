@@ -239,19 +239,61 @@ Example:
 
 ### 7. What are embedded documents?
 
-Embedded documents means storing related data inside the same document.
+Embedded document means one document kept inside another document.
+
+Think like this:
+
+```text
+User is the main document.
+Address belongs to that user.
+So we can keep address inside user.
+```
+
+In simple words:
+
+```text
+When related data is stored inside the same parent document, it is called embedded document.
+```
 
 Example:
 
 ```json
 {
+  "_id": "user1",
   "name": "Paras",
+  "email": "paras@example.com",
   "address": {
     "city": "Bangalore",
+    "state": "Karnataka",
     "country": "India"
   }
 }
 ```
+
+Here `address` is an embedded document because it is stored inside the `user` document.
+
+Another example:
+
+```json
+{
+  "orderId": "ORD001",
+  "customerName": "Paras",
+  "items": [
+    {
+      "productName": "Keyboard",
+      "price": 1200,
+      "quantity": 1
+    },
+    {
+      "productName": "Mouse",
+      "price": 500,
+      "quantity": 2
+    }
+  ]
+}
+```
+
+Here each object inside `items` is embedded inside the order document.
 
 Use embedding when:
 
@@ -260,10 +302,31 @@ Use embedding when:
 - child data is small
 - child data does not grow without limit
 
+Good examples:
+
+```text
+User -> address
+Order -> order items
+Product -> specifications
+Profile -> social links
+```
+
+Why we use embedded documents:
+
+```text
+If parent and child data are usually needed together, embedding makes reading faster because MongoDB can get everything in one query.
+```
+
+When not to embed:
+
+```text
+Do not embed if child data can grow too much, like thousands of comments inside one post. In that case, use a separate collection and reference.
+```
+
 Interview answer:
 
 ```text
-Embedded documents store related data inside the same document. It improves read performance when parent and child data are usually needed together.
+Embedded documents are nested documents stored inside another MongoDB document. We use them when related data belongs to the parent and is usually read together. For example, storing address inside user or order items inside order.
 ```
 
 ### 8. What are references in MongoDB?
