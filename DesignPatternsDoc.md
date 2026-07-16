@@ -202,31 +202,43 @@ In React, Singleton is often used for shared service instances.
 
 Example API client:
 
-```ts
-// httpClient.ts
+```js
+// httpClient.js
 class HttpClient {
-  private baseUrl = '/api';
+  constructor(baseUrl) {
+    this.baseUrl = baseUrl;
+  }
 
-  async get(path: string) {
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      credentials: 'include',
-    });
-
+  async get(path) {
+    const response = await fetch(`${this.baseUrl}${path}`);
     if (!response.ok) {
       throw new Error('API failed');
     }
+    return response.json();
+  }
 
+  async post(path, data) {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      throw new Error('API failed');
+    }
     return response.json();
   }
 }
-
-export const httpClient = new HttpClient();
+const baseUrl = 'https://dummyjson.com';
+export const httpClient = new HttpClient(baseUrl);
 ```
 
 Usage:
 
-```tsx
-import { httpClient } from './httpClient';
+```jsx
+import { httpClient } from './HttpClient.js';
 
 function UserPage() {
   async function loadUsers() {
@@ -234,8 +246,25 @@ function UserPage() {
     console.log(users);
   }
 
-  return <button onClick={loadUsers}>Load Users</button>;
+  async function createUser() {
+    const newUser = await httpClient.post('/users/add', {
+      firstName: 'John',
+      lastName: 'Doe',
+      age: 25,
+    });
+    console.log(newUser);
+  }
+
+  return (
+    <div>
+      <button onClick={loadUsers}>Load Users</button>
+      <button onClick={createUser}>Create User</button>
+    </div>
+  );
 }
+
+export default UserPage;
+
 ```
 
 ### Where to apply it in React
