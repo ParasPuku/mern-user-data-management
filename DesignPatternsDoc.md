@@ -10,6 +10,130 @@ Interview answer:
 Design patterns are common reusable solutions for recurring coding problems. In JavaScript and React apps, patterns help us separate responsibilities, avoid duplication, make components reusable, and keep business logic maintainable.
 ```
 
+## SOLID Principles in React
+
+SOLID is a set of five design principles for keeping React components, hooks, and services easy to change and test. They are guidelines, not rules to apply everywhere. Start using them when a feature becomes large or changes often.
+
+| Principle | React meaning |
+|---|---|
+| Single Responsibility (SRP) | A component, hook, or service should have one main job. |
+| Open/Closed (OCP) | Add behavior through props, composition, or configuration instead of repeatedly editing a component. |
+| Liskov Substitution (LSP) | Components that share a contract should be interchangeable without surprising the parent. |
+| Interface Segregation (ISP) | Pass only the props a component needs; avoid large, unrelated prop objects. |
+| Dependency Inversion (DIP) | Depend on injected props, Context, or small service contracts instead of hard-coded implementations. |
+
+### 1. Single Responsibility Principle (SRP)
+
+Keep rendering separate from data loading. The page coordinates the feature, the hook loads data, and the list only displays it.
+
+```tsx
+function UserList({ users }: { users: { id: string; name: string }[] }) {
+  return <ul>{users.map((user) => <li key={user.id}>{user.name}</li>)}</ul>;
+}
+
+function useUsers() {
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    fetch('/api/users').then((response) => response.json()).then(setUsers);
+  }, []);
+
+  return users;
+}
+
+function UsersPage() {
+  const users = useUsers();
+  return <UserList users={users} />;
+}
+```
+
+### 2. Open/Closed Principle (OCP)
+
+Extend a reusable component with props rather than editing its internal logic for every new button type.
+
+```tsx
+function Button({ variant = 'primary', children, ...props }) {
+  return <button className={`button button--${variant}`} {...props}>{children}</button>;
+}
+
+<Button>Save</Button>
+<Button variant="danger">Delete</Button>
+```
+
+Adding a new `warning` variant only needs CSS and a prop value; the `Button` component stays unchanged.
+
+### 3. Liskov Substitution Principle (LSP)
+
+Two components can be swapped when they honor the same props contract.
+
+```tsx
+function SaveButton({ onClick, disabled }) {
+  return <button onClick={onClick} disabled={disabled}>Save</button>;
+}
+
+function IconSaveButton({ onClick, disabled }) {
+  return <button aria-label="Save" onClick={onClick} disabled={disabled}>💾</button>;
+}
+
+function Editor({ SaveControl = SaveButton }) {
+  return <SaveControl onClick={() => console.log('saved')} disabled={false} />;
+}
+
+<Editor />
+<Editor SaveControl={IconSaveButton} />
+```
+
+Both controls accept `onClick` and `disabled` and preserve their expected behavior.
+
+### 4. Interface Segregation Principle (ISP)
+
+Give a child only the data and callbacks it needs.
+
+```tsx
+// Avatar does not need the full user object or update permissions.
+function Avatar({ name, imageUrl }: { name: string; imageUrl: string }) {
+  return <img src={imageUrl} alt={name} />;
+}
+
+function UserProfile({ user }) {
+  return <Avatar name={user.name} imageUrl={user.imageUrl} />;
+}
+```
+
+This keeps `Avatar` reusable and prevents it from depending on unrelated user fields.
+
+### 5. Dependency Inversion Principle (DIP)
+
+Let a component depend on a small contract supplied from outside, not a specific API implementation.
+
+```tsx
+function UserForm({ saveUser }) {
+  async function handleSubmit(event) {
+    event.preventDefault();
+    await saveUser({ name: 'Asha' });
+  }
+
+  return <form onSubmit={handleSubmit}><button>Save</button></form>;
+}
+
+const apiUserRepository = {
+  saveUser: (user) => fetch('/api/users', {
+    method: 'POST',
+    body: JSON.stringify(user),
+  }),
+};
+
+<UserForm saveUser={apiUserRepository.saveUser} />
+```
+
+The same form can use a mock `saveUser` in tests or a different storage implementation later.
+
+### React interview answer
+
+```text
+In React, I apply SOLID by keeping components and hooks focused, extending UI through props and composition, keeping shared component contracts consistent, passing only required props, and injecting services or callbacks instead of hard-coding dependencies. This keeps features easier to test and change as the app grows.
+```
+
 ## 5 Most Useful Design Patterns for JavaScript and React Apps
 
 | Pattern | JavaScript use | React use |

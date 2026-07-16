@@ -1256,6 +1256,112 @@ notification.notify("Welcome user");
 
 Now `NotificationService` can work with email, SMS, push notification, or any sender that has a `send()` method.
 
+### SOLID in React: simple examples
+
+In React, SOLID applies to components, custom hooks, props, Context, and service modules rather than only classes.
+
+#### S: Single Responsibility Principle
+
+Keep fetching logic in a hook and rendering logic in a component.
+
+```tsx
+function useUsers() {
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    fetch('/api/users').then((response) => response.json()).then(setUsers);
+  }, []);
+
+  return users;
+}
+
+function UserList({ users }) {
+  return <ul>{users.map((user) => <li key={user.id}>{user.name}</li>)}</ul>;
+}
+
+function UsersPage() {
+  return <UserList users={useUsers()} />;
+}
+```
+
+#### O: Open/Closed Principle
+
+Use props to extend a component instead of adding a new conditional for every design variation.
+
+```tsx
+function Button({ variant = 'primary', children }) {
+  return <button className={`button button--${variant}`}>{children}</button>;
+}
+
+<Button>Save</Button>
+<Button variant="danger">Delete</Button>
+```
+
+#### L: Liskov Substitution Principle
+
+Components that follow the same props contract should be safely interchangeable.
+
+```tsx
+function SaveButton({ onClick, disabled }) {
+  return <button onClick={onClick} disabled={disabled}>Save</button>;
+}
+
+function IconSaveButton({ onClick, disabled }) {
+  return <button aria-label="Save" onClick={onClick} disabled={disabled}>💾</button>;
+}
+
+function Editor({ SaveControl = SaveButton }) {
+  return <SaveControl onClick={() => console.log('saved')} disabled={false} />;
+}
+```
+
+`IconSaveButton` can replace `SaveButton` because it accepts and respects the same props.
+
+#### I: Interface Segregation Principle
+
+Pass only the props a component needs.
+
+```tsx
+function Avatar({ name, imageUrl }) {
+  return <img src={imageUrl} alt={name} />;
+}
+
+function UserProfile({ user }) {
+  return <Avatar name={user.name} imageUrl={user.imageUrl} />;
+}
+```
+
+`Avatar` is not coupled to unrelated fields such as `user.role`, `user.permissions`, or `user.address`.
+
+#### D: Dependency Inversion Principle
+
+Inject a dependency through props instead of hard-coding an API call inside the component.
+
+```tsx
+function UserForm({ saveUser }) {
+  return (
+    <button onClick={() => saveUser({ name: 'Asha' })}>
+      Save user
+    </button>
+  );
+}
+
+const saveUserToApi = (user) => fetch('/api/users', {
+  method: 'POST',
+  body: JSON.stringify(user),
+});
+
+<UserForm saveUser={saveUserToApi} />
+```
+
+This makes `UserForm` easier to test because a test can pass a fake `saveUser` function.
+
+### React interview answer
+
+```text
+In React, SOLID means keeping each component or hook focused, using props and composition to extend UI, keeping interchangeable components consistent, passing only necessary props, and injecting services or callbacks rather than hard-coding dependencies.
+```
+
 ### Why SOLID is useful
 
 SOLID helps with:
