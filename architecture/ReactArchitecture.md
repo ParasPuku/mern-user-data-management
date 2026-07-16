@@ -270,7 +270,65 @@ Putting API data everywhere in global UI state can create stale data and manual 
 
 I inspect API calls, cache invalidation, global store updates, and component render behavior.
 
-## 10. How do you render very large lists in React?
+## 10. How do you prevent stale search results when multiple search APIs are triggered quickly?
+
+### What it is
+
+This is a race condition where multiple search requests are in flight and an older response returns after a newer response.
+
+### Where I used it
+
+I used this pattern in search boxes, filtered tables, autocomplete, admin user search, and dashboards with server-side filtering.
+
+### How I implemented it
+
+I debounce the input to reduce unnecessary API calls. For each new query, I cancel the previous request using `AbortController`. If cancellation is not available, I keep a latest request id in a `useRef` and update state only when the response belongs to the latest request.
+
+Example:
+
+```tsx
+const latestRequestId = useRef(0);
+
+useEffect(() => {
+  if (!query.trim()) {
+    setResults([]);
+    return;
+  }
+
+  const requestId = latestRequestId.current + 1;
+  latestRequestId.current = requestId;
+
+  async function search() {
+    const data = await searchApi(query);
+
+    if (requestId !== latestRequestId.current) {
+      return;
+    }
+
+    setResults(data);
+  }
+
+  search();
+}, [query]);
+```
+
+### Why I chose it
+
+The user should always see results for the latest typed query, not whichever network response finishes last.
+
+### Trade-offs
+
+Debounce improves API efficiency but adds a small delay. Request-id checks do not cancel network work; they only prevent stale UI updates.
+
+### Failure cases
+
+Without this handling, an old search response can overwrite the latest result and make the UI look incorrect.
+
+### How I monitored/debugged it
+
+I inspect the browser Network tab, add request/query logging during debugging, simulate slow network, and verify that only the latest query updates the UI.
+
+## 11. How do you render very large lists in React?
 
 ### What it is
 
@@ -300,7 +358,7 @@ Rendering thousands of rows at once can freeze the page and make interactions sl
 
 I use React Profiler, browser Performance tools, DOM node counts, and interaction latency metrics.
 
-## 11. How do you handle authentication refresh in React?
+## 12. How do you handle authentication refresh in React?
 
 ### What it is
 
@@ -330,7 +388,7 @@ Infinite refresh loops, stale auth state, and failing to clear session on logout
 
 I inspect auth cookies/tokens, network calls, 401/403 rates, session logs, and refresh endpoint errors.
 
-## 12. How do you make React apps accessible?
+## 13. How do you make React apps accessible?
 
 ### What it is
 
@@ -360,7 +418,7 @@ Missing labels, poor focus management, and non-semantic buttons can block users.
 
 I use keyboard testing, screen reader checks, Lighthouse, axe-style tools, and design review.
 
-## 13. How do you test React applications?
+## 14. How do you test React applications?
 
 ### What it is
 
@@ -390,7 +448,7 @@ Testing internal state instead of user behavior can create fragile tests.
 
 I track flaky tests, coverage on critical flows, CI failures, and production defects missed by tests.
 
-## 14. How do you handle micro-frontends?
+## 15. How do you handle micro-frontends?
 
 ### What it is
 
@@ -420,7 +478,7 @@ Version conflicts, duplicated bundles, inconsistent UX, and broken cross-app com
 
 I monitor bundle size, runtime errors, shared package versions, app health, and integration tests.
 
-## 15. How do you handle frontend observability?
+## 16. How do you handle frontend observability?
 
 ### What it is
 
@@ -449,3 +507,401 @@ Without frontend monitoring, blank screens, failed chunks, and slow pages may go
 ### How I monitored/debugged it
 
 I use error dashboards, Web Vitals, source maps, release tracking, network timing, and user-impact metrics.
+
+## Real-Time Scenario-Based React Architecture Questions
+
+## 17. User clicks submit multiple times. How do you prevent duplicate API calls?
+
+### What it is
+
+This happens when a user double-clicks a submit button or the network is slow and the user tries again.
+
+### Answer
+
+I prevent duplicate submissions on the frontend by disabling the button while the request is pending and showing a loading state. I also keep a pending flag in state so the same action cannot be triggered again until the first request finishes.
+
+Example:
+
+```tsx
+const [isSubmitting, setIsSubmitting] = useState(false);
+
+async function handleSubmit() {
+  if (isSubmitting) return;
+
+  try {
+    setIsSubmitting(true);
+    await saveUser();
+  } finally {
+    setIsSubmitting(false);
+  }
+}
+```
+
+### Important architecture point
+
+Frontend prevention improves UX, but backend must still use idempotency keys or duplicate checks for critical operations like payments, orders, and account creation.
+
+### Failure cases
+
+If only the button is disabled, duplicate calls can still happen from browser retry, refresh, multiple tabs, or direct API calls.
+
+## 18. API response is slow and the user leaves the page. What should React do?
+
+### What it is
+
+The component may unmount before the API response comes back.
+
+### Answer
+
+I clean up the effect. For `fetch`, I use `AbortController` to cancel the request. If cancellation is not possible, I ignore the result using an active flag or request id.
+
+Example:
+
+```tsx
+useEffect(() => {
+  const controller = new AbortController();
+
+  async function loadData() {
+    const response = await fetch('/api/users', {
+      signal: controller.signal,
+    });
+    const data = await response.json();
+    setUsers(data);
+  }
+
+  loadData();
+
+  return () => {
+    controller.abort();
+  };
+}, []);
+```
+
+### Failure cases
+
+Old responses can update stale state, show wrong data, waste network work, or create confusing loading states.
+
+## 19. User changes filters quickly in a table. How do you design this?
+
+### What it is
+
+A table may have search, status filter, role filter, sorting, and pagination. Changing them quickly can trigger many API calls.
+
+### Answer
+
+I keep filters as UI state, debounce search input, reset pagination when filters change, and send normalized query params to the API. I also cancel or ignore stale requests so old filter results cannot overwrite new ones.
+
+Example query state:
+
+```ts
+type UserQuery = {
+  search: string;
+  role: string;
+  status: string;
+  page: number;
+  limit: number;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
+};
+```
+
+### Architecture point
+
+For shareable screens, I store important filters in the URL query string. This allows refresh, back button, and shared links to work correctly.
+
+### Failure cases
+
+Common bugs are stale results, page number not resetting, filters lost on refresh, and duplicate API calls.
+
+## 20. User logs out while API calls are still running. What should happen?
+
+### What it is
+
+Pending API calls may return after logout and update the app with protected data.
+
+### Answer
+
+On logout, I clear auth state, clear sensitive cached server state, cancel in-flight protected requests if possible, and redirect to login. If any pending protected request returns later, the app should ignore it because the session is no longer active.
+
+### Architecture point
+
+Auth state should be the source of truth for whether protected data can be displayed. Server data related to the previous user must not remain visible after logout.
+
+### Failure cases
+
+If cache is not cleared, the next user on the same browser may briefly see old protected data.
+
+## 21. Token/session refresh is called by many APIs at the same time. How do you handle it?
+
+### What it is
+
+Multiple API calls can fail with `401` at the same time and all try to refresh the session.
+
+### Answer
+
+I use a single in-flight refresh guard. The first request starts refresh. Other requests wait for the same refresh promise instead of starting another refresh call. After refresh succeeds, failed requests can retry once.
+
+Pseudo flow:
+
+```text
+API gets 401
+  -> check if refresh is already running
+  -> if yes, wait for it
+  -> if no, start refresh
+  -> retry original request once
+  -> if refresh fails, logout
+```
+
+### Failure cases
+
+Without an in-flight guard, the app may send many refresh calls, create race conditions, or logout incorrectly.
+
+## 22. How do you avoid flicker on protected routes?
+
+### What it is
+
+When the app starts, auth status may be unknown for a moment. If routing checks too early, the user may briefly see the wrong page.
+
+### Answer
+
+I use an explicit auth bootstrap state: `idle`, `checking`, `authenticated`, or `unauthenticated`. Protected routes render a small loading state while auth is being verified.
+
+Example:
+
+```tsx
+if (authStatus === 'checking') {
+  return <PageLoader />;
+}
+
+if (authStatus === 'unauthenticated') {
+  return <Navigate to="/signin" replace />;
+}
+
+return <Outlet />;
+```
+
+### Failure cases
+
+Without a checking state, the app can flicker between login and dashboard or redirect logged-in users incorrectly.
+
+## 23. Backend updates data but UI still shows old data. How do you fix stale server state?
+
+### What it is
+
+After create, update, or delete, cached API data may become outdated.
+
+### Answer
+
+I invalidate or refetch the affected query after mutation. For local Redux state, I update the specific item or remove it from the list. For React Query or RTK Query, I use query invalidation or tags.
+
+Example:
+
+```text
+Update user succeeds
+  -> invalidate users list
+  -> invalidate user detail
+  -> refetch active views
+```
+
+### Architecture point
+
+Server state needs a cache strategy. Manually copying API data into many components often creates stale UI.
+
+### Failure cases
+
+The UI can show deleted users, old profile data, wrong counts, or mismatched detail/list screens.
+
+## 24. How do you handle optimistic UI updates?
+
+### What it is
+
+Optimistic UI updates the screen before the server confirms success.
+
+### Answer
+
+I update the UI immediately for fast feedback, keep the previous state for rollback, and revert if the API fails. I use optimistic updates only when the action is likely to succeed and the rollback behavior is clear.
+
+Example:
+
+```text
+User marks task complete
+  -> UI immediately shows completed
+  -> API request starts
+  -> if success, keep UI
+  -> if failure, rollback and show error
+```
+
+### Trade-offs
+
+Optimistic UI feels fast, but it can confuse users if failures are common or conflict handling is complex.
+
+### Failure cases
+
+Without rollback, UI may show success even though the backend rejected the change.
+
+## 25. How do you handle real-time updates in React?
+
+### What it is
+
+Real-time updates come from WebSocket, Server-Sent Events, polling, or push notifications.
+
+### Answer
+
+I keep the connection logic outside UI components, usually in a service or custom hook. Incoming events update server-state cache or dispatch store actions. I also handle reconnect, duplicate events, stale events, and cleanup on logout or unmount.
+
+Example flow:
+
+```text
+WebSocket receives USER_UPDATED
+  -> validate event shape
+  -> update user detail cache
+  -> update users list item
+  -> show notification if needed
+```
+
+### Failure cases
+
+Common issues are duplicate events, memory leaks from unclosed sockets, stale updates arriving out of order, and updating data for the wrong user/session.
+
+## 26. How do you handle network offline and retry scenarios?
+
+### What it is
+
+Users can lose network while using the app, especially on mobile or unstable connections.
+
+### Answer
+
+I show offline status, avoid infinite retry loops, retry safe read requests with backoff, and let users manually retry failed actions. For mutations, I avoid automatic retry unless the operation is idempotent.
+
+### Architecture point
+
+Reads are usually safer to retry than writes. For writes, retry can create duplicate records unless the backend supports idempotency.
+
+### Failure cases
+
+Bad retry logic can spam the backend, duplicate submissions, or keep the UI stuck in loading state.
+
+## 27. How do you handle large forms when the user refreshes or navigates away?
+
+### What it is
+
+Users may lose long form progress because of refresh, route change, or accidental navigation.
+
+### Answer
+
+I split the form into sections, autosave drafts when needed, show unsaved-change confirmation, and restore draft data on reload. I submit only validated DTOs to the backend.
+
+### Architecture point
+
+Temporary form draft state is different from final saved server state. I keep that ownership clear.
+
+### Failure cases
+
+Users can lose work, submit partial data, or see old draft data after successful submission if drafts are not cleared.
+
+## 28. A lazy-loaded route chunk fails after deployment. How do you recover?
+
+### What it is
+
+After a new deployment, a user may still have old HTML that points to JavaScript chunks that no longer exist.
+
+### Answer
+
+I wrap lazy routes with error boundaries and show a recovery UI. For chunk load errors, I ask the user to refresh or automatically reload once if the app detects a new version.
+
+### Architecture point
+
+Code splitting needs failure handling. A chunk load failure should not leave the user on a blank screen.
+
+### Failure cases
+
+Without an error boundary, the app can crash completely and show a blank page.
+
+## 29. How do you prevent unnecessary re-renders in a dashboard?
+
+### What it is
+
+Dashboards often have many cards, charts, filters, and tables. One state change can accidentally re-render everything.
+
+### Answer
+
+I keep state close to where it is used, split large components, memoize expensive derived values, stabilize callback props when needed, and avoid putting fast-changing state in broad Context providers.
+
+### Architecture point
+
+I profile before optimizing. `React.memo`, `useMemo`, and `useCallback` are useful only when they protect expensive work or unstable props.
+
+### Failure cases
+
+Overusing memoization can make code harder to understand while not improving real performance.
+
+## 30. How do you design reusable components without making them too generic?
+
+### What it is
+
+Teams often create shared components too early, and those components become hard to use.
+
+### Answer
+
+I start with feature-specific components. When the same pattern appears in multiple places, I extract a shared component with clear props. I keep business logic out of shared UI components.
+
+Example:
+
+```text
+Good shared component:
+  Button, Modal, DataTable, FormField
+
+Feature component:
+  UserStatusBadge, RolePermissionEditor, SignupStepForm
+```
+
+### Trade-offs
+
+Reusable components reduce duplication, but overly generic components become difficult to test and maintain.
+
+### Failure cases
+
+A shared component with too many props, flags, and special cases becomes harder than duplication.
+
+## 31. How do you debug a React page that feels slow?
+
+### What it is
+
+Slow UI can come from frontend rendering, API delay, large payloads, browser work, or backend/database performance.
+
+### Answer
+
+I debug layer by layer. First I check the Network tab for API timing and payload size. Then I use React Profiler to find expensive renders. I inspect bundle size, large lists, repeated API calls, and expensive calculations.
+
+Debug checklist:
+
+```text
+1. Is API slow?
+2. Is payload too large?
+3. Are duplicate requests happening?
+4. Are too many components re-rendering?
+5. Is a large list rendering without pagination or virtualization?
+6. Is bundle size too large?
+```
+
+### Failure cases
+
+Guessing without profiling can lead to wrong fixes, like adding memoization when the real issue is a slow API or missing database index.
+
+## 32. How do you handle permission changes while the user is already using the app?
+
+### What it is
+
+An admin may change a user's role or permissions while that user is still logged in.
+
+### Answer
+
+I treat backend authorization as final. On the frontend, I refresh session/permissions periodically, on route changes, or after important `403` responses. If permissions are reduced, I hide restricted UI and redirect from protected pages.
+
+### Architecture point
+
+Frontend permission checks are for UX. Backend APIs must still enforce authorization.
+
+### Failure cases
+
+If frontend permissions are never refreshed, the user may see actions they can no longer perform, even though the backend rejects them.

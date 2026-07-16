@@ -5282,6 +5282,134 @@ useEffect(() => {
 }, []);
 ```
 
+### 102A. Suppose a user searches quickly and multiple search APIs are triggered. How do you prevent stale results from being displayed?
+
+This is a frontend race condition.
+
+Example:
+
+```text
+User types "r"
+  -> search API 1 starts
+User types "re"
+  -> search API 2 starts
+API 2 finishes first
+  -> UI shows correct "re" result
+API 1 finishes later
+  -> old "r" result overwrites the UI
+```
+
+Interview answer:
+
+```text
+I prevent stale search results by cancelling the previous request using AbortController, or by tracking the latest request id and ignoring older responses. I also debounce the search input so fewer requests are fired. The key rule is: only the latest search response should be allowed to update the UI.
+```
+
+#### Best approach: cancel previous request
+
+For `fetch`, use `AbortController` in the effect cleanup.
+
+```tsx
+function SearchUsers({ query }: { query: string }) {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!query.trim()) {
+      setUsers([]);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    async function searchUsers() {
+      try {
+        setLoading(true);
+
+        const response = await fetch(`/api/users/search?q=${query}`, {
+          signal: controller.signal,
+        });
+
+        const data = await response.json();
+        setUsers(data);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+
+        console.error('Search failed', error);
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    searchUsers();
+
+    return () => {
+      controller.abort();
+    };
+  }, [query]);
+
+  return loading ? <p>Searching...</p> : <UsersList users={users} />;
+}
+```
+
+When `query` changes, React runs the cleanup for the previous effect first. That aborts the previous request before starting the next one.
+
+#### Alternative: ignore old responses using request id
+
+Use this when the request cannot be cancelled, or when using a client that does not support cancellation.
+
+```tsx
+function SearchUsers({ query }: { query: string }) {
+  const latestRequestId = useRef(0);
+  const [users, setUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    if (!query.trim()) {
+      setUsers([]);
+      return;
+    }
+
+    const requestId = latestRequestId.current + 1;
+    latestRequestId.current = requestId;
+
+    async function searchUsers() {
+      const data = await usersApi.search(query);
+
+      if (requestId !== latestRequestId.current) {
+        return;
+      }
+
+      setUsers(data);
+    }
+
+    searchUsers();
+  }, [query]);
+
+  return <UsersList users={users} />;
+}
+```
+
+Here, an older response can still finish, but it cannot update the UI because its request id is no longer the latest.
+
+#### Also use debounce
+
+Debounce reduces unnecessary API calls while the user is typing.
+
+```text
+Debounce reduces API traffic.
+AbortController/request id prevents stale UI.
+```
+
+Strong final answer:
+
+```text
+For fast search, I debounce the input to reduce API calls and handle race conditions by cancelling the previous request with AbortController. If cancellation is not possible, I store a latest request id in a ref and update state only when the response belongs to the latest request. This ensures older responses cannot overwrite newer search results.
+```
+
 ## Authentication in React
 
 ### 103. How does React know user is logged in?
