@@ -7,7 +7,7 @@ var city = 'Delhi';
 var city = 'Mumbai'; // allowed: var can be redeclared
 
 let count = 1;
-count = 2; // allowed: let can be reassigned
+count = 2; // allowed: let can be reassigned 
 // let count = 3; // Error: let cannot be redeclared in the same scope
 
 const user = { name: 'Asha' };
@@ -53,7 +53,7 @@ function sayHello() {
   console.log('Application started');
 })();
 
-// console.log(token); // ReferenceError
+console.log(token); // ReferenceError
 ```
 
 Answer:
@@ -363,8 +363,8 @@ let b = { x: 2 };
 let c = { x: 3 };
 let d = { x: 4 };
 let e = { x: 5 };
-let arr = [a, b, c, d, e];
 
+let arr = [a, b, c, d, e];
 arr.forEach((obj) => (obj.x = obj.x * 2));
 
 console.log(a.x, b.x, c.x, d.x, e.x);
