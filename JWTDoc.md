@@ -1599,7 +1599,7 @@ async function loadProfile() {
 }
 ```
 
-#### Interview explanation script
+############# Interview explanation script
 
 ```text
 I use two tokens. The access token is short-lived and used for protected APIs. The refresh token is longer-lived and used only to get a new access token. On login, backend creates both tokens and stores the refresh token id in Redis or database. The access token and refresh token are sent as HTTP-only secure cookies. When the access token expires, protected APIs return 401. The frontend calls the refresh endpoint. Backend verifies the refresh token, checks it in Redis/database, rotates it, sends a new access token and refresh token, and the frontend retries the original API once. On logout, backend deletes the refresh token session and clears both cookies.
@@ -1789,6 +1789,66 @@ Interview answer:
 ```text
 A JWT is a signed token containing claims like user id and expiry. A session-based cookie usually stores only a session id, while the actual session data is stored on the server. JWT can be stateless and verified by signature, but session cookies are easier to revoke because the server controls the session store.
 ```
+
+```text
+No button is needed. /auth/refresh is called automatically by frontend code—usually an Axios interceptor or a shared fetch wrapper.
+
+Real-world flow:
+- User clicks Login once.
+- Backend sends accessToken and refreshToken as HTTP-only cookies.
+- For later API calls, the browser automatically includes those cookies when you use credentials: 'include'.
+- When the access token expires, a protected API such as /api/users returns 401 Unauthorized.
+- Your API wrapper notices the 401 and silently calls /auth/refresh.
+- Backend validates the refresh-token cookie, rotates it, and sets fresh cookies.
+- The wrapper retries the original /api/users request once.
+- The user normally sees nothing. If refresh fails, redirect them to login.
+```
+```jsx
+Example using Axios:
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'http://localhost:5000/api',
+  withCredentials: true, // sends HTTP-only cookies
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    const isUnauthorized = error.response?.status === 401;
+    const alreadyRetried = originalRequest._retry;
+    const isRefreshRequest = originalRequest.url === '/auth/refresh';
+
+    if (isUnauthorized && !alreadyRetried && !isRefreshRequest) {
+      originalRequest._retry = true;
+
+      try {
+        await api.post('/auth/refresh');
+        return api(originalRequest); // retry original API call
+      } catch {
+        window.location.href = '/login';
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+Then components simply use normal API calls:
+const users = await api.get('/users');
+If the access token is expired, the interceptor performs the refresh request in the background.
+Also, many apps call /auth/refresh once when the application starts or reloads, to restore an existing session:
+useEffect(() => {
+  api.post('/auth/refresh').catch(() => {
+    // No valid session; user stays logged out.
+  });
+}, []);
+
+```
+
+Important: retry the original request only once. Otherwise, an invalid refresh token can cause an infinite refresh loop.
 
 ### 1. How would you use a JWT in a web application for authentication?
 

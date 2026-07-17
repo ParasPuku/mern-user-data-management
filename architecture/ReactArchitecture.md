@@ -905,3 +905,315 @@ Frontend permission checks are for UX. Backend APIs must still enforce authoriza
 ### Failure cases
 
 If frontend permissions are never refreshed, the user may see actions they can no longer perform, even though the backend rejects them.
+
+## 33. What is a Progressive Web App (PWA), and how do you create one?
+
+### What it is
+
+A Progressive Web App is a web application that runs in a browser but can offer app-like features such as installation, a standalone window, offline support, and push notifications where the browser and platform support them.
+
+A PWA is still a website. It is not an Android APK or an iOS IPA file, and it is installed from the browser rather than automatically through an app store.
+
+### How it works
+
+```text
+React application
+  + web app manifest  -> app name, icons, theme, display mode
+  + service worker    -> cache and offline behavior
+  + HTTPS             -> secure production delivery
+  = installable PWA
+```
+
+### How I would create it step by step
+
+1. Build the React application normally.
+2. Add a web app manifest with the application name, icons, colors, and `display: "standalone"`.
+3. Generate and register a service worker. With Vite, a common choice is `vite-plugin-pwa`; frameworks also provide their own PWA integrations.
+4. Choose explicit caching rules for static files, pages, images, and API data.
+5. Serve the production app over HTTPS. `localhost` is allowed for local development.
+6. Test installation, refresh while offline, application updates, and cache cleanup in browser DevTools and on real devices.
+
+Example manifest:
+
+```json
+{
+  "name": "User Management",
+  "short_name": "Users",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
+```
+
+### When I would choose it
+
+I would choose a PWA when browser access, quick installation, responsive layouts, and some offline capability matter more than deep device integration. It works especially well for portals, dashboards, field tools, content apps, and lightweight commerce apps.
+
+### Trade-offs
+
+PWA capabilities vary by browser and operating system. Native apps are usually a better fit for advanced background work, complex Bluetooth or hardware use, high-end graphics, and app-store-first distribution.
+
+### Interview answer
+
+```text
+A PWA is a web app enhanced with a manifest, service worker, and HTTPS. It can be installed from the browser and can cache selected resources for offline use. I treat offline behavior as a product requirement and define caching rules instead of caching everything blindly.
+```
+
+## 34. How does offline work in a PWA?
+
+### What it is
+
+A service worker is a browser-managed script that can intercept requests. It can return a cached response when the network is unavailable and update that cache when the network returns.
+
+### Request flow
+
+```text
+User opens PWA
+  -> browser asks service worker for a file or API response
+  -> cache has a suitable response? return it
+  -> otherwise try network
+  -> network unavailable? show offline fallback or saved data
+```
+
+### Cache strategy depends on the data
+
+| Resource | Common strategy | Why |
+|---|---|---|
+| HTML, JavaScript, CSS, app icons | Cache first with versioned assets | Lets the app shell open offline. |
+| Images | Cache first or stale-while-revalidate | Fast display; refresh in the background. |
+| User list / dashboard read API | Network first with cached fallback | Prefer fresh data, but show last known data offline. |
+| Highly dynamic or sensitive API data | Network only | Avoid showing stale or improperly cached data. |
+| Form submission / create request | Queue deliberately, then sync | Do not silently retry a write that could be duplicated. |
+
+### Important limitation
+
+Offline does not mean the entire backend works without internet. The PWA can show cached screens and previously saved data. A new server request cannot succeed until connectivity returns.
+
+For offline writes, store a clearly identified pending action locally (for example in IndexedDB), show "Pending sync", and send it later. The server should support idempotency keys so retrying does not create duplicates.
+
+### Failure cases
+
+- Caching authenticated or private responses without careful user/session isolation.
+- Serving old JavaScript forever because cache versions are not updated.
+- Automatically retrying payments or create requests and producing duplicates.
+- Claiming data is current when it is only the last cached version.
+
+## 35. Can React web and React Native share code, and is React Native production-ready?
+
+### Short answer
+
+Yes, React Native is production-ready for many applications. React for the web and React Native share React concepts, JavaScript/TypeScript, and often business logic, but their UI primitives are different. A web `<div>` is not a native `<View>`, and browser routing is not native navigation.
+
+### What to share
+
+| Usually shareable | Usually platform-specific |
+|---|---|
+| TypeScript types and validation schemas | Web DOM components versus native components |
+| API client, authentication rules, and domain services | Routing/navigation |
+| State/store logic, query hooks, and business rules | Styling, responsive layout, and interaction patterns |
+| Constants, feature flags, formatting, and tests | Camera, notifications, file access, and other device integrations |
+
+`react-native-web` can render many React Native primitives on the web. It can increase UI sharing for a product with similar mobile and web experiences, but it should be chosen deliberately because web accessibility, SEO, dense tables, and desktop interactions may still need web-specific work.
+
+### Practical recommendation
+
+Do not aim for 100% shared UI by default. Share the domain logic first, then share only UI pieces that genuinely work well on both platforms. This prevents a lowest-common-denominator interface that is poor on both desktop and mobile.
+
+The linked Stack Overflow discussion is useful historical context, but its 2017 tooling advice is outdated. The core idea remains correct: share logic and keep genuinely platform-specific presentation and navigation separate.
+
+### Interview answer
+
+```text
+React Native is production-ready, but React web and React Native do not automatically share all UI code. I share types, API clients, validation, state, and domain logic first. I keep navigation and platform-specific UI separate, and use React Native Web only when a shared UI model fits the product.
+```
+
+## 36. Should web and mobile use one repository or separate repositories?
+
+### Answer
+
+Both are valid. Repository choice is about team ownership and release independence, not whether the applications look the same.
+
+Use one monorepo when the web and mobile apps share a backend, types, API client, validation, design tokens, or business rules and the same team can maintain the tooling. Use separate repositories when teams release independently, have very different technology needs, or sharing is minimal.
+
+Recommended monorepo shape:
+
+```text
+my-product/
+  apps/
+    web/                 # React web or PWA
+    mobile/              # React Native / Expo application
+  packages/
+    domain/              # types, validation, business rules
+    api-client/          # API calls and auth helpers
+    ui-tokens/           # colors, spacing, typography tokens
+    ui-cross-platform/   # optional: truly shared UI only
+```
+
+The two applications still have separate build commands, environment files, tests, and release pipelines. A monorepo does not mean one identical app bundle.
+
+### Trade-offs
+
+Monorepos make shared changes and consistent tooling easier, but dependency management and build configuration can be more complex. Separate repositories give stronger isolation, but shared code must be published as a package or copied, which can drift over time.
+
+## 37. If web and mobile use the same repository, how do users install the app?
+
+### Answer
+
+The repository does not decide installation. Each application is built and delivered for its own platform.
+
+```text
+Same repository
+  -> apps/web builds a website or PWA
+     -> deploy to HTTPS hosting
+     -> user opens URL and chooses browser "Install app" when available
+
+  -> apps/mobile builds an Android App Bundle / iOS app archive
+     -> upload to Google Play / Apple App Store (or test distribution)
+     -> user installs it from the store on phone or tablet
+```
+
+For a PWA, users visit the web URL on a phone, tablet, or desktop browser. If the browser considers it installable, it shows an install option or the user uses the browser menu. The PWA remains one responsive web build; CSS and layout adapt to device size.
+
+For React Native, the mobile project creates native packages. During development, Expo Go or a development build can run the app on a device; production users install the signed release from the appropriate store. Tablets normally use the same mobile app with responsive layouts and tablet testing.
+
+### Key distinction
+
+- **PWA:** installed from a browser; no APK/IPA is required for normal PWA installation.
+- **React Native app:** installed as a native app package, usually through an app store.
+- **Same repository:** only keeps source code together; it does not merge those delivery methods.
+
+## 38. How do you handle race conditions in async code in js?
+
+In JavaScript, race conditions are handled by controlling state updates, canceling stale network requests, or forcing sequential execution. While JavaScript is single-threaded, its event loop allows asynchronous operations to interleave. If multiple tasks modify shared data, the final result depends on which asynchronous operation finishes last.
+
+The layout block below outlines the core programming categories relevant to managing this behavior:
+
+The primary strategies to prevent and handle race conditions depend on the specific scenario:
+
+1. Cancel Stale Network Requests
+When a user triggers multiple API requests in rapid succession (like clicking profile tabs or typing in a search bar), the responses may resolve out of order. You can use the native AbortController API on MDN to cancel previous network requests immediately.
+
+```jsx
+let currentController = null;
+
+async function fetchData(url) {
+  // Cancel the previous active request
+  if (currentController) {
+    currentController.abort();
+  }
+  
+  currentController = new AbortController();
+  
+  try {
+    const response = await fetch(url, { signal: currentController.signal });
+    const data = await response.json();
+    updateUI(data);
+  } catch (error) {
+    if (error.name !== 'AbortError') {
+      console.error("Fetch error:", error);
+    }
+  }
+}
+```jsx
+
+2. Use Local Flags (Ignore Old Responses)
+If you cannot abort the operation itself, you can ignore the response if a newer action has already been started. This is common in component-based UI setups like React useEffect hooks.
+
+```jsx
+let latestRequestId = 0;
+
+async function loadProfile(userId) {
+  const myRequestId = ++latestRequestId;
+  
+  const response = await fetch(`/api/users/${userId}`);
+  const data = await response.json();
+  
+  // If a newer request was sent in the meantime, discard this result
+  if (myRequestId === latestRequestId) {
+    displayProfile(data);
+  }
+}
+```
+
+3. Implement a Mutex (Mutual Exclusion)
+When multiple async routines read, modify, and write back to a shared variable, they can overwrite each other's updates. A Mutex acts as a lock, forcing only one async function to run the critical section at a time.
+
+You can build a simple queue-based lock without external dependencies:
+```jsx
+class Mutex {
+  constructor() {
+    this.queue = Promise.resolve();
+  }
+
+  lock() {
+    let disclose;
+    const next = new Promise(resolve => disclose = resolve);
+    const current = this.queue;
+    this.queue = next; // Set the next promise inline
+    
+    return current.then(() => disclose); // Returns the unlock function
+  }
+}
+
+// Usage
+const mutex = new Mutex();
+let counter = 0;
+
+async function safeIncrement() {
+  const unlock = await mutex.lock(); // Wait for lock
+  try {
+    const current = counter;
+    await new Promise(res => setTimeout(res, 50)); // Simulating async work
+    counter = current + 1;
+  } finally {
+    unlock(); // Release lock for the next task
+  }
+}
+```
+
+4. Enforce Sequential Execution
+If tasks must execute one after the other, avoid triggering them in parallel with methods like Promise.all(). Instead, use a classic for...of loop with await to intentionally block subsequent tasks until the current one finishes.
+
+```jsx
+// ❌ Dangerous: Runs in parallel, can cause race conditions if modifying shared state
+await Promise.all(items.map(async (item) => await processItem(item)));
+
+//  Safe: Executes strictly sequentially
+for (const item of items) {
+  await processItem(item);
+}
+```
+
+## 39. What are JavaScript object getters and setters for?
+
+JavaScript object getters and setters are essential for controlling access to object properties, offering customization when getting or setting values.
+
+```jsx
+const user = {
+  _firstName: 'John',
+  _lastName: 'Doe',
+
+  get fullName() {
+    return `${this._firstName} ${this._lastName}`;
+  },
+
+  set fullName(value) {
+    const parts = value.split(' ');
+    this._firstName = parts[0];
+    this._lastName = parts[1];
+  },
+};
+
+console.log(user.fullName); // Output: 'John Doe'
+user.fullName = 'Jane Smith';
+console.log(user.fullName); // Output: 'Jane Smith'
+```
+
+Getters (fullName) compute values based on internal properties (_firstName and _lastName), while setters (fullName) update these properties based on assigned values ('Jane Smith'). These mechanisms enhance data encapsulation and allow for custom data handling in JavaScript objects.
+
+
