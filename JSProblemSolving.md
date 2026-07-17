@@ -167,6 +167,26 @@ Then compare each element one by one.
 
 ---
 
+## 3. Find the closest sub array of the given target from the array.
+
+```js
+function subArray(arr, target) {
+    const result = [];
+    for (let i = 0; i < arr.length; i++) {
+        for (let j = i + 1; j < arr.length; j++) {
+            if (arr[i] + arr[j] === target) {
+                result.push(arr[i], arr[j]);
+                return result; 
+            }
+        }
+    }
+    return result;
+}
+
+const arr = [1, 3, 2, 4, 6, 5, 8];
+const target = 8;
+console.log(subArray(arr, target)); // [3, 5] or [2, 6] depending on order found
+
 ## 3. Remove Duplicate Values From An Array
 
 ### Question
