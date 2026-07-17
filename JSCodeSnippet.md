@@ -787,3 +787,762 @@ console.log('After setTimeout');
 console.log(1 == '1'); // true
 console.log(1 === '1'); // false
 ```
+## 52. What is a closure?
+
+```js
+function createCounter() {
+  let count = 0;
+
+  return function () {
+    count += 1;
+    return count;
+  };
+}
+
+const counter = createCounter();
+
+console.log(counter()); // 1
+console.log(counter()); // 2
+console.log(counter()); // 3
+```
+
+Answer:
+
+A closure is created when an inner function remembers variables from its outer function even after the outer function has finished running. Here `count` stays private and survives across calls through the returned function.
+
+## 53. What is currying?
+
+```js
+function multiply(a) {
+  return function (b) {
+    return function (c) {
+      return a * b * c;
+    };
+  };
+}
+
+console.log(multiply(2)(3)(4)); // 24
+
+const multiplyES6 = (a) => (b) => (c) => a * b * c;
+console.log(multiplyES6(2)(3)(4)); // 24
+```
+
+Answer:
+
+Currying turns a function that takes multiple arguments into a chain of functions that each take one argument. It is useful for partial application and reusable specialized functions.
+
+## 54. Implement a simple debounce function
+
+```js
+function debounce(fn, delay) {
+  let timerId;
+
+  return function (...args) {
+    clearTimeout(timerId);
+    timerId = setTimeout(() => {
+      fn.apply(this, args);
+    }, delay);
+  };
+}
+
+const onSearch = debounce((query) => {
+  console.log('Searching for:', query);
+}, 300);
+
+onSearch('j');
+onSearch('ja');
+onSearch('jav'); // only this call runs after 300ms of no further typing
+```
+
+Answer:
+
+Debounce delays execution until a quiet period has passed. It is commonly used for search inputs, resize handlers, and button spam prevention.
+
+## 55. Implement a simple throttle function
+
+```js
+function throttle(fn, limit) {
+  let lastCalled = 0;
+
+  return function (...args) {
+    const now = Date.now();
+
+    if (now - lastCalled >= limit) {
+      lastCalled = now;
+      fn.apply(this, args);
+    }
+  };
+}
+
+const onScroll = throttle(() => {
+  console.log('Scroll handler ran');
+}, 1000);
+
+// Even if scroll fires many times, the handler runs at most once per second
+```
+
+Answer:
+
+Throttle guarantees a function runs at most once in a given time window. Debounce waits for silence; throttle enforces a rate limit.
+
+## 56. Difference between `map`, `filter`, and `reduce`?
+
+```js
+const nums = [1, 2, 3, 4, 5];
+
+const doubled = nums.map((n) => n * 2);
+// [2, 4, 6, 8, 10]
+
+const evens = nums.filter((n) => n % 2 === 0);
+// [2, 4]
+
+const sum = nums.reduce((total, n) => total + n, 0);
+// 15
+```
+
+Answer:
+
+- `map` transforms every item and returns a new array of the same length.
+- `filter` keeps items that pass a condition and returns a new (usually shorter) array.
+- `reduce` accumulates array values into a single result.
+
+## 57. How do `call`, `apply`, and `bind` differ?
+
+```js
+function introduce(city, country) {
+  console.log(`${this.name} from ${city}, ${country}`);
+}
+
+const user = { name: 'Asha' };
+
+introduce.call(user, 'Delhi', 'India');
+// Asha from Delhi, India
+
+introduce.apply(user, ['Mumbai', 'India']);
+// Asha from Mumbai, India
+
+const boundIntroduce = introduce.bind(user, 'Pune');
+boundIntroduce('India');
+// Asha from Pune, India
+```
+
+Answer:
+
+`call` and `apply` invoke the function immediately with a given `this`. `call` takes arguments one by one; `apply` takes them as an array. `bind` returns a new function with a permanently bound `this` (and optionally preset arguments).
+
+## 58. What is the difference between shallow copy and deep copy?
+
+```js
+const original = {
+  name: 'Asha',
+  address: { city: 'Delhi' },
+};
+
+const shallow = { ...original };
+const deep = structuredClone(original);
+
+shallow.address.city = 'Mumbai';
+deep.address.city = 'Pune';
+
+console.log(original.address.city); // Mumbai (shared nested object)
+console.log(shallow.address.city);  // Mumbai
+console.log(deep.address.city);     // Pune
+```
+
+Answer:
+
+A shallow copy duplicates only the top level. Nested objects are still shared by reference. A deep copy recursively clones nested values so changes to the copy do not affect the original.
+
+## 59. What do `Promise.all`, `Promise.race`, `Promise.any`, and `Promise.allSettled` do?
+
+```js
+const p1 = Promise.resolve('A');
+const p2 = Promise.resolve('B');
+const p3 = Promise.reject('Error');
+
+Promise.all([p1, p2])
+  .then(console.log); // ['A', 'B']
+
+Promise.all([p1, p3])
+  .catch(console.log); // Error (fails fast)
+
+Promise.allSettled([p1, p3]).then(console.log);
+// [{ status: 'fulfilled', value: 'A' }, { status: 'rejected', reason: 'Error' }]
+
+Promise.race([
+  new Promise((resolve) => setTimeout(() => resolve('fast'), 100)),
+  new Promise((resolve) => setTimeout(() => resolve('slow'), 500)),
+]).then(console.log); // fast
+
+Promise.any([p3, p1]).then(console.log); // A
+```
+
+Answer:
+
+- `Promise.all`: fulfills when all succeed; rejects if any fail.
+- `Promise.allSettled`: waits for all; never rejects for individual failures.
+- `Promise.race`: settles with the first settled promise.
+- `Promise.any`: fulfills with the first success; rejects only if all fail.
+
+## 60. What is optional chaining and nullish coalescing?
+
+```js
+const user = {
+  profile: {
+    address: null,
+  },
+};
+
+console.log(user.profile?.address?.city); // undefined (no error)
+console.log(user.contact?.email);         // undefined
+
+console.log(user.profile.address?.city ?? 'City not set'); // City not set
+console.log(0 ?? 10);   // 0  (0 is not nullish)
+console.log('' || 10);  // 10 (empty string is falsy)
+```
+
+Answer:
+
+`?.` safely reads nested properties and short-circuits to `undefined` if a value is `null` or `undefined`. `??` returns the right-hand value only when the left-hand value is `null` or `undefined`, unlike `||` which also treats `0`, `''`, and `false` as missing.
+
+## 61. Guess the output of this code?
+
+```js
+function createFunctions() {
+  const result = [];
+
+  for (var i = 0; i < 3; i++) {
+    result.push(function () {
+      return i;
+    });
+  }
+
+  return result;
+}
+
+const fns = createFunctions();
+console.log(fns[0](), fns[1](), fns[2]());
+```
+
+## 62. Guess the output of this code?
+
+```js
+function createFunctions() {
+  const result = [];
+
+  for (let i = 0; i < 3; i++) {
+    result.push(function () {
+      return i;
+    });
+  }
+
+  return result;
+}
+
+const fns = createFunctions();
+console.log(fns[0](), fns[1](), fns[2]());
+```
+
+## 63. Guess the output of this code?
+
+```js
+console.log(typeof NaN);
+console.log(NaN === NaN);
+console.log(Object.is(NaN, NaN));
+console.log(Number.isNaN(NaN));
+console.log(isNaN('hello'));
+console.log(Number.isNaN('hello'));
+```
+
+## 64. Guess the output of this code?
+
+```js
+const obj = {
+  value: 10,
+  getValue() {
+    return this.value;
+  },
+};
+
+const unbound = obj.getValue;
+const bound = obj.getValue.bind(obj);
+
+console.log(obj.getValue());
+console.log(unbound());
+console.log(bound());
+```
+
+## 65. Guess the output of this code?
+
+```js
+async function run() {
+  console.log('A');
+  await Promise.resolve();
+  console.log('B');
+}
+
+console.log('C');
+run();
+console.log('D');
+```
+
+## 66. Guess the output of this code?
+
+```js
+Promise.resolve()
+  .then(() => {
+    console.log('1');
+    return Promise.resolve();
+  })
+  .then(() => console.log('2'));
+
+Promise.resolve().then(() => console.log('3'));
+```
+
+## 67. Flatten a nested array (interview classic)
+
+```js
+function flatten(arr) {
+  return arr.reduce((acc, item) => {
+    return Array.isArray(item)
+      ? acc.concat(flatten(item))
+      : acc.concat(item);
+  }, []);
+}
+
+console.log(flatten([1, [2, [3, [4]], 5]])); // [1, 2, 3, 4, 5]
+
+// Built-in alternative:
+console.log([1, [2, [3, [4]], 5]].flat(Infinity)); // [1, 2, 3, 4, 5]
+```
+
+Answer:
+
+Recursively walk the array and concatenate nested arrays into one flat list. `Array.prototype.flat(depth)` is the modern built-in approach.
+
+## 68. Remove duplicates from an array
+
+```js
+const nums = [1, 2, 2, 3, 4, 4, 5];
+
+console.log([...new Set(nums)]); // [1, 2, 3, 4, 5]
+
+const unique = nums.filter((value, index) => nums.indexOf(value) === index);
+console.log(unique); // [1, 2, 3, 4, 5]
+```
+
+Answer:
+
+`Set` stores unique values and is the cleanest approach for primitives. `filter` + `indexOf` is a common interview alternative without using `Set`.
+
+## 69. What is prototypal inheritance?
+
+```js
+function Person(name) {
+  this.name = name;
+}
+
+Person.prototype.greet = function () {
+  return `Hi, I am ${this.name}`;
+};
+
+function Employee(name, role) {
+  Person.call(this, name);
+  this.role = role;
+}
+
+Employee.prototype = Object.create(Person.prototype);
+Employee.prototype.constructor = Employee;
+
+Employee.prototype.getRole = function () {
+  return this.role;
+};
+
+const emp = new Employee('Ravi', 'Developer');
+console.log(emp.greet());   // Hi, I am Ravi
+console.log(emp.getRole()); // Developer
+console.log(emp instanceof Person);   // true
+console.log(emp instanceof Employee); // true
+```
+
+Answer:
+
+Objects inherit properties through the prototype chain. Setting `Employee.prototype` to an object whose prototype is `Person.prototype` lets employee instances reuse `Person` methods.
+
+## 70. Class syntax vs constructor functions
+
+```js
+class Animal {
+  constructor(name) {
+    this.name = name;
+  }
+
+  speak() {
+    return `${this.name} makes a sound`;
+  }
+}
+
+class Dog extends Animal {
+  speak() {
+    return `${this.name} barks`;
+  }
+}
+
+const dog = new Dog('Bruno');
+console.log(dog.speak()); // Bruno barks
+console.log(dog instanceof Animal); // true
+```
+
+Answer:
+
+ES6 classes are primarily syntactic sugar over constructor functions and prototypes. Under the hood, methods still live on the prototype and `extends` still uses the prototype chain.
+
+## 71. Guess the output of this code?
+
+```js
+const a = {};
+const b = { key: 'b' };
+const c = { key: 'c' };
+
+a[b] = 123;
+a[c] = 456;
+
+console.log(Object.keys(a));
+console.log(a[b]);
+```
+
+## 72. Guess the output of this code?
+
+```js
+console.log([] + []);
+console.log([] + {});
+console.log({} + []);
+console.log(true + true);
+console.log('5' - true);
+```
+
+## 73. Guess the output of this code?
+
+```js
+function foo() {
+  return
+  {
+    bar: 'hello';
+  };
+}
+
+console.log(foo());
+```
+
+## 74. Guess the output of this code?
+
+```js
+let x = 1;
+
+function outer() {
+  let x = 2;
+
+  function inner() {
+    console.log(x);
+  }
+
+  return inner;
+}
+
+const fn = outer();
+fn();
+```
+
+## 75. Guess the output of this code?
+
+```js
+const person = {
+  name: 'Asha',
+  sayName: function () {
+    console.log(this.name);
+
+    setTimeout(function () {
+      console.log(this.name);
+    }, 0);
+
+    setTimeout(() => {
+      console.log(this.name);
+    }, 0);
+  },
+};
+
+person.sayName();
+```
+
+## 76. Implement memoization
+
+```js
+function memoize(fn) {
+  const cache = new Map();
+
+  return function (...args) {
+    const key = JSON.stringify(args);
+
+    if (cache.has(key)) {
+      return cache.get(key);
+    }
+
+    const result = fn.apply(this, args);
+    cache.set(key, result);
+    return result;
+  };
+}
+
+const slowSquare = (n) => {
+  console.log('computing...');
+  return n * n;
+};
+
+const fastSquare = memoize(slowSquare);
+
+console.log(fastSquare(4)); // computing... 16
+console.log(fastSquare(4)); // 16 (from cache)
+```
+
+Answer:
+
+Memoization caches function results for previously seen inputs so repeated calls with the same arguments skip expensive recalculation.
+
+## 77. Rest vs spread
+
+```js
+function sum(...nums) {
+  return nums.reduce((total, n) => total + n, 0);
+}
+
+console.log(sum(1, 2, 3, 4)); // 10
+
+const arr = [1, 2, 3];
+const copy = [...arr, 4];
+console.log(copy); // [1, 2, 3, 4]
+
+const user = { name: 'Asha', age: 25 };
+const updated = { ...user, age: 26 };
+console.log(updated); // { name: 'Asha', age: 26 }
+```
+
+Answer:
+
+Rest (`...` in parameters) collects multiple values into an array. Spread (`...` in arrays/objects) expands values into individual elements or properties.
+
+## 78. `Map` vs plain object
+
+```js
+const obj = {};
+const map = new Map();
+
+const key = { id: 1 };
+
+obj[key] = 'object value'; // key becomes "[object Object]"
+map.set(key, 'map value');
+
+console.log(obj['[object Object]']); // object value
+console.log(map.get(key));           // map value
+console.log(map.size);               // 1
+```
+
+Answer:
+
+`Map` allows any value as a key (including objects), preserves insertion order, and exposes a reliable `.size`. Object keys are always strings or symbols.
+
+## 79. Guess the output of this code?
+
+```js
+console.log(1);
+setTimeout(() => console.log(2), 0);
+
+Promise.resolve().then(() => {
+  console.log(3);
+  setTimeout(() => console.log(4), 0);
+});
+
+console.log(5);
+```
+
+## 80. Guess the output of this code?
+
+```js
+const arr = [1, 2, 3];
+
+arr[10] = 99;
+
+console.log(arr.length);
+console.log(arr[5]);
+console.log(Object.keys(arr));
+```
+
+## 81. Guess the output of this code?
+
+```js
+function Person(name) {
+  this.name = name;
+}
+
+const p1 = new Person('Asha');
+const p2 = Person('Ravi');
+
+console.log(p1.name);
+console.log(typeof p2);
+console.log(name); // in non-strict mode / browser global leakage example
+```
+
+## 82. Guess the output of this code?
+
+```js
+const nums = [1, 2, 3, 4];
+
+const result = nums
+  .map((n) => n * 2)
+  .filter((n) => n > 4)
+  .reduce((sum, n) => sum + n, 0);
+
+console.log(result);
+```
+
+## 83. Write a function that works both as `sum(1)(2)(3)` and `sum(1, 2, 3)`
+
+```js
+function sum(...args) {
+  const add = (...next) => {
+    args = args.concat(next);
+    return add;
+  };
+
+  add.valueOf = () => args.reduce((total, n) => total + n, 0);
+  add.value = add.valueOf();
+
+  return typeof args[0] === 'undefined' ? 0 : add;
+}
+
+console.log(+sum(1)(2)(3));     // 6
+console.log(+sum(1, 2, 3));     // 6
+console.log(sum(4)(6)(8).value); // 18
+```
+
+Answer:
+
+Return a callable function that keeps collecting arguments, and expose the accumulated total through `.value` / `valueOf` so the same API supports both curried and multi-argument calls.
+
+## 84. Event delegation pattern
+
+```js
+// HTML: <ul id="list"><li>One</li><li>Two</li><li>Three</li></ul>
+
+document.getElementById('list').addEventListener('click', (event) => {
+  if (event.target.tagName === 'LI') {
+    console.log('Clicked:', event.target.textContent);
+  }
+});
+```
+
+Answer:
+
+Event delegation attaches one listener to a parent and uses `event.target` to handle clicks on child elements. It reduces listeners, works for dynamically added children, and is efficient for large lists.
+
+## 85. Guess the output of this code?
+
+```js
+let a = 10;
+
+(function () {
+  console.log(a);
+  var a = 20;
+})();
+```
+
+## 86. Guess the output of this code?
+
+```js
+const obj = Object.create(null);
+console.log(obj.toString);
+console.log({}.toString);
+console.log(Object.getPrototypeOf(obj));
+```
+
+## 87. Guess the output of this code?
+
+```js
+function test(a, b = a * 2) {
+  console.log(a, b);
+}
+
+test(5);
+test(5, undefined);
+test(5, 10);
+```
+
+## 88. Guess the output of this code?
+
+```js
+const promise = new Promise((resolve, reject) => {
+  console.log('Executor');
+  resolve('Done');
+  reject('Fail');
+  console.log('After settle');
+});
+
+promise
+  .then((value) => console.log(value))
+  .catch((error) => console.log(error));
+```
+
+## 89. Deep equality check (simple version)
+
+```js
+function deepEqual(a, b) {
+  if (a === b) return true;
+
+  if (
+    typeof a !== 'object' ||
+    a === null ||
+    typeof b !== 'object' ||
+    b === null
+  ) {
+    return false;
+  }
+
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+
+  if (keysA.length !== keysB.length) return false;
+
+  return keysA.every((key) => deepEqual(a[key], b[key]));
+}
+
+console.log(deepEqual({ a: 1, b: { c: 2 } }, { a: 1, b: { c: 2 } })); // true
+console.log(deepEqual({ a: 1 }, { a: 2 })); // false
+```
+
+Answer:
+
+Compare by reference first, then recursively compare own keys and nested values. Production code usually also needs array, Date, Map, and circular-reference handling.
+
+## 90. Compose and pipe utility functions
+
+```js
+const compose =
+  (...fns) =>
+  (value) =>
+    fns.reduceRight((acc, fn) => fn(acc), value);
+
+const pipe =
+  (...fns) =>
+  (value) =>
+    fns.reduce((acc, fn) => fn(acc), value);
+
+const add1 = (n) => n + 1;
+const double = (n) => n * 2;
+const square = (n) => n * n;
+
+console.log(compose(square, double, add1)(3)); // ((3+1)*2)^2 = 64
+console.log(pipe(add1, double, square)(3));    // ((3+1)*2)^2 = 64
+```
+
+Answer:
+
+`compose` applies functions right-to-left; `pipe` applies them left-to-right. Both are useful for building readable transformation pipelines.
