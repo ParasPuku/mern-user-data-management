@@ -1799,13 +1799,10 @@ function mostFrequentCharacter(str) {
 
   for (var i = 0; i < str.length; i++) {
     var char = str[i];
-
     if (char === ' ') {
       continue;
     }
-
     frequency[char] = (frequency[char] || 0) + 1;
-
     if (frequency[char] > maxCount) {
       maxCount = frequency[char];
       maxChar = char;
@@ -1831,6 +1828,29 @@ Count each character using an object.
 While counting, keep track of the character with the highest count.
 
 ---
+
+## 17. Find most Frequent number in the array.
+
+```js
+function findMostFrequent(arr) {
+    let freq = {};
+    let maxCount = 0;
+    let mostFrequent = null;
+    for (let i = 0; i < arr.length; i++) {
+        let item = arr[i];
+        freq[item] = (freq[item] || 0) + 1;
+        if (freq[item] > maxCount) {
+            maxCount = freq[item];
+            mostFrequent = item;
+        }
+    }
+    return mostFrequent;
+}
+console.log(findMostFrequent([1, 2, 3, 2, 4, 2, 3, 3, 3, 2, 4, 4, 4, 4]));
+```
+
+Output - 4
+
 
 ## 18. Replace Spaces With Hyphen
 

@@ -551,6 +551,208 @@ When state changes:
 3. React compares old and new UI.
 4. React updates only changed DOM parts.
 
+### 14. Is react unidirectional or bidirectional?
+React uses a strict unidirectional (one-way) data flow. This design choice means data moves in a single direction throughout your application, specifically from parent components down to child components.
+
+How Unidirectional Flow Works in React
+- Data Down: Parent components pass state information down to child components exclusively through read-only props.
+
+- Immutable Props: Child components cannot directly alter or mutate the props they receive from above.
+
+- Actions Up: If a child component needs to trigger a change in the parent's data, it does so by executing a callback function passed down by that parent.
+
+- Re-rendering: The callback updates the parent component's state, causing the application to re-render and pass the newly updated data back down the tree.
+
+Why React Rejects Bidirectional Flow
+Unlike frameworks that feature implicit two-way data binding (such as Angular or Vue's v-model), React intentionally requires explicit manual updates.
+
+The primary benefits of this choice include:
+- High Predictability: Because data travels along a single path, it is incredibly easy to track exactly where a state change originated.
+
+- Simpler Debugging: You always look "up" the component hierarchy to find out why a specific variable changed.
+
+- Performance Control: React can seamlessly minimize unnecessary browser updates by knowing exactly which branch of the tree modified its state.
+
+### 15. how can we change the props value in react?
+In React, you cannot change props values directly within a child component because props are immutable (read-only). React follows a strict strict unidirectional data flow, meaning data can only flow downward from parent to child.
+
+To change a prop value, you must manage that data as state in the parent component and update it from there.
+
+Here are the three standard patterns used to handle this in React.
+
+1. The Standard Way: Pass a Callback Function (Lift State Up)If a child component needs to trigger a change to its props, the parent component must pass down a function along with the prop. The child calls this function, which updates the state in the parent and forces a re-render with the new prop values.
+
+Parent Component
+
+```jsx
+import { useState } from 'react';
+import Child from './Child';
+
+function Parent() {
+  // 1. Define state in the parent
+  const [name, setName] = useState("John");
+
+  rconst handleNameChange = (newName) => {
+    setName(newName);
+  }
+
+  return (
+    <div>
+      {/* 2. Pass both the state and the setter function as props */}
+      <Child userName={name} onNameChange={handleNameChange} />
+    </div>
+  );
+}
+
+OR
+
+import { useState } from 'react';
+import Child from './Child';
+
+function Parent() {
+  // 1. Define state in the parent
+  const [name, setName] = useState("John");
+
+  return (
+    <div>
+      {/* 2. Pass both the state and the setter function as props */}
+      <Child userName={name} onNameChange={setName} />
+    </div>
+  );
+}
+```
+
+Child Component
+
+```jsx
+function Child({ userName, onNameChange }) {
+  return (
+    <div>
+      <p>Current User: {userName}</p>
+      {/* 3. Execute the parent's function to trigger an update */}
+      <button onClick={() => onNameChange("Paras")}>
+        Change Name to Alice
+      </button>
+    </div>
+  );
+}
+```
+
+2. For Local Tweaks: Use the Prop as Initial State
+
+If you want to use the incoming prop value merely as a starting point, and the parent doesn't care about subsequent changes, convert it into local state inside the child.
+
+```jsx
+import { useState } from 'react';
+
+function Counter({ initialCount }) {
+  // Copy the prop value into a local state variable
+  const [count, setCount] = useState(initialCount);
+
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>Increment</button>
+    </div>
+  );
+}
+```
+
+Note: If the parent updates initialCount later, the local count state will not automatically update. It only sets the value on the initial mount.
+
+3. For UI Formatting: Create a Local Variable
+
+If you just want to transform the prop's appearance (e.g., formatting text or calculating a total) without modifying the original data structure, store the result in a local variable or inline it.
+
+```jsx
+function UserCard({ firstName }) {
+  // Create a new local variable instead of changing props.firstName directly
+  const upperName = firstName.toUpperCase();
+
+  return <h1>{upperName}</h1>;
+}
+```
+
+### 14. can we render list of item using for loop or forEach or filter?
+
+Yes, you can use a for loop or forEach to render a list of items in React, but you cannot use them inline inside your JSX block.
+
+JSX only accepts expressions that return a value (like .map()). Because for and forEach are statements that return undefined, you must build an array of JSX elements outside of the JSX return block first.
+
+Here is how to do it correctly with both methods, along with the standard React approach.
+
+1. Using a Standard for LoopTo use a for loop, create an empty array before your return statement, push the JSX elements into it, and then inject that array into your JSX.
+```jsx
+function NumberList() {
+  const items = ['Apple', 'Banana', 'Cherry'];
+  const listItems = []; // 1. Create an empty array
+
+  // 2. Loop and push JSX into the array
+  for (let i = 0; i < items.length; i++) {
+    listItems.push(<li key={i}>{items[i]}</li>);
+  }
+
+  // 3. Render the array inside JSX
+  return <ul>{listItems}</ul>;
+}
+
+OR
+
+import React, { useState } from 'react';
+function App() {
+  const renderListItem = () => {
+    const items = [];
+    for(var i=0; i<10; i++) {
+      items.push((<li key={i}>List - {i}</li>))
+    }
+    return items;
+  }
+  return (
+    <div>
+      <ul>{renderListItem()}</ul>
+    </div>
+  );
+}
+export default App
+```
+
+2. Using forEach
+
+Like the for loop, forEach does not return anything. You must manually push items into an external array before the return statement.
+
+```jsx
+function GroceryList() {
+  const items = ['Milk', 'Eggs', 'Bread'];
+  const listItems = [];
+
+  // Loop and populate the array
+  items.forEach((item, index) => {
+    listItems.push(<li key={index}>{item}</li>);
+  });
+
+  return <ul>{listItems}</ul>;
+}
+```
+
+Why React Developers Prefer .map() InsteadWhile for and forEach work, the standard React convention is to use .map().The .map() method transforms an array of data into an array of JSX elements and returns it instantly. This allows you to write the loop inline directly inside your JSX, keeping your code cleaner and more declarative.
+
+```jsx
+function StandardList() {
+  const items = ['Sony', 'LG', 'Samsung'];
+
+  // Clean, inline rendering
+  return (
+    <ul>
+      {items.map((item, index) => (
+        <li key={index}>{item}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+Important Rule: Always Use a key PropNo matter which loop you choose, you must always provide a unique key prop to the outermost element in your loop. This helps React identify which items have changed, been added, or been removed, ensuring optimal performance.
+
 ### 14. What are the ways to make a responsive application that supports all devices?
 
 A responsive application adapts properly across mobile, tablet, laptop, desktop, and large screens.
@@ -1036,7 +1238,9 @@ Bad:
 users.map((user, index) => <UserRow key={index} user={user} />);
 ```
 
-Using index can cause bugs when list order changes.
+Using index can cause bugs when list order changes, as index are position of the elements so if any elements gets deleted the from the list, the item position will get shift so in this case React will have challenge to figure out which element gets updated. 
+
+If we have a unique key for all of the element and it gets deleted then element of the unique key of others will not change. 
 
 ## Virtual DOM and Reconciliation
 
@@ -1059,6 +1263,75 @@ Interview answer:
 ```text
 Reconciliation is the process where React compares previous and next UI trees and efficiently updates the real DOM.
 ```
+
+### How re-rendered gets happened when a state gets changes?
+
+```jsx
+import { useState } from 'react';
+const App = () => {
+  const [firstName, setFirstName] = useState("paras");
+  const [lastName, setLastName] = useState("puru");
+  const [address, setAddress] = useState("Bengaluru");
+  const [sex, setSex] = useState("Male");
+
+  const handleAddress = () => {
+    setAddress("Ranchi");
+  };
+
+  return (
+    <UserCard 
+      firstName={firstName}  
+      lastName={lastName}  
+      address={address}  
+      sex={sex} 
+      handleAddressChange={handleAddress}
+    />
+  );
+};
+```
+
+```jsx
+function UserCard({ firstName, lastName, sex, address, handleAddressChange }) {
+  const upperName = firstName.toUpperCase();
+
+  return (
+    <div className="wrapper">
+      <div>{upperName}</div>
+      <div>{lastName}</div>
+      <div>{sex}</div>
+      <div onClick={handleAddressChange} className="address">
+        {address}
+      </div>
+    </div>
+  );
+}
+export default App;
+```
+1. Will React only compare the address div, or re-create the UserCard?
+
+React will execute the entire UserCard component function from scratch.
+
+Here is the step-by-step breakdown of how it executes:
+
+- State Change triggers Root Update: Clicking the address calls handleAddress(), which calls setAddress("Ranchi") inside <App />.
+
+- App Re-renders: Because state changed, the entire App component function re-runs.
+
+- UserCard Recalculates: Inside App, React encounters <UserCard ... /> with a new address prop value ("Ranchi").
+
+- Function Re-execution: React calls the UserCard function again. Every line of code inside UserCard runs again, including the recreation of your local upperName variable.
+
+2. How many Virtual DOMs get created, and for which component?
+
+Conceptually, only 1 new Virtual DOM tree is created for this entire tree snapshot, but let's break down exactly what gets created for your components:V
+
+- irtual DOM Element Creation: When App and UserCard re-run, React builds a brand new Virtual DOM representation (a lightweight JavaScript tree object) for both the App component and the entire UserCard component structure (the wrapper div and all four inner child divs).
+
+- The Reconciliation (Diffing) Process: React takes this newly generated Virtual DOM tree and compares it side-by-side with the old Virtual DOM tree from before the click.
+
+- The Target Update: During this comparison, React's diffing algorithm notices that firstName, lastName, and sex have identical values as before. The only difference it finds is the text node inside the address div ("Bengaluru" vs "Ranchi").
+
+- Real DOM Paint: Because React is highly optimised, it skips updating the other elements in the real browser DOM. It updates only the single text node inside the real .address HTML element.
 
 ### 23. Does React always update the real DOM on render?
 
