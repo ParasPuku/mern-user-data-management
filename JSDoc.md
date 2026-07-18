@@ -1892,9 +1892,150 @@ class Admin extends User {
 }
 ```
 
+### 50. What is composition in JavaScript?
+
+Composition means building complex behavior by **combining smaller parts**, instead of creating a long parent-child inheritance chain.
+
+Simple idea:
+
+```text
+Inheritance  -> is-a   (Admin is a User)
+Composition  -> has-a  (User has an Address, has a Logger)
+```
+
+In interviews, "composition" usually means one of these two:
+
+1. **Object composition** — an object uses other objects/functions as parts
+2. **Function composition** — combine small functions into one pipeline
+
+#### 1) Object composition (most common meaning)
+
+Instead of forcing everything through `extends`, you create an object that **owns or uses** other helpers.
+
+Inheritance style:
+
+```js
+class CanFly {
+  fly() {
+    console.log('flying');
+  }
+}
+
+// Awkward: not every bird needs the same hierarchy
+class Bird extends CanFly {}
+```
+
+Composition style:
+
+```js
+const canFly = {
+  fly() {
+    console.log(`${this.name} is flying`);
+  },
+};
+
+const canSwim = {
+  swim() {
+    console.log(`${this.name} is swimming`);
+  },
+};
+
+function createDuck(name) {
+  return {
+    name,
+    ...canFly,
+    ...canSwim,
+  };
+}
+
+const duck = createDuck('Donald');
+duck.fly();  // Donald is flying
+duck.swim(); // Donald is swimming
+```
+
+Another practical example (has-a):
+
+```js
+function createLogger() {
+  return {
+    log(message) {
+      console.log(`[log] ${message}`);
+    },
+  };
+}
+
+function createUser(name, logger = createLogger()) {
+  return {
+    name,
+    login() {
+      logger.log(`${name} logged in`);
+    },
+  };
+}
+
+const user = createUser('Paras');
+user.login(); // [log] Paras logged in
+```
+
+Here `User` does not inherit from `Logger`. It **uses** a logger. That is composition.
+
+#### 2) Function composition
+
+Function composition means the output of one function becomes the input of the next.
+
+```js
+const trim = (text) => text.trim();
+const toLower = (text) => text.toLowerCase();
+const exclaim = (text) => `${text}!`;
+
+// compose right-to-left: exclaim(toLower(trim(value)))
+const compose =
+  (...fns) =>
+  (value) =>
+    fns.reduceRight((acc, fn) => fn(acc), value);
+
+const formatMessage = compose(exclaim, toLower, trim);
+
+formatMessage('  Hello  '); // "hello!"
+```
+
+Pipe style (left-to-right, often easier to read):
+
+```js
+const pipe =
+  (...fns) =>
+  (value) =>
+    fns.reduce((acc, fn) => fn(acc), value);
+
+const formatMessage = pipe(trim, toLower, exclaim);
+formatMessage('  Hello  '); // "hello!"
+```
+
+#### Composition vs inheritance
+
+| Point | Inheritance | Composition |
+|---|---|---|
+| Relationship | is-a | has-a / uses |
+| Flexibility | Can become rigid deep trees | Easy to mix behaviors |
+| Coupling | Child depends on parent | Parts stay more independent |
+| Common advice | Useful for true hierarchies | Prefer when behaviors vary |
+
+Why many teams prefer composition:
+
+- avoids deep and fragile class hierarchies
+- easier to reuse small behaviors
+- clearer ownership of responsibilities
+- fits JavaScript well (objects + functions are easy to combine)
+
+#### Interview answer
+
+```text
+Composition means building features by combining smaller objects or functions, instead of relying only on inheritance. In JavaScript, object composition is a has-a relationship, like a user using a logger. Function composition combines small functions into a pipeline. I prefer composition when behavior needs to be mixed flexibly, and I use inheritance only for clear is-a hierarchies.
+```
+
 ## Arrays
 
-### 50. Difference between map, filter, and reduce?
+### 51. Difference between map, filter, and reduce?
 
 `map` transforms each item.
 
@@ -1914,7 +2055,7 @@ class Admin extends User {
 [1, 2, 3].reduce((sum, n) => sum + n, 0); // 6
 ```
 
-### 51. Difference between forEach and map?
+### 52. Difference between forEach and map?
 
 `forEach` runs a function for each item and returns `undefined`.
 
@@ -1932,7 +2073,7 @@ console.log(a); // undefined
 console.log(b); // [2, 4, 6]
 ```
 
-### 52. How to remove duplicates from an array?
+### 53. How to remove duplicates from an array?
 
 ```js
 const unique = [...new Set([1, 2, 2, 3])];
@@ -1940,7 +2081,7 @@ const unique = [...new Set([1, 2, 2, 3])];
 console.log(unique); // [1, 2, 3]
 ```
 
-### 53. How to flatten an array?
+### 54. How to flatten an array?
 
 ```js
 const arr = [1, [2, [3]]];
@@ -1959,13 +2100,13 @@ const flatten = (arr) =>
   );
 ```
 
-### 54. Difference between Stateful and Stateless.
+### 55. Difference between Stateful and Stateless.
 
 Stateful means an application or system remembers previous interactions (its context or "state").
 
 Stateless means each request is treated as brand new, with no memory of past events.
 
-### 55. Difference between slice and splice?
+### 56. Difference between slice and splice?
 
 `slice` returns a copy and does not mutate original array.
 
@@ -1990,7 +2131,7 @@ The splice(start, deleteCount) method takes two primary numbers here:
 
 ## ES6+ Features
 
-### 56. What are template literals?
+### 57. What are template literals?
 
 Template literals allow string interpolation.
 
@@ -1999,7 +2140,7 @@ const name = 'Paras';
 console.log(`Hello ${name}`);
 ```
 
-### 57. What is destructuring?
+### 58. What is destructuring?
 
 Destructuring extracts values from arrays or objects.
 
@@ -2015,7 +2156,7 @@ Object:
 const { name, email } = user;
 ```
 
-### 58. What is spread operator?
+### 59. What is spread operator?
 
 Spread expands values.
 
@@ -2033,7 +2174,7 @@ const user = { name: 'Paras' };
 const updated = { ...user, age: 25 };
 ```
 
-### 59. What is rest operator?
+### 60. What is rest operator?
 
 Rest collects remaining values.
 
@@ -2051,7 +2192,7 @@ Object:
 const { name, ...rest } = user;
 ```
 
-### 60. What are default parameters?
+### 61. What are default parameters?
 
 ```js
 function greet(name = 'Guest') {
@@ -2059,7 +2200,7 @@ function greet(name = 'Guest') {
 }
 ```
 
-### 61. What are modules?
+### 62. What are modules?
 
 Modules allow code to be split and reused.
 
@@ -2077,7 +2218,7 @@ import { add } from './math.js';
 
 ## Copying and Immutability
 
-### 62. Shallow copy vs deep copy?
+### 63. Shallow copy vs deep copy?
 
 Shallow copy copies only the first level.
 
@@ -2101,7 +2242,7 @@ Deep copy copies nested objects also.
 const deepCopy = structuredClone(user);
 ```
 
-### 63. How to deep clone an object?
+### 64. How to deep clone an object?
 
 Modern way:
 
@@ -2138,7 +2279,7 @@ Definition:
 
 ## Asynchronous JavaScript
 
-### 64. What is asynchronous JavaScript?
+### 65. What is asynchronous JavaScript?
 
 Asynchronous JavaScript allows long-running work without blocking the main thread.
 
@@ -2161,7 +2302,7 @@ Examples:
 - Web APIs: Heavy tasks (like fetching data) are handed over to the browser environment.
 - Event Loop: This mechanism monitors and pushes completed asynchronous tasks back into the JavaScript execution thread when it becomes empty.
 
-### 65. What is event loop?
+### 66. What is event loop?
 
 Event loop coordinates execution of:
 
@@ -2176,7 +2317,7 @@ Interview answer:
 The event loop checks if the call stack is empty, then pushes queued callbacks or microtasks into the call stack for execution. Microtasks like Promise callbacks run before macrotasks like setTimeout.
 ```
 
-### 66. Output question: event loop
+### 67. Output question: event loop
 
 ```js
 console.log('A');
@@ -2205,7 +2346,7 @@ Promise microtask runs next.
 setTimeout macrotask runs after microtasks.
 ```
 
-### 67. What is a Promise?
+### 68. What is a Promise?
 
 A Promise is an object represents the eventual completion (or failure) of an asynchronous operation and its resulting value, and promise represents a future value.
 
@@ -2226,7 +2367,7 @@ const promise = new Promise((resolve, reject) => {
 });
 ```
 
-### 68. What is async/await?
+### 69. What is async/await?
 
 `async/await` is syntax built on promises.
 
@@ -2243,7 +2384,7 @@ async function fetchUser() {
 }
 ```
 
-### 69. Promise methods: all, allSettled, race, and any
+### 70. Promise methods: all, allSettled, race, and any
 
 Assume we have three async tasks:
 
@@ -2834,7 +2975,7 @@ Promise.race       -> first finished wins, success or failure
 Promise.any        -> first success wins
 ```
 
-### 70. What is anonymous function with an example?
+### 71. What is anonymous function with an example?
 
 An anonymous function is a function without a name.
 
@@ -2941,7 +3082,7 @@ Named function has a function name.
 Anonymous function does not have a function name.
 ```
 
-### 71. What is callback with an example?
+### 72. What is callback with an example?
 
 A callback is a function that is passed as an argument to another function and is executed later.
 
@@ -3051,7 +3192,7 @@ Important interview point:
 Callbacks are useful, but too many nested callbacks can make code hard to read. This problem is called callback hell.
 ```
 
-### 72. What is callback hell?
+### 73. What is callback hell?
 
 Callback hell is nested callbacks that make code hard to read.
 
@@ -3075,7 +3216,7 @@ Solution:
 
 ## Error Handling
 
-### 73. How to handle errors in JavaScript?
+### 74. How to handle errors in JavaScript?
 
 Synchronous:
 
@@ -3097,7 +3238,7 @@ try {
 }
 ```
 
-### 74. What is finally?
+### 75. What is finally?
 
 `finally` runs whether error happens or not.
 
@@ -3113,13 +3254,13 @@ try {
 
 ## DOM and Browser
 
-### 75. What is DOM?
+### 76. What is DOM?
 
 DOM means Document Object Model.
 
 It is a tree representation of HTML that JavaScript can read and modify.
 
-### 76. Event bubbling vs capturing?
+### 77. Event bubbling vs capturing?
 
 Capturing:
 
@@ -3135,7 +3276,7 @@ child -> parent -> document
 
 By default, events bubble.
 
-### 77. What is event delegation?
+### 78. What is event delegation?
 
 Event delegation means adding one event listener to a parent instead of many children.
 
@@ -3154,7 +3295,7 @@ Benefits:
 - better performance
 - works for dynamic elements
 
-### 78. localStorage vs sessionStorage vs cookies?
+### 79. localStorage vs sessionStorage vs cookies?
 
 `localStorage`:
 
@@ -3173,7 +3314,7 @@ Cookies:
 - can be HTTP-only
 - useful for auth
 
-### 79. What is CORS?
+### 80. What is CORS?
 
 CORS means Cross-Origin Resource Sharing.
 
@@ -3190,13 +3331,13 @@ These are different origins.
 
 ## Node.js Basics
 
-### 80. What is Node.js?
+### 81. What is Node.js?
 
 Node.js is a JavaScript runtime built on Chrome V8 engine.
 
 It allows JavaScript to run outside the browser.
 
-### 81. CommonJS vs ES Modules?
+### 82. CommonJS vs ES Modules?
 
 CommonJS:
 
@@ -3218,7 +3359,7 @@ This app uses ES Modules:
 "type": "module"
 ```
 
-### 82. What is middleware?
+### 83. What is middleware?
 
 Middleware is a function that runs between request and response.
 
@@ -3239,7 +3380,7 @@ app.use(logger);
 
 ## Security Questions
 
-### 83. What is XSS?
+### 84. What is XSS?
 
 XSS means Cross-Site Scripting.
 
@@ -3252,7 +3393,7 @@ Prevention:
 - use Content Security Policy
 - avoid dangerously setting HTML
 
-### 84. What is CSRF?
+### 85. What is CSRF?
 
 CSRF means Cross-Site Request Forgery.
 
@@ -3264,7 +3405,7 @@ Prevention:
 - CSRF tokens
 - origin checks
 
-### 85. Why should JWT not be stored in localStorage?
+### 86. Why should JWT not be stored in localStorage?
 
 Because XSS can read localStorage.
 
@@ -3276,7 +3417,7 @@ HTTP-only secure cookie
 
 ## Performance Questions
 
-### 86. What is debounce?
+### 87. What is debounce?
 
 Debounce delays function execution until user stops triggering it.
 
@@ -3301,7 +3442,7 @@ function debounce(fn, delay) {
 }
 ```
 
-### 87. What is throttle?
+### 88. What is throttle?
 
 Throttle ensures function runs at most once in a given time.
 
@@ -3327,7 +3468,7 @@ function throttle(fn, delay) {
 }
 ```
 
-### 88. What is memoization?
+### 89. What is memoization?
 
 Memoization caches expensive function results.
 
@@ -3353,7 +3494,7 @@ function memoize(fn) {
 
 ## Tricky Output Questions
 
-### 89. Output question: var loop
+### 90. Output question: var loop
 
 ```js
 for (var i = 0; i < 3; i += 1) {
@@ -3373,7 +3514,7 @@ Reason:
 
 `var` is function scoped. All callbacks share same `i`.
 
-### 90. Output question: let loop
+### 91. Output question: let loop
 
 ```js
 for (let i = 0; i < 3; i += 1) {
@@ -3393,7 +3534,7 @@ Reason:
 
 `let` creates a new binding for each loop iteration.
 
-### 91. Output question: object reference
+### 92. Output question: object reference
 
 ```js
 const a = { value: 1 };
@@ -3414,7 +3555,7 @@ Reason:
 
 `a` and `b` point to same object.
 
-### 92. Output question: typeof null
+### 93. Output question: typeof null
 
 ```js
 console.log(typeof null);
@@ -3430,7 +3571,7 @@ Reason:
 
 Historical JavaScript behavior.
 
-### 93. Output question: equality
+### 94. Output question: equality
 
 ```js
 console.log([] == false);
@@ -3448,7 +3589,7 @@ Reason:
 
 `==` does coercion, `===` does not.
 
-### 94. Output question: closure
+### 95. Output question: closure
 
 ```js
 function outer() {
@@ -3479,7 +3620,7 @@ Inner function remembers outer `count`.
 
 ## Coding Questions
 
-### 95. Reverse a string
+### 96. Reverse a string
 
 ```js
 function reverseString(str) {
@@ -3489,7 +3630,7 @@ function reverseString(str) {
 console.log(reverseString('hello')); // 'olleh'
 ```
 
-### 96. Check palindrome
+### 97. Check palindrome
 
 ```js
 function isPalindrome(str) {
@@ -3498,7 +3639,7 @@ function isPalindrome(str) {
 }
 ```
 
-### 97. Find max number
+### 98. Find max number
 
 ```js
 function findMax(numbers) {
@@ -3517,7 +3658,7 @@ function findMax(numbers) {
 }
 ```
 
-### 98. Count character frequency
+### 99. Count character frequency
 
 ```js
 function countChars(str) {
@@ -3528,7 +3669,7 @@ function countChars(str) {
 }
 ```
 
-### 99. Group array by property
+### 100. Group array by property
 
 ```js
 function groupBy(items, key) {
@@ -3549,7 +3690,7 @@ const users = [
 console.log(groupBy(users, 'role'));
 ```
 
-### 100. Check anagram
+### 101. Check anagram
 
 ```js
 function sortText(text) {
@@ -3561,7 +3702,7 @@ function isAnagram(a, b) {
 }
 ```
 
-### 101. Implement once function
+### 102. Implement once function
 
 ```js
 function once(fn) {
@@ -3579,7 +3720,7 @@ function once(fn) {
 }
 ```
 
-### 102. Implement sleep
+### 103. Implement sleep
 
 ```js
 function sleep(ms) {
@@ -3589,7 +3730,7 @@ function sleep(ms) {
 await sleep(1000);
 ```
 
-### 103. Retry async function
+### 104. Retry async function
 
 ```js
 async function retry(fn, attempts = 3) {
@@ -3609,7 +3750,7 @@ async function retry(fn, attempts = 3) {
 
 ## React/Frontend JavaScript Questions
 
-### 104. What is immutability and why is it important?
+### 105. What is immutability and why is it important?
 
 Immutability means not changing existing data directly.
 
@@ -3630,7 +3771,7 @@ Why important:
 - React change detection
 - Redux best practice
 
-### 105. Why should keys be stable in React lists?
+### 106. Why should keys be stable in React lists?
 
 Stable keys help React identify which items changed.
 
@@ -3646,7 +3787,7 @@ Good:
 users.map((user) => <User key={user.id} user={user} />);
 ```
 
-### 106. What is optional chaining?
+### 107. What is optional chaining?
 
 Optional chaining safely accesses nested values.
 
@@ -3660,7 +3801,7 @@ Without optional chaining:
 const city = user && user.address && user.address.city;
 ```
 
-### 107. What is nullish coalescing?
+### 108. What is nullish coalescing?
 
 `??` returns right side only if left side is `null` or `undefined`.
 
@@ -3677,7 +3818,7 @@ console.log(0 ?? 10); // 0
 
 ## Backend JavaScript Questions
 
-### 108. What is asyncHandler in Express?
+### 109. What is asyncHandler in Express?
 
 `asyncHandler` wraps async route handlers and forwards errors to Express error middleware.
 
@@ -3697,7 +3838,7 @@ app.get('/users', asyncHandler(async (req, res) => {
 }));
 ```
 
-### 109. Why use environment variables?
+### 110. Why use environment variables?
 
 Environment variables store configuration outside code.
 
@@ -3710,7 +3851,7 @@ Examples:
 
 Never hardcode secrets in code.
 
-### 110. What is JSON?
+### 111. What is JSON?
 
 JSON means JavaScript Object Notation.
 
@@ -3725,7 +3866,7 @@ Example:
 }
 ```
 
-### 111. JSON.stringify vs JSON.parse?
+### 112. JSON.stringify vs JSON.parse?
 
 `JSON.stringify` converts object to JSON string.
 
@@ -3741,37 +3882,37 @@ JSON.parse('{"name":"Paras"}');
 
 ## Most Important Short Interview Answers
 
-### 112. Explain closure in one line.
+### 113. Explain closure in one line.
 
 ```text
 A closure is when a function remembers variables from its outer scope even after the outer function has returned.
 ```
 
-### 113. Explain event loop in one line.
+### 114. Explain event loop in one line.
 
 ```text
 The event loop moves async callbacks and microtasks into the call stack when the stack is empty.
 ```
 
-### 114. Explain promise in one line.
+### 115. Explain promise in one line.
 
 ```text
 A promise represents a future value that can be pending, fulfilled, or rejected.
 ```
 
-### 115. Explain this in one line.
+### 116. Explain this in one line.
 
 ```text
 this refers to the execution context and depends on how a function is called.
 ```
 
-### 116. Explain prototype in one line.
+### 117. Explain prototype in one line.
 
 ```text
 Prototype is JavaScript's inheritance mechanism where objects can access properties and methods from another object.
 ```
 
-### 117. Explain hoisting in one line.
+### 118. Explain hoisting in one line.
 
 ```text
 Hoisting is JavaScript's behavior of processing declarations before code execution.
@@ -3789,6 +3930,7 @@ Must know:
 - `this`
 - arrow functions
 - prototypes
+- inheritance vs composition
 - promises
 - async/await
 - event loop
