@@ -1264,7 +1264,7 @@ Interview answer:
 Reconciliation is the process where React compares previous and next UI trees and efficiently updates the real DOM.
 ```
 
-### How re-rendered gets happened when a state gets changes?
+### 22. How re-rendered gets happened when a state gets changes?
 
 ```jsx
 import { useState } from 'react';
@@ -1332,6 +1332,45 @@ Conceptually, only 1 new Virtual DOM tree is created for this entire tree snapsh
 - The Target Update: During this comparison, React's diffing algorithm notices that firstName, lastName, and sex have identical values as before. The only difference it finds is the text node inside the address div ("Bengaluru" vs "Ranchi").
 
 - Real DOM Paint: Because React is highly optimised, it skips updating the other elements in the real browser DOM. It updates only the single text node inside the real .address HTML element.
+
+### 23. Difference between Reconciliation and Diffing, and are both the same?
+No, Reconciliation and Diffing are not the same thing, but they are closely related.
+
+Think of Reconciliation as the entire project and Diffing as the specific step used to complete that project.
+
+Here is the precise breakdown of the differences:
+
+1. The Core Definitions
+
+Reconciliation is the whole process. It is React’s entire workflow of syncronizing the Virtual DOM with the Real Browser DOM. It includes everything from detecting a state change, running the component functions, generating the new Virtual DOM, comparing it to the old one, and finally updating the screen.
+
+Diffing is the comparison algorithm. It is a specific sub-step inside the reconciliation process. 
+It is the raw mathematical calculation that compares the old Virtual DOM tree with the new Virtual DOM tree to find exactly what changed.
+
+2. A Real-World Analogy: Renovating a House
+Imagine you want to renovate a room in your house:
+
+The Blueprint: The Virtual DOM.
+
+The Real House: The Real Browser DOM.
+
+Diffing: This is the inspector walking in with the old blueprint and the new blueprint, comparing them side-by-side, and marking with a red pen: "The couch moved, but the windows and walls are exactly the same.
+
+"Reconciliation: This is the entire renovation process. It includes drawing the new blueprint, hiring the inspector to do the Diffing, and then sending the construction crew to move only the couch without knocking down the walls.
+
+3. How They Fit Into Your UserCard Example
+
+When you clicked the address div in your previous example, here is how both concepts played out:
+
+- Reconciliation Starts: You clicked the button, state changed to "Ranchi", and React kicked off the Reconciliation process.
+
+- New Tree Generation: React executed UserCard and generated a new Virtual DOM tree.
+
+- The Diffing Step (The Algorithm): React ran its Diffing algorithm. It compared the old tree to the new tree. It quickly determined:
+  - First 3 divs? No change.
+  - Address div text node? Changed from "Bengaluru" to "Ranchi".
+
+- Reconciliation Completes: React took the results of that Diffing step, went to the real browser DOM, and updated just that one text node. The reconciliation process is now complete.
 
 ### 23. Does React always update the real DOM on render?
 
@@ -1655,7 +1694,11 @@ Summary Checklist
 
 ### 27. What is useState?
 
-`useState` stores local component state.
+`useState` stores local component state. 
+
+useState is a built-in React Hook that allows you to add state variables to functional components.
+
+It is used to track, store, and update data that changes over time (like form inputs, counters, or toggle menus), automatically triggering a UI re-render whenever the data changes.
 
 Example:
 
@@ -1851,6 +1894,8 @@ setRole('Admin');
 React can render once instead of twice.
 
 ### 31. What is useEffect?
+
+`useEffect` is a React Hook that allows you to run side effects in function components — things like fetching data, subscribing to something, manually changing the DOM, or setting timers. It runs after React renders the component.
 
 `useEffect` runs side effects after render.
 

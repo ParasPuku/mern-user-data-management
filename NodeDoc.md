@@ -1012,6 +1012,205 @@ Benefits:
 - easy to change per environment
 - useful for local, staging, and production configs
 
+### 20.7. What are built-in global objects in Node.js? What are pseudo-globals?
+
+Simple definition:
+
+**Global objects** are available in every module without `require` or `import`.
+
+**Pseudo-globals** look like globals, but they are **not** on the `global` object. Node injects them into each module scope.
+
+#### Built-in true globals
+
+| Global | What it is |
+|---|---|
+| `global` | The global namespace object (like `window` in browsers) |
+| `process` | Info and control of the current Node process |
+| `console` | Logging to stdout/stderr |
+| `Buffer` | Binary data handling |
+| `setTimeout` / `clearTimeout` | Timers |
+| `setInterval` / `clearInterval` | Repeated timers |
+| `setImmediate` / `clearImmediate` | Run after I/O (check phase) |
+| `queueMicrotask` | Schedule a microtask |
+| `URL` / `URLSearchParams` | URL parsing |
+| `TextEncoder` / `TextDecoder` | Text encoding helpers |
+| `performance` | Timing and performance marks |
+| `structuredClone` | Deep clone values |
+| `fetch` / `FormData` / `Headers` / `Request` / `Response` | Built-in HTTP client APIs (modern Node) |
+| `AbortController` / `AbortSignal` | Cancel async work |
+| `atob` / `btoa` | Base64 helpers |
+| `crypto` (webcrypto) | Web Crypto API on `globalThis.crypto` |
+
+Examples:
+
+```js
+console.log(global === globalThis); // true in Node
+console.log(process.pid);
+console.log(Buffer.from('hello').toString('hex'));
+setTimeout(() => console.log('timer'), 0);
+```
+
+#### Pseudo-globals (module-scoped, not true globals)
+
+These are provided by CommonJS module wrapping. They exist inside each file, but **are not** properties of `global`:
+
+| Pseudo-global | Meaning |
+|---|---|
+| `__dirname` | Absolute path of the current module's folder |
+| `__filename` | Absolute path of the current module file |
+| `exports` | Shortcut for `module.exports` |
+| `module` | Current module object |
+| `require` | Function to load modules |
+
+Example:
+
+```js
+console.log(__dirname);
+console.log(__filename);
+console.log(typeof require); // 'function' in CJS
+
+console.log(global.__dirname); // undefined (not a true global)
+console.log(global.require);   // undefined (not a true global)
+```
+
+Why they are called "pseudo":
+
+```js
+// Node wraps each CommonJS file roughly like this:
+(function (exports, require, module, __filename, __dirname) {
+  // your code runs here
+});
+```
+
+So `__dirname`, `__filename`, `require`, `module`, and `exports` are function parameters, not real globals.
+
+Note for ESM:
+
+```js
+// In ES Modules, __dirname and __filename are NOT available by default.
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+```
+
+Interview answer:
+
+```text
+True globals like process, console, Buffer, and timers are available everywhere without importing. Pseudo-globals like __dirname, __filename, require, module, and exports are injected per CommonJS module and are not on the global object.
+```
+
+### 20.8. How do you create custom globals in Node.js?
+
+Simple definition:
+
+You can attach values to `global` (or `globalThis`) so every file can use them without importing. This works, but it is usually a bad design choice.
+
+Example — creating a custom global:
+
+```js
+// setup.js
+global.appName = 'UserDataApp';
+global.config = {
+  port: process.env.PORT || 5001,
+  env: process.env.NODE_ENV || 'development',
+};
+
+// any other file
+console.log(appName);       // UserDataApp
+console.log(global.config); // { port: 5001, env: 'development' }
+```
+
+Using `globalThis` (preferred modern way):
+
+```js
+globalThis.logger = {
+  info: (msg) => console.log(`[INFO] ${msg}`),
+  error: (msg) => console.error(`[ERROR] ${msg}`),
+};
+
+logger.info('Server started');
+```
+
+Load setup early:
+
+```js
+// server.js
+require('./setup'); // must run before other modules use the global
+require('./app');
+```
+
+Safer alternative (recommended):
+
+```js
+// config.js
+module.exports = {
+  port: process.env.PORT || 5001,
+  env: process.env.NODE_ENV || 'development',
+};
+
+// app.js
+const config = require('./config');
+console.log(config.port);
+```
+
+Interview answer:
+
+```text
+You create custom globals by assigning to global or globalThis. Prefer exporting a shared module instead, because explicit imports are clearer, easier to test, and less error-prone than hidden globals.
+```
+
+### 20.9. Why should we avoid overusing globals?
+
+Simple definition:
+
+Globals create shared mutable state that is hard to track, hard to test, and easy to break as the app grows.
+
+Problems with globals:
+
+1. **Hidden dependencies** — a file uses something that is not imported, so readers cannot see where it comes from.
+2. **Name collisions** — two libraries may overwrite the same global name.
+3. **Harder testing** — tests share and mutate global state between cases.
+4. **Harder debugging** — any file can change the value unexpectedly.
+5. **Race / load-order bugs** — if setup runs late, other modules may see `undefined`.
+6. **Scaling issues** — in cluster/worker setups, each process has its own globals (not shared memory).
+
+Bad example:
+
+```js
+global.db = connectDb();
+
+// later somewhere else
+db.query('SELECT * FROM users'); // unclear who owns db, hard to mock
+```
+
+Good example:
+
+```js
+// db.js
+const mongoose = require('mongoose');
+
+async function connectDb() {
+  await mongoose.connect(process.env.MONGODB_URI);
+  return mongoose.connection;
+}
+
+module.exports = { connectDb };
+```
+
+When a global is acceptable:
+
+- built-in Node globals (`process`, `console`, `Buffer`)
+- rare app bootstrap helpers (still prefer modules)
+- polyfills in carefully controlled environments
+
+Interview answer:
+
+```text
+Avoid custom globals because they hide dependencies, cause collisions, make testing harder, and create unexpected shared state. Prefer modules, dependency injection, or a config file that you import explicitly.
+```
+
 ## Express.js
 
 ### 21. What is Express.js?
@@ -3575,6 +3774,8 @@ Must know:
 - process.nextTick vs queueMicrotask vs setImmediate
 - blocking vs non-blocking I/O
 - CommonJS vs ES Modules
+- built-in globals vs pseudo-globals (`__dirname`, `require`)
+- why avoid custom globals
 - streams and backpressure
 - Buffer.alloc vs Buffer.allocUnsafe
 - cluster vs worker threads
