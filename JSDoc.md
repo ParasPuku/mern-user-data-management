@@ -986,7 +986,291 @@ greet('Paras', (message) => {
 });
 ```
 
-### 30. What is the typical use case for anonymous functions?
+### 30. What is AbortController, and how does it cancel or retry API requests?
+
+`AbortController` is a browser/Node API used to **cancel** async work, most commonly a `fetch` request.
+
+Simple idea:
+
+```text
+AbortController = remote control
+abort()         = press stop
+signal          = wire connected to fetch / timeout / custom async work
+```
+
+When you call `controller.abort()`, anything listening to `controller.signal` should stop.
+
+#### Main pieces
+
+| Piece | Meaning |
+|---|---|
+| `AbortController` | Creates the controller |
+| `controller.signal` | Pass this to `fetch` (or other APIs) |
+| `controller.abort()` | Cancel the linked request/work |
+| `AbortError` / `AbortSignal` reason | How you detect "cancelled on purpose" |
+
+#### Step-by-step: cancel a fetch request
+
+```text
+1. Create controller = new AbortController()
+2. Call fetch(url, { signal: controller.signal })
+3. If user leaves page / types again / clicks cancel -> controller.abort()
+4. fetch rejects with an abort error
+5. You ignore abort errors (not a real failure) and handle real errors normally
+```
+
+Example:
+
+```js
+const controller = new AbortController();
+
+async function loadUsers() {
+  try {
+    const response = await fetch('/api/users', {
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error('Request failed');
+    }
+
+    const users = await response.json();
+    console.log(users);
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      console.log('Request was cancelled');
+      return;
+    }
+
+    console.error('Real error:', error);
+  }
+}
+
+loadUsers();
+
+// later: cancel the in-flight request
+controller.abort();
+```
+
+#### Step-by-step: cancel previous request (search / filter pattern)
+
+This is the most common real UI case: user types fast, old API calls must die.
+
+```text
+1. Keep one currentController variable
+2. On every new search, abort the previous controller
+3. Create a new AbortController for the new request
+4. Pass the new signal to fetch
+5. Only the latest request is allowed to update UI
+```
+
+```js
+let currentController = null;
+
+async function searchUsers(query) {
+  // Step 1: cancel previous in-flight request
+  if (currentController) {
+    currentController.abort();
+  }
+
+  // Step 2: create a fresh controller for this request
+  currentController = new AbortController();
+
+  try {
+    const response = await fetch(`/api/users?q=${encodeURIComponent(query)}`, {
+      signal: currentController.signal,
+    });
+
+    const users = await response.json();
+    renderUsers(users); // only latest successful response should reach here
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      // expected when user typed again; ignore
+      return;
+    }
+    showError(error);
+  }
+}
+
+// user types: "p" -> "pa" -> "par"
+// old requests for "p" and "pa" get aborted
+searchUsers('p');
+searchUsers('pa');
+searchUsers('par');
+```
+
+#### Step-by-step: timeout with AbortController
+
+```js
+async function fetchWithTimeout(url, ms = 5000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), ms);
+
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    return await response.json();
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+```
+
+Modern browsers also support:
+
+```js
+await fetch(url, { signal: AbortSignal.timeout(5000) });
+```
+
+#### Step-by-step: retries with AbortController
+
+Important point:
+
+```text
+Abort = cancel this attempt
+Retry = start a new attempt with a new AbortController
+```
+
+Do not reuse one aborted controller for the next retry. Create a new one each attempt.
+
+```js
+async function fetchWithRetry(url, { retries = 3, signal } = {}) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= retries; attempt += 1) {
+    // If parent already cancelled (page unmount / user cancel), stop retrying
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
+
+    // Each attempt gets its own controller, linked to parent signal
+    const attemptController = new AbortController();
+
+    const onParentAbort = () => attemptController.abort();
+    signal?.addEventListener('abort', onParentAbort, { once: true });
+
+    try {
+      const response = await fetch(url, { signal: attemptController.signal });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      lastError = error;
+
+      // Do not retry if user/parent cancelled
+      if (error.name === 'AbortError') {
+        throw error;
+      }
+
+      // Optional: small delay before next retry
+      if (attempt < retries) {
+        await new Promise((resolve) => setTimeout(resolve, 300 * attempt));
+      }
+    } finally {
+      signal?.removeEventListener('abort', onParentAbort);
+    }
+  }
+
+  throw lastError;
+}
+
+// usage
+const pageController = new AbortController();
+
+fetchWithRetry('/api/users', {
+  retries: 3,
+  signal: pageController.signal,
+})
+  .then(console.log)
+  .catch((error) => {
+    if (error.name === 'AbortError') {
+      console.log('Cancelled; no more retries');
+      return;
+    }
+    console.error(error);
+  });
+
+// user leaves page -> cancel current attempt and prevent further retries
+pageController.abort();
+```
+
+Retry flow in plain words:
+
+```text
+Attempt 1 fails (network/5xx)
+  -> wait briefly
+Attempt 2 starts with a NEW AbortController
+  -> if parent.abort() happens, attempt stops and loop ends
+Attempt 3 ...
+  -> success or final error
+```
+
+#### What else can we do with AbortController?
+
+| Use case | How |
+|---|---|
+| Cancel `fetch` | Pass `{ signal }` to fetch |
+| Cancel previous search/filter calls | Abort old controller before new request |
+| Request timeout | `abort()` after N ms, or `AbortSignal.timeout(ms)` |
+| Cancel on page leave / component unmount | Abort in cleanup (`useEffect` return) |
+| Stop retries | Pass parent signal into retry helper |
+| Cancel `addEventListener` | `element.addEventListener('click', fn, { signal })` then abort |
+| Cancel `setTimeout` / custom async loops | Check `signal.aborted` or listen to `abort` event |
+| Cancel streams / ReadableStream work | Pass signal where supported, or stop reading on abort |
+| Link multiple operations | One abort can cancel fetch + timeout + listeners together |
+
+Event listener example:
+
+```js
+const controller = new AbortController();
+
+button.addEventListener(
+  'click',
+  () => {
+    console.log('clicked');
+  },
+  { signal: controller.signal }
+);
+
+// later: remove listener automatically
+controller.abort();
+```
+
+React cleanup example:
+
+```js
+useEffect(() => {
+  const controller = new AbortController();
+
+  fetch('/api/users', { signal: controller.signal })
+    .then((res) => res.json())
+    .then(setUsers)
+    .catch((error) => {
+      if (error.name !== 'AbortError') {
+        console.error(error);
+      }
+    });
+
+  return () => controller.abort(); // cancel when component unmounts
+}, []);
+```
+
+#### Common mistakes
+
+- Reusing an already aborted controller for a new request (create a new one)
+- Treating `AbortError` like a real API failure (usually ignore it)
+- Retrying after abort (should stop)
+- Forgetting to pass `signal` into `fetch` (abort will do nothing)
+
+#### Interview answer
+
+```text
+AbortController lets us cancel async work through a signal. For fetch, I pass controller.signal and call controller.abort() to cancel. For fast typing or filters, I abort the previous request before starting a new one. For retries, each attempt gets a new controller, and a parent signal can stop the whole retry loop. Besides fetch, it can cancel timeouts, event listeners, and unmount/cleanup work.
+```
+
+### 31. What is the typical use case for anonymous functions?
 
 Anonymous functions are commonly used when a function is needed only once.
 
@@ -1015,7 +1299,7 @@ button.addEventListener('click', () => {
 });
 ```
 
-### 31. What is a higher-order function?
+### 32. What is a higher-order function?
 
 A higher-order function a function that does at least one of two things: it either takes one or more functions as arguments, or it returns a new function as its output.
 
@@ -1051,7 +1335,7 @@ console.log(double(5)); // Output: 10
 console.log(triple(5)); // Output: 15
 ```
 
-### 32. Explain the concept of data binding in JavaScript?
+### 33. Explain the concept of data binding in JavaScript?
 
 Data binding means keeping data and UI in sync.
 
@@ -1078,7 +1362,7 @@ Types of binding:
 
 React mostly uses one-way data flow: state changes, then UI re-renders from that state.
 
-### 33. What are iterators and generators in JavaScript and what are they used for?
+### 34. What are iterators and generators in JavaScript and what are they used for?
 
 An iterator is an object that follows the iterator protocol and returns values using `next()`.
 
@@ -1115,7 +1399,7 @@ Use cases:
 - processing large data step by step
 - generating IDs or streams of values
 
-### 34. What are Web Workers and how can they be used to improve performance?
+### 35. What are Web Workers and how can they be used to improve performance?
 
 Web Workers enable JavaScript code to run in the background, separate from the main execution thread of a web application. They handle intensive computations without freezing the user interface. Here's a concise example:
 
@@ -1237,7 +1521,7 @@ Use Case: State sharing across multiple browser contexts.
 
 
 
-### 35. Difference between normal script, async script, and defer script?
+### 36. Difference between normal script, async script, and defer script?
 
 This is a browser JavaScript question.
 
@@ -1384,7 +1668,7 @@ Interview answer:
 A normal script blocks HTML parsing while it downloads and executes. An async script downloads in parallel and executes as soon as it is ready, so order is not guaranteed. A defer script downloads in parallel but executes only after HTML parsing is complete, and deferred scripts maintain order. For most app scripts, defer is preferred. For independent third-party scripts like analytics, async is useful.
 ```
 
-### 36. Explain the concept of memoization in JavaScript and how it can be implemented.
+### 37. Explain the concept of memoization in JavaScript and how it can be implemented.
 
 Memoization caches the result of an expensive function call so repeated calls with the same inputs can return quickly.
 
@@ -1412,7 +1696,7 @@ const slowAdd = memoize((a, b) => a + b);
 
 Use memoization for expensive pure functions. Avoid it when inputs are huge, constantly changing, or difficult to serialize safely.
 
-### 37. What is an IIFE?
+### 38. What is an IIFE?
 
 IIFE means Immediately Invoked Function Expression, and IIFE is a function that gets executes automatically as soon as it is defined. It requires no explicit call later in the script and is primarily used to create local lexical scopes. This isolation prevents variable name bleeding into the global namespace.
 
@@ -1431,7 +1715,7 @@ Use cases:
 - running setup code immediately
 - older module-like patterns before ES modules
 
-### 38. What is prototypal inheritance in JS?
+### 39. What is prototypal inheritance in JS?
 
 Prototypal inheritance means one object can access properties and methods from another object through the prototype chain.
 
@@ -1682,12 +1966,12 @@ console.log(Object.getPrototypeOf(user) === User.prototype); // true
 
 Prefer `Object.getPrototypeOf(obj)` instead of directly using `__proto__`.
 
-### 39. What is pure function?
+### 40. What is pure function?
 
 In JavaScript, a pure function is a function that always returns the same output given the same input arguments and produces absolutely no side effects. It is a foundational concept in functional programming.
 
 
-### 40. What is currying?
+### 41. What is currying?
 
 Currying transforms/converts a function with multiple arguments into a sequence of functions. 
 
@@ -1721,7 +2005,7 @@ const add = (a) => (b) => a + b;
 
 ## this Keyword
 
-### 41. What is this in JavaScript?
+### 42. What is this in JavaScript?
 
 `this` refers to the object that is calling the function.
 
@@ -1742,7 +2026,7 @@ const user = {
 user.greet(); // Paras
 ```
 
-### 42. How is this decided?
+### 43. How is this decided?
 
 `this` depends on how a function is called.
 
@@ -1754,7 +2038,7 @@ Rules:
 - call/apply/bind -> explicitly set
 - arrow function -> lexical this
 
-### 43. What are call, apply, and bind?
+### 44. What are call, apply, and bind?
 
 In JavaScript, call, apply, and bind are built-in methods used to explicitly set the this context (the execution context) inside a function. 
 
@@ -1795,7 +2079,7 @@ greet.call(user, 'Hi'); // Hi, Paras
 
 ## Objects and Prototypes
 
-### 44. What is an object?
+### 45. What is an object?
 
 An object is a collection of key-value pairs.
 
@@ -1808,7 +2092,7 @@ const user = {
 };
 ```
 
-### 45. How to access object properties?
+### 46. How to access object properties?
 
 Dot notation:
 
@@ -1829,7 +2113,7 @@ const key = 'name';
 console.log(user[key]);
 ```
 
-### 46. What is prototype?
+### 47. What is prototype?
 
 Every JavaScript object has an internal link to another object called prototype.
 
@@ -1842,7 +2126,7 @@ const arr = [];
 console.log(arr.__proto__ === Array.prototype); // true
 ```
 
-### 47. What is prototype chain?
+### 48. What is prototype chain?
 
 When JavaScript cannot find a property on an object, it looks up the prototype chain.
 
@@ -1856,7 +2140,7 @@ console.log(user.toString);
 
 `toString` is found through prototype chain.
 
-### 48. What is class in JavaScript?
+### 49. What is class in JavaScript?
 
 Class - A class is a blueprint for creating objects.
 Class is syntactic sugar over prototype-based inheritance.
@@ -1878,7 +2162,7 @@ const user = new User('Paras');
 user.greet();
 ```
 
-### 49. What is inheritance?
+### 50. What is inheritance?
 
 Inheritance allows one class/object to reuse properties and methods from another.
 
@@ -1892,7 +2176,7 @@ class Admin extends User {
 }
 ```
 
-### 50. What is composition in JavaScript?
+### 51. What is composition in JavaScript?
 
 Composition means building complex behavior by **combining smaller parts**, instead of creating a long parent-child inheritance chain.
 
@@ -2035,7 +2319,7 @@ Composition means building features by combining smaller objects or functions, i
 
 ## Arrays
 
-### 51. Difference between map, filter, and reduce?
+### 52. Difference between map, filter, and reduce?
 
 `map` transforms each item.
 
@@ -2055,7 +2339,7 @@ Composition means building features by combining smaller objects or functions, i
 [1, 2, 3].reduce((sum, n) => sum + n, 0); // 6
 ```
 
-### 52. Difference between forEach and map?
+### 53. Difference between forEach and map?
 
 `forEach` runs a function for each item and returns `undefined`.
 
@@ -2073,7 +2357,7 @@ console.log(a); // undefined
 console.log(b); // [2, 4, 6]
 ```
 
-### 53. How to remove duplicates from an array?
+### 54. How to remove duplicates from an array?
 
 ```js
 const unique = [...new Set([1, 2, 2, 3])];
@@ -2081,7 +2365,7 @@ const unique = [...new Set([1, 2, 2, 3])];
 console.log(unique); // [1, 2, 3]
 ```
 
-### 54. How to flatten an array?
+### 55. How to flatten an array?
 
 ```js
 const arr = [1, [2, [3]]];
@@ -2100,13 +2384,13 @@ const flatten = (arr) =>
   );
 ```
 
-### 55. Difference between Stateful and Stateless.
+### 56. Difference between Stateful and Stateless.
 
 Stateful means an application or system remembers previous interactions (its context or "state").
 
 Stateless means each request is treated as brand new, with no memory of past events.
 
-### 56. Difference between slice and splice?
+### 57. Difference between slice and splice?
 
 `slice` returns a copy and does not mutate original array.
 
@@ -2131,7 +2415,7 @@ The splice(start, deleteCount) method takes two primary numbers here:
 
 ## ES6+ Features
 
-### 57. What are template literals?
+### 58. What are template literals?
 
 Template literals allow string interpolation.
 
@@ -2140,7 +2424,7 @@ const name = 'Paras';
 console.log(`Hello ${name}`);
 ```
 
-### 58. What is destructuring?
+### 59. What is destructuring?
 
 Destructuring extracts values from arrays or objects.
 
@@ -2156,7 +2440,7 @@ Object:
 const { name, email } = user;
 ```
 
-### 59. What is spread operator?
+### 60. What is spread operator?
 
 Spread expands values.
 
@@ -2174,7 +2458,7 @@ const user = { name: 'Paras' };
 const updated = { ...user, age: 25 };
 ```
 
-### 60. What is rest operator?
+### 61. What is rest operator?
 
 Rest collects remaining values.
 
@@ -2192,7 +2476,7 @@ Object:
 const { name, ...rest } = user;
 ```
 
-### 61. What are default parameters?
+### 62. What are default parameters?
 
 ```js
 function greet(name = 'Guest') {
@@ -2200,7 +2484,7 @@ function greet(name = 'Guest') {
 }
 ```
 
-### 62. What are modules?
+### 63. What are modules?
 
 Modules allow code to be split and reused.
 
@@ -2218,7 +2502,7 @@ import { add } from './math.js';
 
 ## Copying and Immutability
 
-### 63. Shallow copy vs deep copy?
+### 64. Shallow copy vs deep copy?
 
 Shallow copy copies only the first level.
 
@@ -2242,7 +2526,7 @@ Deep copy copies nested objects also.
 const deepCopy = structuredClone(user);
 ```
 
-### 64. How to deep clone an object?
+### 65. How to deep clone an object?
 
 Modern way:
 
@@ -2279,7 +2563,7 @@ Definition:
 
 ## Asynchronous JavaScript
 
-### 65. What is asynchronous JavaScript?
+### 66. What is asynchronous JavaScript?
 
 Asynchronous JavaScript allows long-running work without blocking the main thread.
 
@@ -2302,7 +2586,7 @@ Examples:
 - Web APIs: Heavy tasks (like fetching data) are handed over to the browser environment.
 - Event Loop: This mechanism monitors and pushes completed asynchronous tasks back into the JavaScript execution thread when it becomes empty.
 
-### 66. What is event loop?
+### 67. What is event loop?
 
 Event loop coordinates execution of:
 
@@ -2317,7 +2601,7 @@ Interview answer:
 The event loop checks if the call stack is empty, then pushes queued callbacks or microtasks into the call stack for execution. Microtasks like Promise callbacks run before macrotasks like setTimeout.
 ```
 
-### 67. Output question: event loop
+### 68. Output question: event loop
 
 ```js
 console.log('A');
@@ -2346,7 +2630,7 @@ Promise microtask runs next.
 setTimeout macrotask runs after microtasks.
 ```
 
-### 68. What is a Promise?
+### 69. What is a Promise?
 
 A Promise is an object represents the eventual completion (or failure) of an asynchronous operation and its resulting value, and promise represents a future value.
 
@@ -2367,7 +2651,7 @@ const promise = new Promise((resolve, reject) => {
 });
 ```
 
-### 69. What is async/await?
+### 70. What is async/await?
 
 `async/await` is syntax built on promises.
 
@@ -2384,7 +2668,7 @@ async function fetchUser() {
 }
 ```
 
-### 70. Promise methods: all, allSettled, race, and any
+### 71. Promise methods: all, allSettled, race, and any
 
 Assume we have three async tasks:
 
@@ -2975,7 +3259,7 @@ Promise.race       -> first finished wins, success or failure
 Promise.any        -> first success wins
 ```
 
-### 71. What is anonymous function with an example?
+### 72. What is anonymous function with an example?
 
 An anonymous function is a function without a name.
 
@@ -3082,7 +3366,7 @@ Named function has a function name.
 Anonymous function does not have a function name.
 ```
 
-### 72. What is callback with an example?
+### 73. What is callback with an example?
 
 A callback is a function that is passed as an argument to another function and is executed later.
 
@@ -3192,7 +3476,7 @@ Important interview point:
 Callbacks are useful, but too many nested callbacks can make code hard to read. This problem is called callback hell.
 ```
 
-### 73. What is callback hell?
+### 74. What is callback hell?
 
 Callback hell is nested callbacks that make code hard to read.
 
@@ -3216,7 +3500,7 @@ Solution:
 
 ## Error Handling
 
-### 74. How to handle errors in JavaScript?
+### 75. How to handle errors in JavaScript?
 
 Synchronous:
 
@@ -3238,7 +3522,7 @@ try {
 }
 ```
 
-### 75. What is finally?
+### 76. What is finally?
 
 `finally` runs whether error happens or not.
 
@@ -3254,13 +3538,13 @@ try {
 
 ## DOM and Browser
 
-### 76. What is DOM?
+### 77. What is DOM?
 
 DOM means Document Object Model.
 
 It is a tree representation of HTML that JavaScript can read and modify.
 
-### 77. Event bubbling vs capturing?
+### 78. Event bubbling vs capturing?
 
 Capturing:
 
@@ -3276,7 +3560,7 @@ child -> parent -> document
 
 By default, events bubble.
 
-### 78. What is event delegation?
+### 79. What is event delegation?
 
 Event delegation means adding one event listener to a parent instead of many children.
 
@@ -3295,7 +3579,7 @@ Benefits:
 - better performance
 - works for dynamic elements
 
-### 79. localStorage vs sessionStorage vs cookies?
+### 80. localStorage vs sessionStorage vs cookies?
 
 `localStorage`:
 
@@ -3314,7 +3598,7 @@ Cookies:
 - can be HTTP-only
 - useful for auth
 
-### 80. What is CORS?
+### 81. What is CORS?
 
 CORS means Cross-Origin Resource Sharing.
 
@@ -3331,13 +3615,13 @@ These are different origins.
 
 ## Node.js Basics
 
-### 81. What is Node.js?
+### 82. What is Node.js?
 
 Node.js is a JavaScript runtime built on Chrome V8 engine.
 
 It allows JavaScript to run outside the browser.
 
-### 82. CommonJS vs ES Modules?
+### 83. CommonJS vs ES Modules?
 
 CommonJS:
 
@@ -3359,7 +3643,7 @@ This app uses ES Modules:
 "type": "module"
 ```
 
-### 83. What is middleware?
+### 84. What is middleware?
 
 Middleware is a function that runs between request and response.
 
@@ -3380,7 +3664,7 @@ app.use(logger);
 
 ## Security Questions
 
-### 84. What is XSS?
+### 85. What is XSS?
 
 XSS means Cross-Site Scripting.
 
@@ -3393,7 +3677,7 @@ Prevention:
 - use Content Security Policy
 - avoid dangerously setting HTML
 
-### 85. What is CSRF?
+### 86. What is CSRF?
 
 CSRF means Cross-Site Request Forgery.
 
@@ -3405,7 +3689,7 @@ Prevention:
 - CSRF tokens
 - origin checks
 
-### 86. Why should JWT not be stored in localStorage?
+### 87. Why should JWT not be stored in localStorage?
 
 Because XSS can read localStorage.
 
@@ -3417,7 +3701,7 @@ HTTP-only secure cookie
 
 ## Performance Questions
 
-### 87. What is debounce?
+### 88. What is debounce?
 
 Debounce delays function execution until user stops triggering it.
 
@@ -3442,7 +3726,7 @@ function debounce(fn, delay) {
 }
 ```
 
-### 88. What is throttle?
+### 89. What is throttle?
 
 Throttle ensures function runs at most once in a given time.
 
@@ -3468,7 +3752,7 @@ function throttle(fn, delay) {
 }
 ```
 
-### 89. What is memoization?
+### 90. What is memoization?
 
 Memoization caches expensive function results.
 
@@ -3494,7 +3778,7 @@ function memoize(fn) {
 
 ## Tricky Output Questions
 
-### 90. Output question: var loop
+### 91. Output question: var loop
 
 ```js
 for (var i = 0; i < 3; i += 1) {
@@ -3514,7 +3798,7 @@ Reason:
 
 `var` is function scoped. All callbacks share same `i`.
 
-### 91. Output question: let loop
+### 92. Output question: let loop
 
 ```js
 for (let i = 0; i < 3; i += 1) {
@@ -3534,7 +3818,7 @@ Reason:
 
 `let` creates a new binding for each loop iteration.
 
-### 92. Output question: object reference
+### 93. Output question: object reference
 
 ```js
 const a = { value: 1 };
@@ -3555,7 +3839,7 @@ Reason:
 
 `a` and `b` point to same object.
 
-### 93. Output question: typeof null
+### 94. Output question: typeof null
 
 ```js
 console.log(typeof null);
@@ -3571,7 +3855,7 @@ Reason:
 
 Historical JavaScript behavior.
 
-### 94. Output question: equality
+### 95. Output question: equality
 
 ```js
 console.log([] == false);
@@ -3589,7 +3873,7 @@ Reason:
 
 `==` does coercion, `===` does not.
 
-### 95. Output question: closure
+### 96. Output question: closure
 
 ```js
 function outer() {
@@ -3620,7 +3904,7 @@ Inner function remembers outer `count`.
 
 ## Coding Questions
 
-### 96. Reverse a string
+### 97. Reverse a string
 
 ```js
 function reverseString(str) {
@@ -3630,7 +3914,7 @@ function reverseString(str) {
 console.log(reverseString('hello')); // 'olleh'
 ```
 
-### 97. Check palindrome
+### 98. Check palindrome
 
 ```js
 function isPalindrome(str) {
@@ -3639,7 +3923,7 @@ function isPalindrome(str) {
 }
 ```
 
-### 98. Find max number
+### 99. Find max number
 
 ```js
 function findMax(numbers) {
@@ -3658,7 +3942,7 @@ function findMax(numbers) {
 }
 ```
 
-### 99. Count character frequency
+### 100. Count character frequency
 
 ```js
 function countChars(str) {
@@ -3669,7 +3953,7 @@ function countChars(str) {
 }
 ```
 
-### 100. Group array by property
+### 101. Group array by property
 
 ```js
 function groupBy(items, key) {
@@ -3690,7 +3974,7 @@ const users = [
 console.log(groupBy(users, 'role'));
 ```
 
-### 101. Check anagram
+### 102. Check anagram
 
 ```js
 function sortText(text) {
@@ -3702,7 +3986,7 @@ function isAnagram(a, b) {
 }
 ```
 
-### 102. Implement once function
+### 103. Implement once function
 
 ```js
 function once(fn) {
@@ -3720,7 +4004,7 @@ function once(fn) {
 }
 ```
 
-### 103. Implement sleep
+### 104. Implement sleep
 
 ```js
 function sleep(ms) {
@@ -3730,7 +4014,7 @@ function sleep(ms) {
 await sleep(1000);
 ```
 
-### 104. Retry async function
+### 105. Retry async function
 
 ```js
 async function retry(fn, attempts = 3) {
@@ -3750,7 +4034,7 @@ async function retry(fn, attempts = 3) {
 
 ## React/Frontend JavaScript Questions
 
-### 105. What is immutability and why is it important?
+### 106. What is immutability and why is it important?
 
 Immutability means not changing existing data directly.
 
@@ -3771,7 +4055,7 @@ Why important:
 - React change detection
 - Redux best practice
 
-### 106. Why should keys be stable in React lists?
+### 107. Why should keys be stable in React lists?
 
 Stable keys help React identify which items changed.
 
@@ -3787,7 +4071,7 @@ Good:
 users.map((user) => <User key={user.id} user={user} />);
 ```
 
-### 107. What is optional chaining?
+### 108. What is optional chaining?
 
 Optional chaining safely accesses nested values.
 
@@ -3801,7 +4085,7 @@ Without optional chaining:
 const city = user && user.address && user.address.city;
 ```
 
-### 108. What is nullish coalescing?
+### 109. What is nullish coalescing?
 
 `??` returns right side only if left side is `null` or `undefined`.
 
@@ -3818,7 +4102,7 @@ console.log(0 ?? 10); // 0
 
 ## Backend JavaScript Questions
 
-### 109. What is asyncHandler in Express?
+### 110. What is asyncHandler in Express?
 
 `asyncHandler` wraps async route handlers and forwards errors to Express error middleware.
 
@@ -3838,7 +4122,7 @@ app.get('/users', asyncHandler(async (req, res) => {
 }));
 ```
 
-### 110. Why use environment variables?
+### 111. Why use environment variables?
 
 Environment variables store configuration outside code.
 
@@ -3851,7 +4135,7 @@ Examples:
 
 Never hardcode secrets in code.
 
-### 111. What is JSON?
+### 112. What is JSON?
 
 JSON means JavaScript Object Notation.
 
@@ -3866,7 +4150,7 @@ Example:
 }
 ```
 
-### 112. JSON.stringify vs JSON.parse?
+### 113. JSON.stringify vs JSON.parse?
 
 `JSON.stringify` converts object to JSON string.
 
@@ -3882,37 +4166,37 @@ JSON.parse('{"name":"Paras"}');
 
 ## Most Important Short Interview Answers
 
-### 113. Explain closure in one line.
+### 114. Explain closure in one line.
 
 ```text
 A closure is when a function remembers variables from its outer scope even after the outer function has returned.
 ```
 
-### 114. Explain event loop in one line.
+### 115. Explain event loop in one line.
 
 ```text
 The event loop moves async callbacks and microtasks into the call stack when the stack is empty.
 ```
 
-### 115. Explain promise in one line.
+### 116. Explain promise in one line.
 
 ```text
 A promise represents a future value that can be pending, fulfilled, or rejected.
 ```
 
-### 116. Explain this in one line.
+### 117. Explain this in one line.
 
 ```text
 this refers to the execution context and depends on how a function is called.
 ```
 
-### 117. Explain prototype in one line.
+### 118. Explain prototype in one line.
 
 ```text
 Prototype is JavaScript's inheritance mechanism where objects can access properties and methods from another object.
 ```
 
-### 118. Explain hoisting in one line.
+### 119. Explain hoisting in one line.
 
 ```text
 Hoisting is JavaScript's behavior of processing declarations before code execution.
@@ -3940,6 +4224,7 @@ Must know:
 - equality and coercion
 - DOM events
 - debounce/throttle
+- AbortController
 - error handling
 - modules
 - security basics
