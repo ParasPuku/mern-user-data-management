@@ -480,7 +480,7 @@ ES5 added strict mode, JSON support, array methods like map/filter/reduce, and o
 
 ### 11. What is hoisting?
 
-Hoisting means declarations are moved to the top of their scope during compilation.
+Hoisting is the process of moving the variable declarations to the top of their scope during compilation.
 
 Example with `var`:
 
@@ -510,6 +510,8 @@ function sayHello() {
 ### 12. What is Temporal Dead Zone?
 
 Temporal Dead Zone is the time between entering a scope and the actual declaration of `let` or `const`.
+
+let and const variables are created in memory but not yet initialized, so those variable are in Temporal Dead Zone.
 
 Example:
 
@@ -714,7 +716,7 @@ function createUser() {
 ```
 
 ### 22. What are the disadvantage of closures?
-  - High Memory Usage and leaks
+  - High Memory Usage and leaks -A memory leak occurs when a closure retains references to outer variables, preventing the garbage collector from freeing up that memory, even after the outer function has finished executing. Because the inner function needs to "remember" its lexical scope, the referenced variables remain alive in memory.
   - Garbage Collection Complications
   - Debugging Complexity
   - Overuse can Hurt Performance
@@ -986,13 +988,21 @@ A callback is a function passed as an argument (input) into another function, wi
 Example:
 
 ```js
-function greet(name, callback) {
-  callback(`Hello ${name}`);
+// 1. The outer function that accepts a callback
+function fetchUserData(userId, callback) {
+  // Simulate a 2-second delay
+  setTimeout(() => {
+    const user = { id: userId, name: "Alex", role: "Admin" };
+    // 3. The callback is executed with the data
+    callback(user); 
+  }, 2000);
 }
+// 2. The callback function definition
+function displayWelcomeMessage(userData) {
+  console.log(`Welcome back, ${userData.name}! Role: ${userData.role}`);
+}
+fetchUserData(101, displayWelcomeMessage);
 
-greet('Paras', (message) => {
-  console.log(message);
-});
 ```
 
 ### 30. What is AbortController, and how does it cancel or retry API requests?
