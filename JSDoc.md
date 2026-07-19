@@ -1101,6 +1101,86 @@ searchUsers('pa');
 searchUsers('par');
 ```
 
+Important clarification (common confusion):
+
+`abort()` runs **before** creating the new controller, so it cancels the **old** request, not the new one.
+
+```text
+abort()                 = stop the request that is already running
+new AbortController()   = prepare the new search
+fetch(...)              = start the new search
+```
+
+What happens when user types `p` -> `pa` -> `par`:
+
+**1. User types `p`**
+
+```text
+currentController = null
+
+if (currentController) abort()   -> skipped (null)
+
+currentController = new AbortController()   // Controller-A for "p"
+fetch('/api/users?q=p', { signal: Controller-A.signal })
+  -> "p" request is in flight
+```
+
+**2. User types `pa` (while `p` is still running)**
+
+```text
+currentController is still Controller-A  (the "p" one)
+
+if (currentController) abort()
+  -> Controller-A.abort()
+  -> cancels the "p" fetch   (old request dies)
+
+currentController = new AbortController()   // Controller-B for "pa"
+fetch('/api/users?q=pa', { signal: Controller-B.signal })
+  -> "pa" request starts
+```
+
+So on `pa`:
+- `abort()` cancels **`p`**
+- then a **new** controller starts **`pa`**
+
+`pa` is not cancelled by that `if (currentController)` check. That check cancels whatever was stored from the **previous** call (`p`).
+
+**3. User types `par` (while `pa` is still running)**
+
+```text
+abort Controller-B  -> cancels "pa"
+new Controller-C    -> starts "par"
+```
+
+| Moment | What gets aborted | What starts |
+|---|---|---|
+| Type `p` | nothing | `p` |
+| Type `pa` | `p` | `pa` |
+| Type `par` | `pa` | `par` |
+
+Why aborted requests do not update the UI:
+
+When `p` is aborted, its `fetch` rejects with `AbortError`, and this runs:
+
+```js
+if (error.name === 'AbortError') {
+  return; // ignore, do not call renderUsers
+}
+```
+
+So only the latest successful response (usually `par`) calls `renderUsers`.
+
+Key line order to remember:
+
+```js
+if (currentController) {
+  currentController.abort();      // kill PREVIOUS request
+}
+
+currentController = new AbortController();  // create CURRENT request's controller
+fetch(..., { signal: currentController.signal });
+```
+
 #### Step-by-step: timeout with AbortController
 
 ```js
