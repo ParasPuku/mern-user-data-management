@@ -1002,7 +1002,7 @@ fetchData(showMsg, "paras")
 
 ### 30. What is AbortController, and how does it cancel or retry API requests?
 
-The `AbortController` interface represents a controller object that allows you to abort one or more Web requests as and when desired.
+The `AbortController` interface is a controller object that allows you to abort one or more Web requests as and when desired.
 
 `AbortController` is a browser/Node API used to **cancel** async work, most commonly a `fetch` request.
 
@@ -1630,6 +1630,22 @@ There are three common ways to load a script:
 <script async src="app.js"></script>
 <script defer src="app.js"></script>
 ```
+
+When loading external script files (<script src="...">), browsers block HTML parsing by default to download and run the script. async and defer prevent this blocking behavior during downloading, but they execute at different times.
+
+<script async>
+  Download - Downloads in the background parallel to HTML parsing.
+  Execution Timing - Executes immediately after downloading finishes, pausing HTML parsing.
+  Execution Order - No order guaranteed. The script that downloads first runs first.
+  DOM Dependency - Risky for DOM manipulation; the DOM might not be fully loaded yet.
+  Best Used For - Independent scripts (e.g., Google Analytics, tracking ads).
+
+<script defer>
+  Download - Downloads in the background parallel to HTML parsing.
+  Execution Timing - Executes only after the HTML document is fully parsed.
+  Execution Order - Strict document order. Scripts run exactly in the order they are written.
+  DOM Dependency - Safe for DOM manipulation; always runs before DOMContentLoaded.
+  Best Used For - Interdependent scripts or scripts that require page elements (e.g., UI logic).
 
 #### 1. Normal script
 
