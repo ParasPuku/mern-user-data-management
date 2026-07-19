@@ -988,6 +988,8 @@ greet('Paras', (message) => {
 
 ### 30. What is AbortController, and how does it cancel or retry API requests?
 
+The `AbortController` interface represents a controller object that allows you to abort one or more Web requests as and when desired.
+
 `AbortController` is a browser/Node API used to **cancel** async work, most commonly a `fetch` request.
 
 Simple idea:
