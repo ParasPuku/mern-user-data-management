@@ -18,6 +18,10 @@ Use this file for:
 
 JavaScript is a high-level, interpreted programming language used mainly for web development.
 
+JavaScript happens entirely at runtime, but it uses a hybrid process where compilation and execution both occur simultaneously while the program is running.
+
+Unlike ahead-of-time (AOT) languages like C++ or Rust—where compilation happens before the program is shipped—JavaScript code is processed, compiled, and executed all at once on the user's machine.
+
 It runs in:
 
 - browsers
@@ -31,6 +35,11 @@ Interview answer:
 ```text
 JavaScript is a single-threaded, dynamically typed, high-level language mainly used to build interactive web applications. It runs in browsers and also on servers through Node.js.
 ```
+
+### 2. Is compile time the same as runtime?
+Compile-time and Runtime are the two programming terms used in the software development. 
+
+Compile-time is the time at which the source code is converted into an executable code while the run time is the time at which the executable code is started running.
 
 ### 2. Is JavaScript compiled or interpreted?
 
