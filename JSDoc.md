@@ -988,21 +988,16 @@ A callback is a function passed as an argument (input) into another function, wi
 Example:
 
 ```js
-// 1. The outer function that accepts a callback
-function fetchUserData(userId, callback) {
-  // Simulate a 2-second delay
-  setTimeout(() => {
-    const user = { id: userId, name: "Alex", role: "Admin" };
-    // 3. The callback is executed with the data
-    callback(user); 
-  }, 2000);
+function fetchData(callback, name) {
+    const user = {age: 45}
+    callback(name, user)
 }
-// 2. The callback function definition
-function displayWelcomeMessage(userData) {
-  console.log(`Welcome back, ${userData.name}! Role: ${userData.role}`);
-}
-fetchUserData(101, displayWelcomeMessage);
 
+function showMsg(name, user) {
+    console.log("Hello Mr...", name , "age is: ", user.age)
+}
+
+fetchData(showMsg, "paras")
 ```
 
 ### 30. What is AbortController, and how does it cancel or retry API requests?
