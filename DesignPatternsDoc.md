@@ -84,7 +84,12 @@ Adding a new discount type means adding a new class, not editing existing code.
 
 ### 3. Liskov Substitution Principle (LSP)
 
+The Liskov Substitution Principle (LSP) states that objects of a superclass should be replaceable with objects of its subclasses without breaking the application. 
+
+It ensures that derived classes extend rather than alter the expected behavior and contracts of their base classes.
+
 Subclasses should be usable in place of their base class without breaking behavior.
+
 Bad (classic violation):
 ```jsx
 class Bird {
@@ -94,19 +99,51 @@ class Bird {
 class Penguin extends Bird {
   fly() { throw new Error("Can't fly!"); } // breaks the contract
 }
+
+class Ostrich extends Bird {
+  fly() {
+    // ❌ VIOLATION: An ostrich cannot fly. 
+    // Throwing an error breaks the contract of the base class.
+    throw new Error("Ostriches cannot fly!");
+  }
+}
+
 ```
 
 Good: 
 ```jsx
-class Bird {}
+class Bird {
+  eat() {
+    return "Chomp chomp";
+  }
+}
 
+// Separate class for birds that actually possess the flying behavior
 class FlyingBird extends Bird {
-  fly() { /* ... */ }
+  fly() {
+    return "I am flying high!";
+  }
 }
 
-class Penguin extends Bird {
-  swim() { /* ... */ }
+class Eagle extends FlyingBird {}
+
+class Ostrich extends Bird {
+  //  SUCCESS: Ostrich only inherits 'eat'.
+  // It is never forced to implement a 'fly' method it cannot support.
 }
+
+// Client Code
+function makeBirdFly(flyingBird) {
+  return flyingBird.fly();
+}
+
+// The system works seamlessly
+console.log(makeBirdFly(new Eagle())); 
+
+// The Ostrich is safely kept away from functions requiring a flying bird
+const myOstrich = new Ostrich();
+console.log(myOstrich.eat()); 
+
 ```
 
 Now Penguin doesn't pretend to support a behavior it can't fulfill.
