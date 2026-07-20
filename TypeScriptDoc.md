@@ -2610,6 +2610,8 @@ For simple fixed string choices, use union types.
 
 ### 65. What is type assertion?
 
+A type assertion in TypeScript allows you to explicitly tell the compiler to treat a value as a specific type, overriding its automatically inferred type. It is used when you have more information about a value's type than TypeScript can determine on its own.
+
 Type assertion tells TypeScript to treat a value as a specific type.
 
 Type Assertion is telling TypeScript: "I know more about the data type of this variable than you do, so trust me and apply this specific type."
