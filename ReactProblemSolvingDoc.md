@@ -51,10 +51,10 @@ If the user types quickly, previous timers are cleared.
 ### Code
 
 ```jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 export const DebouncedSearch = () => {
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -68,7 +68,7 @@ export const DebouncedSearch = () => {
       setLoading(true);
 
       const response = await fetch(
-        `https://dummyjson.com/products/search?q=${search}`
+        `https://dummyjson.com/products/search?q=${search}`,
       );
       const data = await response.json();
 
@@ -130,19 +130,19 @@ Store todos in `localStorage`.
 ### Code
 
 ```jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 export const TodoApp = () => {
   const [todos, setTodos] = useState(() => {
-    const savedTodos = localStorage.getItem('todos');
+    const savedTodos = localStorage.getItem("todos");
     return savedTodos ? JSON.parse(savedTodos) : [];
   });
 
-  const [text, setText] = useState('');
+  const [text, setText] = useState("");
   const [editId, setEditId] = useState(null);
 
   useEffect(() => {
-    localStorage.setItem('todos', JSON.stringify(todos));
+    localStorage.setItem("todos", JSON.stringify(todos));
   }, [todos]);
 
   const handleSubmit = () => {
@@ -151,21 +151,21 @@ export const TodoApp = () => {
     if (editId) {
       setTodos((currentTodos) =>
         currentTodos.map((todo) =>
-          todo.id === editId ? { ...todo, text } : todo
-        )
+          todo.id === editId ? { ...todo, text } : todo,
+        ),
       );
       setEditId(null);
     } else {
       const newTodo = {
         id: Date.now(),
         text,
-        completed: false
+        completed: false,
       };
 
       setTodos((currentTodos) => [...currentTodos, newTodo]);
     }
 
-    setText('');
+    setText("");
   };
 
   const handleEdit = (todo) => {
@@ -180,8 +180,8 @@ export const TodoApp = () => {
   const handleToggle = (id) => {
     setTodos((currentTodos) =>
       currentTodos.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      )
+        todo.id === id ? { ...todo, completed: !todo.completed } : todo,
+      ),
     );
   };
 
@@ -193,7 +193,7 @@ export const TodoApp = () => {
         placeholder="Enter task"
       />
 
-      <button onClick={handleSubmit}>{editId ? 'Update' : 'Add'}</button>
+      <button onClick={handleSubmit}>{editId ? "Update" : "Add"}</button>
 
       <ul>
         {todos.map((todo) => (
@@ -204,7 +204,11 @@ export const TodoApp = () => {
               onChange={() => handleToggle(todo.id)}
             />
 
-            <span style={{ textDecoration: todo.completed ? 'line-through' : 'none' }}>
+            <span
+              style={{
+                textDecoration: todo.completed ? "line-through" : "none",
+              }}
+            >
               {todo.text}
             </span>
 
@@ -245,7 +249,7 @@ Fetch users from an API and show pagination with previous, next, current page, a
 ### Code
 
 ```jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 export const UsersPaginationExample = () => {
   const [users, setUsers] = useState([]);
@@ -263,7 +267,7 @@ export const UsersPaginationExample = () => {
       const skip = (currentPage - 1) * limit;
 
       const response = await fetch(
-        `https://dummyjson.com/users?limit=${limit}&skip=${skip}`
+        `https://dummyjson.com/users?limit=${limit}&skip=${skip}`,
       );
       const data = await response.json();
 
@@ -364,9 +368,9 @@ Load a component only when it is needed.
 ### Code
 
 ```jsx
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useState } from "react";
 
-const Profile = lazy(() => import('./Profile'));
+const Profile = lazy(() => import("./Profile"));
 
 export const LazyLoadingExample = () => {
   const [showProfile, setShowProfile] = useState(false);
@@ -419,7 +423,7 @@ Load more products when the user reaches the bottom of the page.
 ### Code
 
 ```jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 export const InfiniteScrollExample = () => {
   const [products, setProducts] = useState([]);
@@ -436,7 +440,7 @@ export const InfiniteScrollExample = () => {
       setLoading(true);
 
       const response = await fetch(
-        `https://dummyjson.com/products?limit=${limit}&skip=${skip}`
+        `https://dummyjson.com/products?limit=${limit}&skip=${skip}`,
       );
       const data = await response.json();
 
@@ -458,10 +462,10 @@ export const InfiniteScrollExample = () => {
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener("scroll", handleScroll);
     };
   }, [loading, hasMore]);
 
@@ -523,97 +527,70 @@ Instead of writing `useEffect`, `loading`, `error`, and `fetch` logic in every c
 ### Code
 
 ```jsx
-import { useCallback, useEffect, useRef, useState } from 'react';
-
-const useFetch = (url) => {
+import { useEffect, useState } from "react";
+const useFetch = (url, options = {}) => {
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const controllerRef = useRef(null);
-
-  const fetchData = useCallback(async () => {
-    if (!url) return;
-
-    if (controllerRef.current) {
-      controllerRef.current.abort();
-    }
-
-    const controller = new AbortController();
-    controllerRef.current = controller;
-
-    try {
-      setLoading(true);
-      setError('');
-
-      const response = await fetch(url, {
-        signal: controller.signal
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch data');
-      }
-
-      const result = await response.json();
-      setData(result);
-    } catch (err) {
-      if (err.name === 'AbortError') {
-        return;
-      }
-
-      setError(err.message || 'Something went wrong');
-    } finally {
-      if (!controller.signal.aborted) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(url, options);
+        if (!response.ok) {
+          throw new Error("API request failed");
+        }
+        const data = await response.json();
+        setData(data);
+        setLoading(false);
+      } catch (error) {
+        console.log("Error", error);
+        setError(error);
         setLoading(false);
       }
-    }
-  }, [url]);
-
-  useEffect(() => {
-    fetchData();
-
-    return () => {
-      if (controllerRef.current) {
-        controllerRef.current.abort();
-      }
     };
-  }, [fetchData]);
-
-  return {
-    data,
-    loading,
-    error,
-    refetch: fetchData
-  };
+    fetchData();
+  }, [url]);
+  return { data, loading, error };
 };
-
 export default useFetch;
 ```
 
 ### Using The Custom Hook
 
 ```jsx
-import useFetch from './useFetch';
+import React from "react";
+import useFetch from "./utils.js";
+function App() {
+  // Simple get request
+  const {data, loading, error} = useFetch("https://dummyjson.com/users");
 
-export const ProductsExample = () => {
-  const { data, loading, error, refetch } = useFetch(
-    'https://dummyjson.com/products'
-  );
-
-  if (loading) return <p>Loading products...</p>;
-  if (error) return <p>{error}</p>;
-
+  // POST / PUT / DELETE
+  const { data, loading, error } = useFetch("https://dummyjson.com/products/add", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ name: "John" }),
+  });
+  console.log("DATTAAAAA", data);
   return (
     <div>
-      <button onClick={() => refetch()}>Refresh</button>
-
-      <ul>
-        {data?.products?.map((product) => (
-          <li key={product.id}>{product.title}</li>
-        ))}
-      </ul>
+      <h1>Hello, World!</h1>
+      <div>{error ? "Error on ui side" : null}</div>
+      <div>{loading && "API is Fetching data....."}</div>
+      <div>
+        {data &&
+          data.users &&
+          data.users.length > 0 &&
+          data.users.map((user) => (
+            <div key={crypto.randomUUID()}>{user.firstName}</div>
+          ))}
+      </div>
     </div>
   );
-};
+}
+export default App;
 ```
 
 ### Interview Explanation
@@ -677,19 +654,19 @@ For retry, use a loop. If the request fails, wait for 2 seconds and try again. I
 ### Code
 
 ```jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 const wait = (milliseconds, signal) => {
   return new Promise((resolve) => {
     const timerId = window.setTimeout(resolve, milliseconds);
 
     signal.addEventListener(
-      'abort',
+      "abort",
       () => {
         window.clearTimeout(timerId);
         resolve();
       },
-      { once: true }
+      { once: true },
     );
   });
 };
@@ -697,7 +674,7 @@ const wait = (milliseconds, signal) => {
 export const AbortControllerRetryExample = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -706,12 +683,12 @@ export const AbortControllerRetryExample = () => {
 
     const fetchProducts = async () => {
       setLoading(true);
-      setError('');
+      setError("");
 
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
-          const response = await fetch('https://dummyjson.com/products', {
-            signal: controller.signal
+          const response = await fetch("https://dummyjson.com/products", {
+            signal: controller.signal,
           });
 
           if (!response.ok) {
@@ -724,13 +701,13 @@ export const AbortControllerRetryExample = () => {
           setLoading(false);
           return;
         } catch (err) {
-          if (err.name === 'AbortError') {
+          if (err.name === "AbortError") {
             return;
           }
 
           if (attempt === maxAttempts) {
-            console.log('api got failed');
-            setError('api got failed');
+            console.log("api got failed");
+            setError("api got failed");
             setLoading(false);
             return;
           }
@@ -808,7 +785,8 @@ Do not retry forever. Always keep a maximum retry count.
 ---
 
 ## 8. Write a custom hook that uses useCallback to multiply two numbers in React.
-### Code 
+
+### Code
 
 ```jsx
 
@@ -844,6 +822,7 @@ function App() {
 export default App;
 
 ```
+
 If you don't need a custom hook
 If the callback is only used in one component, you can use useCallback directly:
 
@@ -857,7 +836,9 @@ function App() {
 ```
 
 ## 9. Custom hooks of useMemo to calculate the addition two number in react?
+
 ### Code
+
 useMemo is used to memoize a computed value, not a function. If you want a custom hook that calculates the addition of two numbers and only recalculates when either number changes, you can do this:
 
 ```jsx
@@ -920,29 +901,29 @@ Fetch data from an API and handle loading and error states.
 ### Code
 
 ```jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 export const FetchDataExample = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        setError('');
+        setError("");
 
-        const response = await fetch('https://dummyjson.com/products');
+        const response = await fetch("https://dummyjson.com/products");
 
         if (!response.ok) {
-          throw new Error('Failed to fetch products');
+          throw new Error("Failed to fetch products");
         }
 
         const data = await response.json();
         setProducts(data.products);
       } catch (err) {
-        setError('Something went wrong');
+        setError("Something went wrong");
       } finally {
         setLoading(false);
       }
@@ -994,21 +975,21 @@ Example:
 ### Code
 
 ```jsx
-import { useState } from 'react';
+import { useState } from "react";
 
 export const MultiStepForm = () => {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
-    name: '',
-    email: '',
-    city: '',
-    country: ''
+    name: "",
+    email: "",
+    city: "",
+    country: "",
   });
 
   const handleChange = (event) => {
     setForm({
       ...form,
-      [event.target.name]: event.target.value
+      [event.target.name]: event.target.value,
     });
   };
 
@@ -1097,16 +1078,16 @@ Create a login form with email and password validation.
 ### Code
 
 ```jsx
-import { useState } from 'react';
+import { useState } from "react";
 
 export const LoginValidation = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
-  const emailError = !email.includes('@') ? 'Enter valid email' : '';
+  const emailError = !email.includes("@") ? "Enter valid email" : "";
   const passwordError =
-    password.length < 6 ? 'Password must be at least 6 characters' : '';
+    password.length < 6 ? "Password must be at least 6 characters" : "";
 
   const isFormValid = !emailError && !passwordError;
 
@@ -1169,19 +1150,19 @@ Show a list of users and filter them by role.
 ### Code
 
 ```jsx
-import { useState } from 'react';
+import { useState } from "react";
 
 const users = [
-  { id: 1, name: 'Amit', role: 'admin' },
-  { id: 2, name: 'Ravi', role: 'manager' },
-  { id: 3, name: 'Neha', role: 'member' }
+  { id: 1, name: "Amit", role: "admin" },
+  { id: 2, name: "Ravi", role: "manager" },
+  { id: 3, name: "Neha", role: "member" },
 ];
 
 export const FilterByDropdown = () => {
-  const [role, setRole] = useState('all');
+  const [role, setRole] = useState("all");
 
   const filteredUsers =
-    role === 'all' ? users : users.filter((user) => user.role === role);
+    role === "all" ? users : users.filter((user) => user.role === role);
 
   return (
     <div>
@@ -1227,7 +1208,7 @@ Create a modal that opens on button click and closes on close button.
 ### Code
 
 ```jsx
-import { useState } from 'react';
+import { useState } from "react";
 
 export const ModalExample = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -1292,11 +1273,11 @@ Create a simple shopping cart where quantity can increase/decrease and total pri
 ### Code
 
 ```jsx
-import { useState } from 'react';
+import { useState } from "react";
 
 const initialCart = [
-  { id: 1, name: 'Keyboard', price: 1000, quantity: 1 },
-  { id: 2, name: 'Mouse', price: 500, quantity: 2 }
+  { id: 1, name: "Keyboard", price: 1000, quantity: 1 },
+  { id: 2, name: "Mouse", price: 500, quantity: 2 },
 ];
 
 export const CartExample = () => {
@@ -1307,15 +1288,12 @@ export const CartExample = () => {
       currentCart.map((item) =>
         item.id === id
           ? { ...item, quantity: Math.max(1, item.quantity + change) }
-          : item
-      )
+          : item,
+      ),
     );
   };
 
-  const total = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
     <div>
@@ -1360,16 +1338,16 @@ Create tabs where clicking each tab changes the visible content.
 ### Code
 
 ```jsx
-import { useState } from 'react';
+import { useState } from "react";
 
 const tabs = [
-  { id: 'profile', label: 'Profile', content: 'This is profile tab' },
-  { id: 'settings', label: 'Settings', content: 'This is settings tab' },
-  { id: 'billing', label: 'Billing', content: 'This is billing tab' }
+  { id: "profile", label: "Profile", content: "This is profile tab" },
+  { id: "settings", label: "Settings", content: "This is settings tab" },
+  { id: "billing", label: "Billing", content: "This is billing tab" },
 ];
 
 export const TabsExample = () => {
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState("profile");
 
   const selectedTab = tabs.find((tab) => tab.id === activeTab);
 
@@ -1411,15 +1389,15 @@ Create a counter using `useReducer`.
 ### Code
 
 ```jsx
-import { useReducer } from 'react';
+import { useReducer } from "react";
 
 const reducer = (state, action) => {
   switch (action.type) {
-    case 'increment':
+    case "increment":
       return { count: state.count + 1 };
-    case 'decrement':
+    case "decrement":
       return { count: state.count - 1 };
-    case 'reset':
+    case "reset":
       return { count: 0 };
     default:
       return state;
@@ -1433,9 +1411,9 @@ export const CounterReducer = () => {
     <div>
       <h2>{state.count}</h2>
 
-      <button onClick={() => dispatch({ type: 'increment' })}>+</button>
-      <button onClick={() => dispatch({ type: 'decrement' })}>-</button>
-      <button onClick={() => dispatch({ type: 'reset' })}>Reset</button>
+      <button onClick={() => dispatch({ type: "increment" })}>+</button>
+      <button onClick={() => dispatch({ type: "decrement" })}>-</button>
+      <button onClick={() => dispatch({ type: "reset" })}>Reset</button>
     </div>
   );
 };
@@ -1464,7 +1442,7 @@ Pass data from parent to child and send selected data back to parent.
 ### Code
 
 ```jsx
-import { useState } from 'react';
+import { useState } from "react";
 
 const UserList = ({ users, onSelect }) => {
   return (
@@ -1483,8 +1461,8 @@ export const ParentChildExample = () => {
   const [selectedUser, setSelectedUser] = useState(null);
 
   const users = [
-    { id: 1, name: 'Paras' },
-    { id: 2, name: 'Rahul' }
+    { id: 1, name: "Paras" },
+    { id: 2, name: "Rahul" },
   ];
 
   return (
@@ -1523,24 +1501,24 @@ Create a list that supports search and sorting.
 ### Code
 
 ```jsx
-import { useState } from 'react';
+import { useState } from "react";
 
 const employees = [
-  { id: 1, name: 'Amit', salary: 50000 },
-  { id: 2, name: 'Neha', salary: 70000 },
-  { id: 3, name: 'Ravi', salary: 60000 }
+  { id: 1, name: "Amit", salary: 50000 },
+  { id: 2, name: "Neha", salary: 70000 },
+  { id: 3, name: "Ravi", salary: 60000 },
 ];
 
 export const SearchAndSort = () => {
-  const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('name');
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("name");
 
   const filteredEmployees = employees
     .filter((employee) =>
-      employee.name.toLowerCase().includes(search.toLowerCase())
+      employee.name.toLowerCase().includes(search.toLowerCase()),
     )
     .sort((first, second) => {
-      if (sortBy === 'salary') {
+      if (sortBy === "salary") {
         return first.salary - second.salary;
       }
 
@@ -1555,7 +1533,10 @@ export const SearchAndSort = () => {
         placeholder="Search employee"
       />
 
-      <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+      <select
+        value={sortBy}
+        onChange={(event) => setSortBy(event.target.value)}
+      >
         <option value="name">Sort by name</option>
         <option value="salary">Sort by salary</option>
       </select>
@@ -1731,30 +1712,29 @@ Explain:
 
 ---
 
-### 11. Please say the output - 
+### 11. Please say the output -
+
 ```jsx
-import React, {useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import Child from "./Child";
 function Parent() {
-    const [count, setCount] = useState(0);
-    console.log("Parent clicked");
-    useEffect(() => {
-      console.log("Parent Mounted");
-    }, [])
-    return (
-        <>
-            <button onClick={() => setCount(count + 1)}>
-                Increment
-            </button>
-            <Child />
-        </>
-    );
+  const [count, setCount] = useState(0);
+  console.log("Parent clicked");
+  useEffect(() => {
+    console.log("Parent Mounted");
+  }, []);
+  return (
+    <>
+      <button onClick={() => setCount(count + 1)}>Increment</button>
+      <Child />
+    </>
+  );
 }
 export default Parent;
 ```
 
 ```jsx
-import React, {useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import GrandChild from "./GrandChild";
 function Child() {
   const [cont, setCont] = useState(0);
@@ -1762,20 +1742,24 @@ function Child() {
   useEffect(() => {
     console.log("Child Mounted");
   }, []);
-  return <>
-    <button onClick={() => { 
-      setCont(cont + 1);
-      console.log("Child Clicked") 
-    }}>
-      Child Btnssssssssssssss
-    </button>
-    <h2>Child</h2>
-    <GrandChild />
-  </>
+  return (
+    <>
+      <button
+        onClick={() => {
+          setCont(cont + 1);
+          console.log("Child Clicked");
+        }}
+      >
+        Child Btnssssssssssssss
+      </button>
+      <h2>Child</h2>
+      <GrandChild />
+    </>
+  );
 }
 export default Child;
-
 ```
+
 ```jsx
 import React, { useEffect, useState } from "react";
 function GrandChild() {
@@ -1784,21 +1768,25 @@ function GrandChild() {
   useEffect(() => {
     console.log("Grand Child Mounted");
   }, []);
-  return <>
-    <button onClick={() => {
-      setContt(contt + 1);
-      console.log("Child Clicked")
-    }}>
-      Grand Child Increment
-    </button>
-    <h2>Grand Child</h2>
-  </>
+  return (
+    <>
+      <button
+        onClick={() => {
+          setContt(contt + 1);
+          console.log("Child Clicked");
+        }}
+      >
+        Grand Child Increment
+      </button>
+      <h2>Grand Child</h2>
+    </>
+  );
 }
 export default GrandChild;
 ```
 
-Output - 
-On Mount - 
+Output -
+On Mount -
 Parent clicked
 Child Rendered
 Grand Child Rendered
@@ -1811,7 +1799,7 @@ Parent clicked
 Child Rendered
 Grand Child Rendered
 
-On Child Increment - 
+On Child Increment -
 Child Clicked
 Child Rendered
 Grand Child Rendered

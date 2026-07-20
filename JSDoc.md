@@ -2292,6 +2292,9 @@ class Admin extends User {
 
 Composition means building complex behavior by **combining smaller parts**, instead of creating a long parent-child inheritance chain.
 
+Composition in JS just means building something bigger by combining smaller, simple pieces — instead of one giant function or class trying to do everything, you build small focused pieces and snap them together like Lego blocks.
+There are two common flavors:
+
 Simple idea:
 
 ```text

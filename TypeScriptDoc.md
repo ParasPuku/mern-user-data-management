@@ -172,8 +172,9 @@ If TypeScript feels confusing, learn in this order:
 
 ### 1. What is TypeScript?
 
-TypeScript is JavaScript with a type system added on top.
+TypeScript is a superset of Javascript, it adds type checking on top of the object. 
 
+TypeScript is a superset of JavaScript that adds static type checking. It helps catch errors during development and improves maintainability, autocomplete, and refactoring. TypeScript only adds extra syntax for types.
 JavaScript lets you write:
 
 ```js
@@ -193,7 +194,7 @@ The important point is that TypeScript catches this mistake before the app runs.
 Interview answer:
 
 ```text
-TypeScript is a superset of JavaScript that adds static type checking. It helps catch errors during development and improves maintainability, autocomplete, and refactoring.
+TypeScript is a superset of JavaScript that adds static type checking. It helps catch errors during development and improves maintainability, autocomplete, and refactoring. TypeScript only adds extra syntax for types.
 ```
 
 ### 2. Is TypeScript a separate language from JavaScript?
