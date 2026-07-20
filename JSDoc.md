@@ -2744,7 +2744,7 @@ setTimeout macrotask runs after microtasks.
 
 ### 69. What is a Promise?
 
-A Promise is an object represents the eventual completion (or failure) of an asynchronous operation and its resulting value, and promise represents a future value.
+A Promise is an object that represents the eventual completion (or failure) of an asynchronous operation and its resulting value, and promise represents a future value.
 
 Think of it like ordering food at a restaurant: 
 you get a receipt (the Promise) immediately, which guarantees you will eventually get food (the resolved value) or an error message if the kitchen runs out of ingredients (the rejected reason).
@@ -3725,93 +3725,6 @@ Backend: http://localhost:5001
 
 These are different origins.
 
-## Node.js Basics
-
-### 82. What is Node.js?
-
-Node.js is a JavaScript runtime built on Chrome V8 engine.
-
-It allows JavaScript to run outside the browser.
-
-### 83. CommonJS vs ES Modules?
-
-CommonJS:
-
-```js
-const express = require('express');
-module.exports = app;
-```
-
-ES Modules:
-
-```js
-import express from 'express';
-export { app };
-```
-
-This app uses ES Modules:
-
-```json
-"type": "module"
-```
-
-### 84. What is middleware?
-
-Middleware is a function that runs between request and response.
-
-Example:
-
-```js
-const logger = (req, res, next) => {
-  console.log(req.method, req.url);
-  next();
-};
-```
-
-In Express:
-
-```js
-app.use(logger);
-```
-
-## Security Questions
-
-### 85. What is XSS?
-
-XSS means Cross-Site Scripting.
-
-It happens when attacker injects malicious JavaScript into a page.
-
-Prevention:
-
-- escape output
-- sanitize input
-- use Content Security Policy
-- avoid dangerously setting HTML
-
-### 86. What is CSRF?
-
-CSRF means Cross-Site Request Forgery.
-
-It tricks authenticated users into sending unwanted requests.
-
-Prevention:
-
-- SameSite cookies
-- CSRF tokens
-- origin checks
-
-### 87. Why should JWT not be stored in localStorage?
-
-Because XSS can read localStorage.
-
-Better for browser apps:
-
-```text
-HTTP-only secure cookie
-```
-
-## Performance Questions
 
 ### 88. What is debounce?
 

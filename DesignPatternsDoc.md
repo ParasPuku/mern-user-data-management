@@ -24,106 +24,175 @@ SOLID is a set of five design principles for keeping React components, hooks, an
 
 ### 1. Single Responsibility Principle (SRP)
 
-Keep rendering separate from data loading. The page coordinates the feature, the hook loads data, and the list only displays it.
+A class should have only one reason to change — i.e., one job.
 
-```tsx
-function UserList({ users }: { users: { id: string; name: string }[] }) {
-  return <ul>{users.map((user) => <li key={user.id}>{user.name}</li>)}</ul>;
-}
-
-function useUsers() {
-  const [users, setUsers] = useState([]);
-
-  useEffect(() => {
-    fetch('/api/users').then((response) => response.json()).then(setUsers);
-  }, []);
-
-  return users;
-}
-
-function UsersPage() {
-  const users = useUsers();
-  return <UserList users={users} />;
+Bad:
+```jsx
+class Report {
+  generate() { /* ... */ }
+  saveToFile(path) { /* persistence logic mixed in */ }
+  sendEmail(address) { /* email logic mixed in */ }
 }
 ```
+
+Good:
+```jsx
+class Report {
+  generate() { /* ... */ }
+}
+class ReportSaver {
+  saveToFile(report, path) { /* ... */ }
+}
+class ReportMailer {
+  sendEmail(report, address) { /* ... */ }
+}
+```
+Now if the storage mechanism changes, only ReportSaver changes — Report and ReportMailer are untouched.
 
 ### 2. Open/Closed Principle (OCP)
 
-Extend a reusable component with props rather than editing its internal logic for every new button type.
+Classes should be open for extension but closed for modification.
 
-```tsx
-function Button({ variant = 'primary', children, ...props }) {
-  return <button className={`button button--${variant}`} {...props}>{children}</button>;
+Bad: 
+```jsx
+class Discount {
+  apply(customerType, price) {
+    if (customerType === "regular") {
+      return price * 0.95;
+    } else if (customerType === "vip") {
+      return price * 0.80;
+    }
+    // every new customer type means editing this method
+  }
 }
-
-<Button>Save</Button>
-<Button variant="danger">Delete</Button>
+```
+Good: 
+```jsx
+class Discount {
+  apply(price) { return price; }
+}
+class RegularDiscount extends Discount {
+  apply(price) { return price * 0.95; }
+}
+class VipDiscount extends Discount {
+  apply(price) { return price * 0.80; }
+}
 ```
 
-Adding a new `warning` variant only needs CSS and a prop value; the `Button` component stays unchanged.
+Adding a new discount type means adding a new class, not editing existing code.
+
 
 ### 3. Liskov Substitution Principle (LSP)
 
-Two components can be swapped when they honor the same props contract.
-
-```tsx
-function SaveButton({ onClick, disabled }) {
-  return <button onClick={onClick} disabled={disabled}>Save</button>;
+Subclasses should be usable in place of their base class without breaking behavior.
+Bad (classic violation):
+```jsx
+class Bird {
+  fly() { /* ... */ }
 }
 
-function IconSaveButton({ onClick, disabled }) {
-  return <button aria-label="Save" onClick={onClick} disabled={disabled}>💾</button>;
+class Penguin extends Bird {
+  fly() { throw new Error("Can't fly!"); } // breaks the contract
 }
-
-function Editor({ SaveControl = SaveButton }) {
-  return <SaveControl onClick={() => console.log('saved')} disabled={false} />;
-}
-
-<Editor />
-<Editor SaveControl={IconSaveButton} />
 ```
 
-Both controls accept `onClick` and `disabled` and preserve their expected behavior.
+Good: 
+```jsx
+class Bird {}
+
+class FlyingBird extends Bird {
+  fly() { /* ... */ }
+}
+
+class Penguin extends Bird {
+  swim() { /* ... */ }
+}
+```
+
+Now Penguin doesn't pretend to support a behavior it can't fulfill.
+
 
 ### 4. Interface Segregation Principle (ISP)
 
-Give a child only the data and callbacks it needs.
+Don't force a class to implement methods it doesn't need — prefer many small, specific interfaces over one large one.
 
-```tsx
-// Avatar does not need the full user object or update permissions.
-function Avatar({ name, imageUrl }: { name: string; imageUrl: string }) {
-  return <img src={imageUrl} alt={name} />;
+```jsx
+class Worker {
+  work() { /* ... */ }
+  eat() { /* ... */ }
 }
 
-function UserProfile({ user }) {
-  return <Avatar name={user.name} imageUrl={user.imageUrl} />;
+class Robot extends Worker {
+  eat() { throw new Error("Robots don't eat"); } // forced, useless method
 }
+```
+
+Bad: 
+```jsx
+class Worker {
+  work() { /* ... */ }
+  eat() { /* ... */ }
+}
+
+class Robot extends Worker {
+  eat() { throw new Error("Robots don't eat"); } // forced, useless method
+}
+```
+
+Good:
+```jsx
+const Workable = Base => class extends Base {
+  work() { /* ... */ }
+};
+const Eatable = Base => class extends Base {
+  eat() { /* ... */ }
+};
+class Human extends Eatable(Workable(class {})) {}
+class Robot extends Workable(class {}) {}
 ```
 
 This keeps `Avatar` reusable and prevents it from depending on unrelated user fields.
 
 ### 5. Dependency Inversion Principle (DIP)
 
-Let a component depend on a small contract supplied from outside, not a specific API implementation.
+Depend on abstractions, not concrete implementations.
 
+Now UserService works with any database that implements the Database interface, and you can swap implementations freely (or mock it for testing).
+
+Bad: 
 ```tsx
-function UserForm({ saveUser }) {
-  async function handleSubmit(event) {
-    event.preventDefault();
-    await saveUser({ name: 'Asha' });
-  }
-
-  return <form onSubmit={handleSubmit}><button>Save</button></form>;
+class MySQLDatabase {
+  save(data) { /* ... */ }
 }
 
-const apiUserRepository = {
-  saveUser: (user) => fetch('/api/users', {
-    method: 'POST',
-    body: JSON.stringify(user),
-  }),
-};
+class UserService {
+  constructor() {
+    this.db = new MySQLDatabase(); // tightly coupled to one implementation
+  }
+}
+```
+Good:
 
-<UserForm saveUser={apiUserRepository.saveUser} />
+```tsx
+class Database {
+  save(data) { /* ... */ }
+}
+
+class MySQLDatabase extends Database {
+  save(data) { /* MySQL-specific logic */ }
+}
+
+class MongoDatabase extends Database {
+  save(data) { /* Mongo-specific logic */ }
+}
+
+class UserService {
+  constructor(db) { // depends on the abstraction
+    this.db = db;
+  }
+}
+// Usage
+const service = new UserService(new MySQLDatabase());
 ```
 
 The same form can use a mock `saveUser` in tests or a different storage implementation later.
