@@ -3901,3 +3901,17 @@ Example:
 ```text
 unknown means a value can be anything, but TypeScript forces us to narrow it before use. For example, in a catch block we check error instanceof Error before reading error.message. It is safer than any because any disables type checking. The pitfall is using type assertion to bypass narrowing too often.
 ```
+
+### How do you type useState and useRef?
+### How do you type Event Handlers?
+### How do you type component props?
+### How do you type API Response?
+### How do you share types between frontend and backend?
+### Our API response gets changes frequently how do you design?
+### How do you avoid any?
+### Convert from any to unknown in simple code?
+### How do you type React component?
+### Write a generic function?
+### type useCallback, useMemo, React.memo
+### What is keyof?
+### Reusable react card component using typescript?
