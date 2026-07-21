@@ -3913,5 +3913,5 @@ unknown means a value can be anything, but TypeScript forces us to narrow it bef
 ### How do you type React component?
 ### Write a generic function?
 ### type useCallback, useMemo, React.memo
-### What is keyof?
+### What is keyof, typeof, map type, conditional types?
 ### Reusable react card component using typescript?
