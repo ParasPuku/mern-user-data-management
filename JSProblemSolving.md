@@ -46,22 +46,23 @@ Missing numbers:
 
 ```js
 function missingNumber(arr) {
-  const numSet = new Set(arr);
+  const newArr = [...arr].sort((a, b) => a - b);
+  const numSet = new Set(newArr);
+  console.log(numSet)
   const foundValue = [];
-  const missedValue = [];
-  const end = arr[arr.length - 1] || 0;
-  for (let i = 1; i <= end; i++) {
-    if (numSet.has(i)) {
+  const missValue = [];
+  const end = newArr[newArr.length - 1] || 0;
+  for(var i=1; i<=end; i++) {
+    if(numSet.has(i)) {
       foundValue.push(i);
     } else {
-      missedValue.push(i);
+      missValue.push(i)
     }
   }
-
-  return { foundValue, missedValue };
+  return {foundValue, missValue}
 }
 
-const result = missingNumber([1, 2, 3, 4, 6, 8, 10]);
+const result = missingNumber([22, 2, 3, 4, 6, 8, 10]);
 console.log(result);
 
 ```
@@ -313,12 +314,14 @@ function countFrequency(arr) {
 }
 
 console.log(countFrequency(['apple', 'banana', 'apple', 'orange', 'banana']));
+console.log(countFrequency([2, 2, 1, 3, 3, 5]));
 ```
 
 ### Output
 
 ```js
 { apple: 2, banana: 2, orange: 1 }
+{ a: 1, p: 2, l: 1, e: 3, s: 1 }
 ```
 
 ### Explanation
@@ -952,33 +955,48 @@ Sort an array in ascending order without using the built-in `sort()` method.
 ### Code
 
 ```js
-function sortArray(arr) {
-  var result = [];
-
-  for (var i = 0; i < arr.length; i++) {
-    result.push(arr[i]);
-  }
-
-  for (var j = 0; j < result.length; j++) {
-    for (var k = 0; k < result.length - 1; k++) {
-      if (result[k] > result[k + 1]) {
-        var temp = result[k];
-        result[k] = result[k + 1];
-        result[k + 1] = temp;
+function sorting(arr) {
+  for(var i=0; i<arr.length; i++){
+    for(var j=0;j<arr.length; j++) {
+      if(arr[j] > arr[j+1]) {
+        var temp = arr[j];
+        arr[j] = arr[j+1];
+        arr[j+1] = temp;
       }
     }
   }
-
-  return result;
+  return arr;
 }
-
-console.log(sortArray([5, 2, 8, 1, 3]));
+const result = sorting([22, 2, 3, 4, 6, 8, 10]);
+console.log(result);
 ```
 
 ### Output
 
 ```js
-[1, 2, 3, 5, 8]
+[2, 3, 4, 6, 8, 10, 22]
+```
+
+### Ascending Order Sorting
+```js
+function sorting(arr) {
+  const newArr = [...arr].sort((a, b) => a - b);
+  return newArr;
+}
+
+const result = sorting([22, 2, 3, 4, 6, 8, 10]);
+console.log(result); // 2, 3, 4, 6, 8, 10, 22
+```
+
+### Descending Order Sorting
+```js
+function sorting(arr) {
+  const newArr = [...arr].sort((a, b) => b - a);
+  return newArr;
+}
+
+const result = sorting([22, 2, 3, 4, 6, 8, 10]);
+console.log(result); // 22, 10, 8, 6, 4, 3, 2
 ```
 
 ### Explanation
@@ -1408,29 +1426,26 @@ Count how many times each character appears in a string.
 ### Code
 
 ```js
-function characterFrequency(str) {
+function countFrequency(arr) {
   var frequency = {};
-
-  for (var i = 0; i < str.length; i++) {
-    var char = str[i];
-
-    if (char === ' ') {
-      continue;
+  for(var i=0; i<arr.length; i++) {
+    var item = arr[i];
+    if(frequency[item]) {
+      frequency[item] = frequency[item] + 1;
+    } else {
+      frequency[item] = 1
     }
-
-    frequency[char] = (frequency[char] || 0) + 1;
   }
-
   return frequency;
 }
 
-console.log(characterFrequency('hello world'));
+console.log(countFrequency("appleees"));
 ```
 
 ### Output
 
 ```js
-{ h: 1, e: 1, l: 3, o: 2, w: 1, r: 1, d: 1 }
+{ a: 1, p: 2, l: 1, e: 3, s: 1 }
 ```
 
 ### Explanation

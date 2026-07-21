@@ -3304,9 +3304,24 @@ useCallback is a React Hook that caches (memoizes) a function definition between
 Example:
 
 ```tsx
-const handleDelete = useCallback((id: string) => {
-  dispatch(deleteUser(id));
-}, [dispatch]);
+export const useMultiply = () => {
+  const response = useCallback((val1, val2) => {
+    return val1 * val2; // 👈 val1 and val2 belong inside this function scope
+  }, []); // 🟢 Empty is correct!
+};
+
+//App.js
+import { useMultiply } from "./utils.js"
+function App() {
+  const mul = useMultiply();
+  console.log(mul(10, 100));
+  return (
+    <div>Hello</div>
+  )
+}
+
+export default App;
+
 ```
 Useful when passing callbacks to memoized child components.
 
@@ -5546,7 +5561,11 @@ Benefits:
 - faster initial load
 - load feature code only when needed
 
-### 97. What is list virtualization?
+### 97. What is list virtualization? How do you optimize a large list (virtualization)??
+
+To optimize a large list in React, you use list virtualization (also called windowing). Instead of rendering thousands of DOM nodes, virtualization only renders the items currently visible in the viewport plus a small buffer.
+
+As the user scrolls, old DOM nodes are destroyed and new ones are created dynamically, keeping memory usage flat.
 
 Virtualization renders only visible rows in a large list.
 
@@ -7848,6 +7867,51 @@ console.log(increment()); // 2
 
 `increment` remembers `count`.
 
+#### What causes stale closures?
+A stale closure occurs when an inner function (closure) captures variables from an outer scope, but that function continues to hold onto the old, outdated values even after those variables have been updated
+
+This happens because of a mismatch between when a function "captures" its environment and when the data actually changes. It is a particularly common issue in modern front-end frameworks like React.
+
+```tsx
+// ❌ THE PROBLEM: Stale Closure Example
+import React, { useState, useEffect } from 'react';
+
+function Counter() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      // This alerts "0" forever because it captured count = 0 at creation
+      console.log(`Count is: ${count}`); 
+      setCount(count + 1); 
+    }, 1000);
+
+    return () => clearInterval(id);
+  }, []); // ⚠️ Empty array means this only runs once and stays stale
+
+  return <h1>{count}</h1>;
+}
+```
+
+Why it breaks
+- useEffect runs only once on mount.
+- The setInterval callback captures count when it was 0.
+- Every second, the loop runs setCount(0 + 1).
+- The screen updates to 1, but the interval remains trapped in the first render where count is always 0.
+
+Fix this by updating - 
+```tsx
+//  THE FIX: Functional Update
+useEffect(() => {
+  const id = setInterval(() => {
+    // Correct: updates based on the absolute latest live state
+    setCount(prevCount => prevCount + 1); 
+  }, 1000);
+
+  return () => clearInterval(id);
+}, []); 
+```
+
 #### Closure in React
 
 ```tsx
@@ -8298,8 +8362,8 @@ Example:
 ```tsx
 function useAddition(num1: number, num2: number) {
   return useMemo(() => {
-    return num1 + num2;
-  }, [num1, num2]);
+    return num1 + num2; // 👈 val1 and val2 come from the outer hook scope!
+  }, [num1, num2]); // 🔴 Dependencies required!
 }
 ```
 
@@ -8685,7 +8749,7 @@ Common mistake:
 Do not switch an input from uncontrolled to controlled during its lifetime. For example, avoid value={undefined} first and value="Paras" later.
 ```
 
-### 17. useReducer
+### 17. What is useReducer?
 
 Interview answer:
 
@@ -8739,7 +8803,7 @@ function Counter() {
 }
 ```
 
-#### When to use useReducer instead of useState
+### 18. When to use useReducer instead of useState?
 
 Use `useState` when state is simple:
 

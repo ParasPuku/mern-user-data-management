@@ -699,6 +699,16 @@ Literal types are useful when your app has known values like:
 
 ### 14. Difference between union type and literal type?
 
+1. Literal Types (The Single Value)
+A literal type represents one specific exact value. It can be a specific string, number, or boolean.
+  - let method: "GET" = "GET";
+  - The variable method can only ever be "GET".
+  - It cannot be "POST", "get", or any other string.
+2. Union Types (The Collection of Choices)
+When you want a variable to allow a choice between multiple specific values, you combine those literal types using the pipe (|) symbol. This creates a union of literal types.
+  - type ApiMethod = "GET" | "POST" | "PUT" | "DELETE";
+  - Now, the value can be any one of those specific options.
+
 Union type and literal type are connected, but they are not exactly the same thing.
 
 A literal type means one exact value is allowed.
@@ -2639,11 +2649,26 @@ This tells TypeScript:
 Trust me, this element is an HTMLInputElement.
 ```
 
-Important: assertion does not change the runtime value.
+Important: assertion does not change the runtime value. Yes, this is completely correct.
 
 If you assert incorrectly, TypeScript may stop warning you but the app can still crash.
 
 Use assertions carefully.
+
+```jsx
+// TypeScript
+const unknownData: any = "123";
+const myNumber = unknownData as number; 
+
+console.log(typeof myNumber); 
+```
+
+```jsx
+// Compiled JavaScript output
+const unknownData = "123";
+const myNumber = unknownData; // The "as number" is gone!
+console.log(typeof myNumber); // Prints "string", NOT "number"
+```
 
 ### 66. as vs angle bracket assertion?
 
@@ -3336,6 +3361,8 @@ in = check property exists
 ```
 
 ### 93. What is template literal type?
+
+A literal type represents one specific exact value. It can be a specific string, number, or boolean.
 
 Template literal types build string types using template syntax.
 
