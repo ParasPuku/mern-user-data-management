@@ -3903,7 +3903,66 @@ unknown means a value can be anything, but TypeScript forces us to narrow it bef
 ```
 
 ### How do you type useState and useRef?
+useState
+
+For simple values, TypeScript infers the type automatically. For complex values, nulls, or empty states, pass a generic argument.
+
+```jsx
+// Type inferred automatically as boolean
+const [isOpen, setIsOpen] = useState(false);
+
+// Explicit type for complex data or null values
+interface User { id: string; name: string; }
+const [user, setUser] = useState<User | null>(null);
+
+// Explicit type for empty arrays
+const [items, setItems] = useState<string[]>([]);
+```
+
+useRef
+
+useRef has two distinct use cases. Its type definition changes depending on whether you are referencing a DOM element or a mutable instance variable.
+
+```jsx
+// 1. DOM Element Reference (Must pass null initial value)
+const inputRef = useRef<HTMLInputElement>(null);
+const focusInput = () => inputRef.current?.focus();
+
+// 2. Mutable Instance Variable (Like a timer ID)
+const timerRef = useRef<number>(0);
+const startTimer = () => { timerRef.current = window.setInterval(() => {}, 1000); };
+```
+
+
+
 ### How do you type Event Handlers?
+You can type the event directly inside an inline function parameter, or type the separate handler function completely.
+
+```jsx
+import React, { useState } from "react";
+
+export function FormComponent() {
+  const [text, setText] = useState("");
+
+  // 1. Separate handler function typing
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setText(event.target.value);
+  };
+
+  return (
+    <form onSubmit={(e: React.FormEvent<HTMLFormElement>) => e.preventDefault()}>
+      {/* 2. Inline typing is handled automatically by React inference */}
+      <input type="text" value={text} onChange={handleChange} />
+      <button type="submit">Submit</button>
+    </form>
+  );
+}
+```
+Common Events: 
+- React.MouseEvent<HTMLButtonElement>, 
+- React.KeyboardEvent<HTMLInputElement>, 
+- React.FocusEvent<HTMLInputElement>
+
 ### How do you type component props?
 ### How do you type API Response?
 ### How do you share types between frontend and backend?
@@ -3913,5 +3972,9 @@ unknown means a value can be anything, but TypeScript forces us to narrow it bef
 ### How do you type React component?
 ### Write a generic function?
 ### type useCallback, useMemo, React.memo
-### What is keyof, typeof, map type, conditional types?
+### What is keyof, typeof, mapped type, conditional types?
 ### Reusable react card component using typescript?
+### How do you organize types?
+### How do you share types?
+### How do you genereic components
+### How do you generic api response

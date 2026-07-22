@@ -1118,6 +1118,24 @@ const App = () => {
 
 React runs `App()` to know what UI should be.
 
+### 15. How does React decide which component to re-render?
+React decides to re-render a component based on a single core trigger: a change in state or context. If a component's state changes, or if it consumes a React Context value that changes, React schedules a re-render for that component and all of its child components.
+
+The complete evaluation process follows a strict top-down flow.
+
+1. The Triggering PhasesState Changes: 
+- Calling setState (or a useState setter hook) marks that specific component as "dirty.
+- "Context Changes: When a <Context.Provider> value changes, any component using useContext for that provider is forced to re-render.
+- Parent Re-renders: By default, if a parent component re-renders, React automatically cascades down and re-renders all of its child components.
+
+2. The Reconciliation (Diffing) Process
+Once a re-render is triggered, React executes the component function to generate a new Virtual DOM snippet. It then compares this new Virtual DOM against the old one using a "diffing" algorithm based on two core rules:
+
+- Different Element Types: If the HTML tag or component type changes (e.g., swapping a <div> for a <span>, or <Profile> for <Settings>), React destroys the old DOM tree completely and builds a brand new one from scratch.
+
+- Same Element Types: If the element type remains the same but attributes or props change, React leaves the underlying DOM node intact. It only updates the specific HTML attributes, CSS styles, or text content that actually changed.
+
+
 ### 16. Difference between Render phase and Commit phase in React?
 
 React update has two main phases:
