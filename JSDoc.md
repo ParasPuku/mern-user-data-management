@@ -192,8 +192,6 @@ console.log(c); // ReferenceError
 ```
 
 
-
-
 ### 7. Do let and const get hoisted during compilation time?
 
 Yes, let and const are hoisted during the compile phase, but unlike var, they are not initialized with undefined.
@@ -507,20 +505,62 @@ function sayHello() {
 }
 ```
 
-### 12. What is Temporal Dead Zone?
+### 12. What is Temporal Dead Zone(TDZ)?
+A temporal dead zone (TDZ) is the area of a block where a variable is inaccessible until the moment the computer completely initializes it with a value.
 
-Temporal Dead Zone is the time between entering a scope and the actual declaration of `let` or `const`.
+The Temporal Dead Zone (TDZ) in JavaScript is the specific period from the start of a block scope until the moment a variable is declared and initialized. If you attempt to access, read, or write to a variable while it is trapped within this zone, JavaScript will immediately throw a ReferenceError.
 
-let and const variables are created in memory but not yet initialized, so those variable are in Temporal Dead Zone.
-
-Example:
+Code Example of the TDZ
+The zone is "temporal" (time-based) rather than spatial (location-based). It depends entirely on the execution order of your code, not just the physical layout of the lines.
 
 ```js
-console.log(name); // ReferenceError
-let name = 'Paras';
-```
+{
+    // ─── START OF BLOCK SCOPE ───
+    // The TDZ for 'myVariable' begins here.
 
-`let` and `const` are hoisted, but they cannot be accessed before declaration.
+    console.log(myVariable); 
+    // ❌ Throws ReferenceError: Cannot access 'myVariable' before initialization
+
+    // The TDZ is still active here...
+
+    let myVariable = "Hello World"; 
+    // ─── END OF TDZ ───
+    // 'myVariable' is now initialized.
+
+    console.log(myVariable); 
+    //  Logs: "Hello World"
+}
+```
+Why the TDZ Occurs
+The TDZ is directly tied to hoisting. In JavaScript, all variable declarations are hoisted (lifted) to the top of their enclosing scope before execution begins. However, they are treated differently based on their keyword:
+
+- let and const: They are hoisted to the top of their block, but they remain uninitialized. JavaScript forbids any interaction with an uninitialized variable, keeping it in the TDZ until the engine runs the exact line where it is declared.
+- var: Variables declared with var do not have a TDZ. They are hoisted and instantly initialized with a default value of undefined. This allows them to be accessed before their actual declaration line without crashing your program.
+
+Comparison: let/const vs var
+Here is how let / const compare to var across key JavaScript features:
+
+Hoisting
+- let / const: Yes, they are hoisted.
+- var: Yes, it is hoisted.
+Initial Value
+- let / const: Uninitialized.
+- var: Automatically initialized as undefined.
+Temporal Dead Zone (TDZ)
+- let / const: Yes, the TDZ applies.
+- var: No TDZ exists.
+Early Access Behavior
+- let / const: Immediately throws a ReferenceError.
+- var: Returns undefined safely.
+Scope Type
+- let / const: Block scope { ... }.
+- var: Function or Global scope.
+
+Why Did JavaScript Introduce the TDZ?
+The TDZ was introduced in ECMAScript 6 (ES6) as a safety mechanism to build more reliable software. It helps developers by:
+- Catching Bugs Early: Accessing a variable before setting its value is usually an accidental programming mistake.
+- Enforcing Best Practices: It forces you to write cleaner habits, ensuring you always declare variables before using them.
+- Protecting const: A const variable can never change its value once set. If it were hoisted as undefined like a var, it would technically shift values later, breaking its core design rule.
 
 ## Equality and Type Conversion
 
@@ -613,11 +653,51 @@ console.log(NaN === NaN); // false
 console.log(Number.isNaN(NaN)); // true
 ```
 
+### 18. Why everything in javascript is an Object?
+The phase "everything in JavaScript is an object" is technically a myth, though it correctly describes how JavaScript behaves on the surface. In reality, JavaScript is divided into two distinct categories: primitives and objects.
+
+The reason this misconception persists is due to two fundamental architectural designs in JavaScript: Prototypal Inheritance and a mechanism known as Autoboxing (Object Wrapping).
+
+1. Complex Types are Literally Objects
+In many programming languages, complex structures like arrays, functions, and dates are unique, distinct data types. In JavaScript, these are all built on top of the base Object prototype.
+- Arrays: Under the hood, an array is just a specialized object with numeric keys, a tracked length property, and extra array-specific methods.
+- Functions: Functions are "first-class citizens" and are actually callable objects. You can freely assign properties or pass methods to a function just like a normal object.
+- Regular Expressions, Maps, and Sets: These are also specialized object instances built from their respective constructors.
+
+2. The Illusion of Objects: Autoboxing
+The biggest reason people think everything is an object is that you can run methods on primitive values like strings, numbers, and booleans (e.g., "hello".toUpperCase() or (4.567).toFixed(2)).
+
+Primitives do not have methods or properties, and they are immutable. When you try to call a method on a primitive, JavaScript performs a temporary transformation behind the scenes:
+
+const name = "alex";
+const upper = name.toUpperCase(); 
+
+Behind the scenes, JavaScript executes the equivalent of these steps:
+- Boxes the string primitive into a temporary wrapper object: new String("alex").
+- Runs the .toUpperCase() method on that temporary object.
+- Returns the resulting new primitive string value.
+- Disposes of the temporary object to free up memory stack space.
+
+This architectural trick keeps primitives lightweight and fast, while giving developers the convenience of object-like functionality.
+
+3. The Grandparent: The Prototype Chain
+Every structural data type in JavaScript eventually traces back to Object.prototype. If you follow the internal prototype chain of an array, a custom class, or a function up to its logical end, it points back to the universal root object.
+
+// Following an array's prototype lineage
+myArray.__proto__ === Array.prototype;          // true
+Array.prototype.__proto__ === Object.prototype; // true
+Object.prototype.__proto__ === null;             // true (The end of the line)
+
+Summary: What is Not an Object?
+To understand JavaScript fully, you must know what is explicitly excluded from the object family. JavaScript contains 7 primitive data types that are not objects and do not have prototypes:
+
 ## Scope and Closures
 
 ### 18. What is scope?
 
 Scope defines where variables are accessible.
+
+Scope in JavaScript refers to the current context of execution, which determines the accessibility (visibility) of variables, functions, and objects to different parts of your code. If a variable is not within the current scope, it cannot be used or accessed.Think of scope as an automatic boundary that decides who can see and use your data.
 
 Types:
 
@@ -633,9 +713,378 @@ function test() {
   const name = 'Paras';
   console.log(name);
 }
-
 console.log(name); // ReferenceError
 ```
+
+## Global Scope
+A variable has global scope when it is declared outside of any function or block. It can be accessed from anywhere in your entire JavaScript program. However, let/const and var treat the global object (like window in browsers or global in Node.js) very differently.
+
+- Visibility: Everywhere in your entire code.
+- Lifespan: Until the browser tab or application closes.
+
+```js
+Code Example: var vs let/const Globals
+// Both are declared in the global scope
+var globalVar = "I attach to the window object";
+let globalLet = "I stay private to the global scope";
+
+// 1. Both can be accessed directly anywhere:
+console.log(globalVar); // 🟢 Logs: "I attach to the window object"
+console.log(globalLet); // 🟢 Logs: "I stay private to the global scope"
+
+// 2. Checking the global 'window' object properties:
+console.log(window.globalVar); // 🟢 Logs: "I attach to the window object"
+console.log(window.globalLet); // 🟡 Logs: undefined (It does not attach!)
+```
+
+Key Differences Added to the Comparison List - 
+
+Global Object Attachment
+- var: Automatically adds itself as a property on the global window object. This can accidentally overwrite existing browser properties and cause bugs.
+- let / const: Does not attach to the global object. It is stored securely in an invisible declarative environment record.
+
+Redeclaration Protection
+- var: Allows you to redeclare the same global variable multiple times without warning.
+- let / const: Throws a SyntaxError if you try to redeclare the same variable in the global scope.
+
+## Block Scope (let / const)
+Variables declared with let or const are bound to the nearest pair of curly braces {}. They do not exist outside of that specific block.
+
+- Visibility: Only inside those exact curly braces.
+- Keywords: Strictly enforced only by let and const.
+
+```js
+if (true) {
+    let blockScoped = "I am trapped inside this block!";
+    console.log(blockScoped); //  Logs: "I am trapped inside this block!"
+}
+// Trying to access it outside the block:
+console.log(blockScoped); 
+// ❌ Throws ReferenceError: blockScoped is not defined
+```
+
+## Function Scope (var)
+Variables declared with var ignore blocks like if statements or for loops. They are only confined by the boundaries of an entire function.
+
+- Visibility: Only inside that specific function.
+- Keywords: Created by var, let, or const.
+
+```js
+function myFunction() {
+    if (true) {
+        var functionScoped = "I can escape if blocks!";
+    }
+    // Accessing it outside the if block, but inside the function:
+    console.log(functionScoped); 
+    //  Logs: "I can escape if blocks!"
+}
+myFunction();
+// Trying to access it outside the function:
+console.log(functionScoped); 
+// ❌ Throws ReferenceError: functionScoped is not defined
+```
+
+## Module Scope - 
+Variables declared inside a JavaScript Module (import/export files) live here.
+- Visibility: Only within that specific file.
+- Lifespan: As long as the module is loaded.
+Example: Other files cannot see these variables unless you explicitly export them.
+
+## Why This Matters: The for Loop Trap
+Using var in loops can lead to unexpected bugs because the variable leaks out into the surrounding scope.
+
+The var Issue
+```js
+for (var i = 0; i < 3; i++) {
+    // Loop runs...
+}
+console.log(i); //  Logs: 3 (The variable leaked out!)
+```
+
+The let Fix
+```js
+for (let j = 0; j < 3; j++) {
+    // Loop runs...
+}
+console.log(j); // ❌ Throws ReferenceError: j is not defined (Safely contained!)
+```
+
+### 19. What is Execution Context?
+An execution context is the abstract environment where code is evaluated and executed in JavaScript. It acts as a container holding all the necessary information for the code to run—including local variables, function arguments, the this keyword, and a reference to outer scopes.
+
+The Two Phases
+Every execution context is created and managed in two main steps:
+- Creation Phase: The JavaScript engine sets up the environment. It allocates memory for variables (assigning undefined as a placeholder) and functions, sets up the scope chain, and binds the this keyword.
+- Execution Phase: The engine runs the code line by line, assigning actual values to the variables and executing the logic.
+
+Types of Execution Contexts
+There are three main types:
+- Global Execution Context (GEC): The default environment. Created as soon as the JavaScript file loads, it represents the global scope. There is only one GEC for the entire program.
+- Function Execution Context (FEC): Created every time a function is invoked. It handles all the code and variables specific to that function.
+- Eval Execution Context: Created when executing code inside the eval() function (which is rarely used).
+
+How the Engine Manages Them: The Call Stack
+Because JavaScript is single-threaded, it handles multiple execution contexts using a Call Stack (which follows a Last-In, First-Out principle).
+
+When a script starts, the Global Execution Context is pushed to the bottom of the stack. Whenever you call a function, the engine creates a new FEC, pushes it to the top of the stack, and executes it. Once the function finishes, its context is popped off the stack, and the engine resumes executing the context below it.
+
+### 19. What is call stack?
+The JavaScript Call Stack is a mechanism used by the JavaScript engine to keep track of function execution in a script. It acts like a digital "to-do list" that records which function is currently running and which functions are called from within that function.
+
+Key Characteristics
+- Single-Threaded: JavaScript has only one call stack. It can execute only one task or function at a time.
+- LIFO Structure: It operates on a Last-In, First-Out (LIFO) principle. The last function pushed onto the stack is the first one to be popped off (completed and removed).
+- Synchronous Execution: Code execution is synchronous. Each function call blocks the execution of the code below it until it finishes.
+
+How It Works (Step-by-Step)
+When your JavaScript file loads, the engine processes code sequentially through these phases:
+
+- Global Execution Context: Before any custom functions run, the engine creates a Global Execution Context and pushes it to the bottom of the stack.
+
+- Pushing a Function: When a function is invoked, a new execution context (called a stack frame) is created for it and pushed onto the top of the stack.
+
+- Handling Nested Calls: If the current function calls another function, the script pauses execution, creates a new frame, and pushes the new function to the top of the stack.
+
+- Popping a Function: Once a function hits a return statement or reaches its final bracket, it finishes executing. The engine pops it off the top of the stack and resumes where it left off in the function below it.
+
+Code Example and Stack Visualization
+Consider the following script:
+
+function multiply(a, b) {
+    return a * b;
+}
+
+function square(n) {
+    let result = multiply(n, n);
+    return result;
+}
+
+function printSquare(num) {
+    let output = square(num);
+    console.log(output);
+}
+
+printSquare(4);
+
+As the JavaScript engine processes printSquare(4), the call stack changes dynamically:
+
+Here is the step-by-step execution of the code example, broken down into chronological points:
+- Step 1: The script starts running, and the engine pushes the Global Context to the bottom of the stack.
+- Step 2: The engine invokes printSquare(4) and pushes printSquare onto the stack, right above the Global Context.
+- Step 3: Inside printSquare, the engine encounters square(4). It pauses printSquare and pushes square to the top of the stack.
+- Step 4: Inside square, the engine encounters multiply(4, 4). It pauses square and pushes multiply to the very top of the stack.
+- Step 5: The multiply function finishes its calculation and returns 16. The engine pops multiply off the stack, leaving square back at the top.
+- Step 6: The square function receives the value, completes its execution, and returns 16. The engine pops square off the stack, leaving printSquare at the top.
+- Step 7: The printSquare function resumes, executes console.log(16), and finishes. The engine pops printSquare off the stack.
+- Step 8: The script reaches the end of the file, the Global Context is popped off, and the stack becomes entirely empty.
+
+### 19. What is a Stack Overflow?
+Because the call stack has a limited size (usually between 10,000 to 15,000 frames depending on the browser), it can run out of memory.
+
+A Stack Overflow occurs when a function calls itself recursively without a terminating base case (infinite recursion). The stack continuously grows until it exceeds its limit and crashes the script with a Maximum call stack size exceeded error.
+
+```js
+// This will cause a Stack Overflow error
+function recurse() {
+    recurse(); 
+}
+recurse();
+```
+
+If you are debugging complex code, you can open your browser's DevTools, look at the Sources or Debugger tab, and find the Call Stack window to inspect the exact path your application took to reach a breakpoint.
+
+### 19. What is Event Loop?
+The Event Loop is the core mechanism that allows JavaScript to perform non-blocking, asynchronous operations despite being a single-threaded language. It acts like an invisible coordinator, continuously monitoring your code's execution state and deciding exactly when to run pending asynchronous tasks.
+
+The Core Architecture
+To understand the Event Loop, you must understand the four primary parts of the JavaScript runtime environment:
+
+- Call Stack: A Last-In, First-Out (LIFO) stack where JavaScript keeps track of functions currently executing.
+- Web APIs / Node APIs: Background environments provided by the browser or Node.js to handle slow tasks like setTimeout, fetch() network requests, or DOM events.
+- Microtask Queue: A high-priority staging line specifically for Promise callbacks (.then, .catch) and async/await continuations.
+- Callback Queue (Macrotask Queue): A lower-priority staging line for older asynchronous APIs like setTimeout, setInterval, and UI event listeners.
+
+How It Works Step-by-Step
+The Event Loop runs continuously in the background and executes a strict lifecycle loop:
+
+[ Step 1: Run Synchronous Code in Call Stack ] 
+                       |
+                       v
+[ Step 2: Call Stack Becomes Completely Empty ]
+                       |
+                       v
+[ Step 3: Flush ALL Tasks in Microtask Queue (Promises) ]
+                       |
+                       v
+[ Step 4: Run ONE Task from Callback Queue (setTimeout) ]
+                       |
+                       v
+            (Repeat indefinitely...)
+
+1. Execute Synchronous Tasks: JavaScript runs code line-by-line, pushing and popping functions onto the Call Stack.
+2. Offload Asynchronous Operations: When an async task appears (e.g., a network request), it is pushed to the Web APIs to run in the background, freeing up the Call Stack immediately.
+3. Queue Completed Callbacks: Once the background Web API finishes, its corresponding callback function is sent to either the Microtask Queue or the Callback Queue.
+4. The Event Loop Check: The Event Loop continuously monitors the Call Stack. The split-second the Call Stack is completely empty, it processes tasks:
+- It executes all pending items in the Microtask Queue first.
+- It then takes exactly one item from the Callback Queue and executes it.
+
+Where are tasks executed?
+They are executed in the Call Stack. No JavaScript code ever executes anywhere else.
+
+The queues (Microtask and Callback queues) are purely holding areas for functions waiting for their turn. They do not have an execution engine of their own.
+
+The exact handoff process:
+1. The Call Stack becomes completely empty.
+2. The Event Loop looks at the Microtask Queue and sees a waiting Promise callback.
+3. The Event Loop plucks that callback out of the queue.
+4. The Event Loop pushes that callback directly onto the empty Call Stack.
+5. The JavaScript engine executes the code inside the Call Stack.
+6. Once finished, the function is popped off the Call Stack, and the loop checks for the next task.
+
+```js
+Code Example & Execution Order
+Consider this classic interview snippet:
+
+console.log("Start");
+
+setTimeout(() => {
+  console.log("Timeout (Macrotask)");
+}, 0);
+
+Promise.resolve().then(() => {
+  console.log("Promise (Microtask)");
+});
+
+console.log("End");
+```
+
+Output:
+Start
+End
+Promise (Microtask)
+Timeout (Macrotask)
+
+Why did this happen?
+- "Start" and "End" print instantly because they are synchronous.
+- Even though setTimeout has a delay of 0ms, its callback must wait in the lower-priority Callback Queue.
+- The Promise callback goes to the Microtask Queue.
+- When the Call Stack clears, the Event Loop prioritizes the Microtask Queue over the Callback Queue, running the Promise log before the Timeout log.
+
+### 19. Why do Microtasks(Promises) have higher priority than Macrotasks(setTimeout and setInterval)?
+Microtasks have higher priority than macrotasks to ensure the application state remains consistent and updated immediately before the browser renders the next frame. By clearing the microtask queue first, JavaScript guarantees that asynchronous state changes (like Promise resolutions) are completely processed without giving the user interface a chance to render half-baked or outdated data.
+
+🔄 The Event Loop Execution Order
+The JavaScript Event Loop follows a strict order of operations during each cycle:
+- Execute Synchronous Code: The call stack runs all immediate code until it is empty.
+- Clear the Microtask Queue: JavaScript processes every single microtask in the queue, including any new ones added while processing.
+- Render Updates: The browser updates the visual screen if a repaint is needed.
+- Execute One Macrotask: The event loop picks exactly one macrotask from the queue and pushes it to the call stack.
+- Repeat: The loop goes back to step 2.
+
+💡 Why This Priority Matters
+1. Preventing Visual FlickeringIf macrotasks ran before microtasks, the browser might render a frame showing an incomplete UI state. Executing microtasks first ensures all underlying data is stable before the browser paints the screen.
+2. Immediate State ConsistencyMicrotasks usually handle critical asynchronous updates like data fetching callbacks or state changes. They need to execute as soon as possible after the synchronous code finishes, without waiting for heavier layout operations, rendering cycles, or user input events.
+
+🔹 Common Examples
+- Microtasks: Promise.then, queueMicrotask, and MutationObserver.
+- Macrotasks: setTimeout, setInterval, setImmediate, I/O operations, and UI rendering events.
+
+🔹 Execution Timing
+- Microtasks: Run immediately after the current call stack becomes completely empty.
+- Macrotasks: Run only after the call stack empties and the entire microtask queue is clear.
+
+🔹 Queue Handling
+- Microtasks: The event loop processes all queued items until the microtask queue is empty.
+- Macrotasks: The event loop processes exactly one item per loop iteration before checking other queues.
+
+🔹 Blocking Risk
+- Microtasks: High risk, because infinite microtask loops will completely freeze the browser UI.
+- Macrotasks: Low risk, because they naturally yield control back to the event loop after each task.
+
+### 19. Difference between Microtask vs Macrotask in js?
+In JavaScript, the core difference is that microtasks have a higher execution priority than macrotasks within the Event Loop. After the main synchronous script runs, the JavaScript engine will completely empty the entire Microtask Queue before moving on to execute a single task from the Macrotask Queue.
+
+Microtask Queue
+- Priority: Higher execution priority.
+- Execution Rule: Entire queue is completely drained in one go.
+- UI Rendering: Runs before the browser updates the UI.
+- Common Examples: Promise.then/catch/finally, queueMicrotask(), MutationObserver.
+
+Macrotask Queue (Task Queue)
+- Priority: Lower execution priority.
+- Execution Rule: Only one task is executed per Event Loop iteration.
+- UI Rendering: Runs after UI updates or across separate ticks.
+- Common Examples: setTimeout(), setInterval(), UI Events, I/O tasks.
+
+Key Execution Differences
+- Synchronous code always runs first and clears the Call Stack.
+- The engine drains the entire microtask queue right after synchronous code finishes.
+- New microtasks added during execution run immediately in the same cycle.
+- Only one macrotask runs per Event Loop cycle.
+- The engine checks for new microtasks again after that single macrotask finishes.
+
+### 19. How call stack work when async await is used in js?
+When an async function encounters an await keyword, the function's execution frame is popped entirely off the JavaScript call stack. This behavior prevents the engine from blocking the main thread while waiting for an asynchronous operation to finish. Instead of waiting, the JavaScript engine yields control back to the event loop, allows the caller function to continue running, and resumes the paused function later.
+
+Here is a step-by-step breakdown of how the call stack, memory heap, and queues interact during this process.
+
+1. Synchronous Execution Up to the await
+When an async function is called, it initially executes synchronously.
+- The engine creates an execution context frame for the async function.
+- It pushes this frame onto the top of the Call Stack.
+- It executes all the code inside the function line-by-line until it encounters the first await keyword.
+
+2. Hitting the await Keyword
+As soon as the engine evaluates the await expression:
+- The expression is evaluated: The operation following await (e.g., a fetch() call or a Promise) is executed.
+- State Preservation: The local variables, execution state, and exact point of code progression of the async function are saved into the Memory Heap.
+- Popped from Stack: The async function's context frame is removed (popped) from the Call Stack.
+- Implicit Promise Return: The function returns an implicit Promise to its initial caller.
+
+3. Yielding Control back to the Event Loop
+Because the call stack is now clear of that specific async function frame:
+- The engine continues running any synchronous code left in the program (such as the code belonging to the caller function).
+- The main execution thread remains completely responsive to user events, rendering tasks, or other scripts.
+
+4. Promise Resolution and the Microtask Queue
+Behind the scenes, the asynchronous operation continues to progress outside the main thread (via Web APIs in browsers or C++ threads in Node.js).
+- Once the awaited Promise settles (resolves or rejects), the engine schedules a PromiseReactionJob.
+- A callback representing the remaining portion of the async function is placed into the Microtask Queue.
+
+5. Resuming Execution on the Call Stack
+The final resumption relies entirely on the Event Loop.
+- The Event Loop constantly monitors the Call Stack to see if it is empty.
+- Once the Call Stack is completely clear of all synchronous execution frames, the Event Loop pulls the continuation callback from the Microtask Queue.
+- The engine looks up the saved execution state from the Memory Heap, recreates the function's context frame, and pushes it back onto the Call Stack.
+- The function resumes execution exactly where it left off, assigning the resolved value to your variable.
+
+Code Execution Walkthrough
+```js
+async function fetchData() {
+  console.log("2. Inside async function"); 
+  const result = await Promise.resolve("Data Loaded");
+  console.log("4. Resumed:", result); 
+}
+
+console.log("1. Global start");
+fetchData();
+console.log("3. Global end");
+```
+
+What happens to the Call Stack during this script?
+- console.log("1...") goes to the stack, executes, and pops off.
+- fetchData() is called. Its frame is pushed to the Call Stack.
+- console.log("2...") is pushed to the stack, executes, and pops off.
+- The engine hits await Promise.resolve().
+  - fetchData() context is moved to the Heap.
+  - fetchData() is popped off the Call Stack.
+  - The remaining code of fetchData() is scheduled into the Microtask Queue.
+- The stack is now empty, so control returns to the global context. console.log("3...") is pushed to the stack, executes, and pops off.
+- The global script finishes. The Call Stack is now completely empty.
+- The Event Loop picks up the remaining fetchData() callback from the Microtask Queue.
+- fetchData() frame is pushed back onto the Call Stack.
+- console.log("4. Resumed: Data Loaded") executes and pops off.
+- fetchData() finishes and pops off the stack permanently.
 
 ### 19. What is lexical scope?
 
@@ -903,6 +1352,31 @@ someElement.addEventListener("click", () => {
 });
 
 ```
+
+### 26. What is Memory Leaks in Javascript?
+A memory leak happens when a computer program keeps holding onto pieces of data it no longer needs, forgetting to release them back to the computer's memory pool. Think of it like renting a hotel room, checking out, but forgetting to return the keys—the hotel cannot rent that room to anyone else, so space is wasted. Over time, your application slows down or crashes.
+
+### 27. What caused memory leaks?
+JavaScript automatically manages memory using a system called Garbage Collection. This system looks for data that cannot be reached anymore and deletes it. However, if your code accidentally keeps a reference (a link) to that data, the garbage collector will not delete it.
+
+The most common causes include:
+- Accidental Global Variables: Creating variables without using const, let, or var attaches them permanently to the main window object.
+- Forgotten Timers: Running a setInterval or setTimeout function that keeps executing code in the background forever.
+- Detached DOM Nodes: Removing an element from the visual web page but still keeping it stored inside a JavaScript variable.
+- Closures: Inner functions that hold onto large variables from their parent functions long after they are needed.
+
+### 28. How to identify memory leaks?
+You can spot memory leaks using the built-in Developer Tools in Google Chrome, Firefox, or Edge.
+- Task Manager: Press Shift + Esc in Chrome to see if your tab's memory usage keeps climbing without ever dropping
+- Performance Monitor: Open DevTools (F12), go to the Performance tab, and watch the real-time "JS Heap" graph. If it looks like a rising staircase, you have a leak.
+- Memory Snapshots: Take a "Heap Snapshot" in the Memory tab, perform actions in your app, take another snapshot, and compare them to see what objects stayed behind.
+
+### 29. How to handle/prevent memory leaks?
+Preventing memory leaks is all about cleaning up after your code finishes its job.
+- Use Strict Mode: Always write "use strict"; at the top of your files or use modern JS modules to stop accidental global variables.
+- Clear Your Timers: Always save your timers to a variable and clear them when done using clearInterval() or clearTimeout().
+- Remove Event Listeners: If you add a scroll or click listener to an element, remove it using removeEventListener() when that element is destroyed.
+- Nullify References: Set large objects or variables to null once you are completely finished using them to signal the garbage collector to clear them.
 
 ## Functions
 
@@ -1545,6 +2019,7 @@ Web Workers / Dedicated Workers
   - Termination: Ends when the main script unloads or explicitly terminated.
 
 Example: Creating a Web Worker
+```js
 // Check if the browser supports workers
 main.js
 if (window.Worker) {
@@ -1575,7 +2050,7 @@ onmessage = function (event) {
   // Post the result back to the main script
   postMessage(result);
 };
-
+```
 
 Service Workers
 - Purpose: Act as a network proxy, handle requests, and cache resources.
@@ -1585,8 +2060,8 @@ Service Workers
 
 Example: Creating a Service Worker
 
+```js
 main.js:
-
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker
     .register('/service-worker.js')
@@ -1608,14 +2083,12 @@ self.addEventListener('fetch', (event) => {
     }),
   );
 });
-
+```
 
 Shared Workers
 
 Purpose: Shared across multiple scripts in different windows/tabs/iframes.
 Use Case: State sharing across multiple browser contexts.
-
-
 
 ### 36. Difference between normal script, async script, and defer script?
 
@@ -2701,50 +3174,6 @@ Examples:
 - Web APIs: Heavy tasks (like fetching data) are handed over to the browser environment.
 - Event Loop: This mechanism monitors and pushes completed asynchronous tasks back into the JavaScript execution thread when it becomes empty.
 
-### 67. What is event loop?
-
-Event loop coordinates execution of:
-
-- call stack
-- microtask queue
-- callback/macrotask queue
-- browser/Node APIs
-
-Interview answer:
-
-```text
-The event loop checks if the call stack is empty, then pushes queued callbacks or microtasks into the call stack for execution. Microtasks like Promise callbacks run before macrotasks like setTimeout.
-```
-
-### 68. Output question: event loop
-
-```js
-console.log('A');
-
-setTimeout(() => console.log('B'), 0);
-
-Promise.resolve().then(() => console.log('C'));
-
-console.log('D');
-```
-
-Output:
-
-```text
-A
-D
-C
-B
-```
-
-Why?
-
-```text
-Synchronous code runs first.
-Promise microtask runs next.
-setTimeout macrotask runs after microtasks.
-```
-
 ### 69. What is a Promise?
 
 A Promise is an object that represents the eventual completion (or failure) of an asynchronous operation and its resulting value, and promise represents a future value.
@@ -3679,6 +4108,32 @@ By default, events bubble.
 
 Event delegation means adding one event listener to a parent instead of many children.
 
+Event delegation is a JavaScript design pattern used to handle events efficiently by attaching a single event listener to a parent element instead of adding separate listeners to multiple individual child elements.
+
+This technique relies entirely on event bubbling, a mechanism where an event triggered on a nested child element propagates (bubbles) upward through its ancestor elements in the DOM tree. When the event reaches the parent container, the parent's listener fires, and you can identify the exact target that triggered the event using the event.target property.
+
+How It Works (Step-by-Step)
+- A user interacts with a child element (e.g., clicking a button inside a list).
+- The browser triggers the event on that specific child element.
+- The event bubbles up to the parent and higher ancestor nodes.
+- The parent's event listener detects the bubbling event and executes its handler function.
+- Inside the handler, event.target is checked to ensure the event originated from an element you care about.
+
+Code Example
+Imagine an unordered list (<ul>) containing multiple list items (<li>).
+
+```js
+❌ The Inefficient Way (Without Delegation)
+Attaching a listener to every single <li> consumes more memory and breaks if you add new items dynamically.
+
+const items = document.querySelectorAll('li');
+items.forEach(item => {
+  item.addEventListener('click', (e) => {
+    console.log('Clicked:', e.target.textContent);
+  });
+});
+```
+
 Example:
 
 ```js
@@ -3693,6 +4148,29 @@ Benefits:
 
 - better performance
 - works for dynamic elements
+
+The Efficient Way (With Event Delegation)
+You attach exactly one listener to the <ul> and use event.target.matches() to target specific children.
+
+```js
+const list = document.querySelector('ul');
+
+list.addEventListener('click', (event) => {
+  // Filter out clicks that didn't happen on an LI element
+  if (event.target.matches('li')) {
+    console.log('Clicked item text:', event.target.textContent);
+  }
+});
+```
+
+Why Use Event Delegation?
+- Lower Memory Footprint: Instead of initializing hundreds of separate event listeners, you only manage one, saving browser RAM.
+- Handles Dynamic Elements: If your app frequently injects or removes elements via JavaScript, the parent listener will automatically pick up events from new children without needing manual re-binding.
+- Cleaner Codebase: Consolidates event logic into a centralized place, keeping your DOM interaction tidier.
+
+Limitations to Keep in Mind
+- Not All Events Bubble: Certain native events do not bubble up the DOM tree. Common exceptions include focus, blur, scroll, mouseenter, and mouseleave. For these events, delegation will fail unless you use capturing alternatives like focusin or focusout.
+- CPU Overhead: If the handler executes on a top-level element (like document) for a highly frequent event (like mousemove), checking event.target on every movement can occasionally cause a performance bottleneck.
 
 ### 80. localStorage vs sessionStorage vs cookies?
 
@@ -4115,7 +4593,11 @@ const city = user && user.address && user.address.city;
 
 ### 109. What is nullish coalescing?
 
+Nullish coalescing is a JavaScript logical operator (??) that returns its right-hand side operand when its left-hand side operand is either null or undefined.
+
 `??` returns right side only if left side is `null` or `undefined`.
+
+Otherwise, it returns its left-hand side operand. It is explicitly designed to handle missing or uninitialized data without accidentally treating valid "falsy" values (like 0, "", or false) as missing.
 
 ```js
 const limit = inputLimit ?? 10;
@@ -4128,143 +4610,150 @@ console.log(0 || 10); // 10
 console.log(0 ?? 10); // 0
 ```
 
-## Backend JavaScript Questions
+Why It Was Created: Fixing the OR (||) Operator Problem
+- Before the introduction of ?? in ES2020, developers used the logical OR (||) operator to assign default values. However, || checks for falsy values. In JavaScript, 0, empty strings "", and false are all falsy. This often created unintended bugs when those falsy values were actually valid, intentional inputs.
 
-### 110. What is asyncHandler in Express?
-
-`asyncHandler` wraps async route handlers and forwards errors to Express error middleware.
-
-Example:
+Code Examples
+1. Setting Default Configuration Values
 
 ```js
-const asyncHandler = (handler) => (req, res, next) =>
-  Promise.resolve(handler(req, res, next)).catch(next);
+const userSettings = {
+  theme: "dark",
+  animationSpeed: 0, // Valid setting!
+  sidebarVisible: false // Valid setting!
+};
+
+// ❌ The old, buggy way using ||
+const speedOld = userSettings.animationSpeed || 300; 
+console.log(speedOld); // Output: 300 (Wrong! It overwrote the valid 0)
+
+//  The modern way using ??
+const speedNew = userSettings.animationSpeed ?? 300; 
+console.log(speedNew); // Output: 0 (Correct! It preserved the 0)
 ```
 
-Use:
+2. Handling Missing Object Properties
+```js
+const profile = {
+  nickname: "" // Valid choice, user wants no nickname
+};
+
+const displayName1 = profile.nickname || "Anonymous";
+console.log(displayName1); // Output: "Anonymous" (Overwrote empty string)
+
+const displayName2 = profile.nickname ?? "Anonymous";
+console.log(displayName2); // Output: "" (Kept the empty string)
+```
+
+Key Syntax Rules
+
+- Chaining with AND/OR: For safety and clarity, you cannot mix ?? directly with && or || operators without using parentheses.
 
 ```js
-app.get('/users', asyncHandler(async (req, res) => {
-  const users = await User.find();
-  res.json(users);
-}));
+// ❌ Throws a SyntaxError
+const value = a || b ?? "default"; 
+
+//  Perfectly valid
+const value = (a || b) ?? "default"; 
 ```
 
-### 111. Why use environment variables?
+- Short-circuiting: Just like ||, the ?? operator only evaluates the right-hand side expression if the left-hand side is null or undefined. If the left side is valid, the right side is never run.
 
-Environment variables store configuration outside code.
 
-Examples:
+### 110. What is Symbol in js?
+In JavaScript, a Symbol is a primitive data type introduced in ECMAScript 6 (ES6) that is guaranteed to be completely unique and immutable. They are primarily used as unique property keys for objects to prevent name collisions, ensuring that no other property key can accidentally overwrite or conflict with them.
 
-- database URL
-- JWT secret
-- Redis URL
-- port
+Core Characteristics
+- Guaranteed Uniqueness: Every time you invoke the Symbol() factory function, a brand-new, completely unique token is created.
+- Debugging Labels: You can pass an optional string argument to Symbol('description'). This acts strictly as a description for logging and debugging; it does not impact the symbol's uniqueness.
+- No new Keyword: You cannot use new Symbol(), as it is a primitive factory function rather than a standard constructor class.
+- Hidden/Non-enumerable: Property keys defined by symbols are skipped in normal iterations like for...in loops, Object.keys(), and serialization tasks via JSON.stringify().
 
-Never hardcode secrets in code.
+Code Example
+```js
+// Two symbols with identical descriptions are completely different
+const firstId = Symbol("userId");
+const secondId = Symbol("userId");
 
-### 112. What is JSON?
+console.log(firstId === secondId); // false
 
-JSON means JavaScript Object Notation.
+// Using a symbol as an object property key
+const user = {
+  name: "Alice",
+  [firstId]: 101 // Computed property syntax
+};
 
-It is a text format used for data exchange.
+console.log(user[firstId]); // 101
+console.log(user[secondId]); // undefined (keys do not match)
 
-Example:
-
-```json
-{
-  "name": "Paras",
-  "role": "admin"
-}
+// Symbol properties are non-enumerable
+console.log(Object.keys(user)); // ["name"] (firstId is hidden)
 ```
 
-### 113. JSON.stringify vs JSON.parse?
+### 111. What is the difference between map and set in javascript?
+The primary difference is that a Map stores data as key-value pairs, whereas a Set stores a collection of unique individual values.
 
-`JSON.stringify` converts object to JSON string.
+Here is the core comparison broken down into clear lists:
+
+Map Overview
+- Data Structure: Two-dimensional format storing pairs of keys and values.
+- Elements: Stored as [key, value] pairs.
+- Duplicates: Keys must be unique, but multiple keys can hold identical values.
+- Primary Methods: .set(), .get(), .has(), and .delete().
+- Primary Use Case: Ideal for dictionary lookups, caching, and data association.
+
+Set Overview
+- Data Structure: One-dimensional format storing a list of individual values.
+- Elements: Stored as unique standalone values.
+- Duplicates: All values must be strictly unique; duplicates are ignored.
+- Primary Methods: .add(), .has(), and .delete().
+- Primary Use Case: Ideal for tracking unique items and removing array duplicates.
+
+Key Differences Explained
+1. How Data is Accessed
+  - Map: Elements are accessed via their specific keys using the .get(key) method.
+  - Set: Elements cannot be accessed by an index or key. You primarily use .has(value) to check if a value exists within the collection.
+2. Unique Constraints
+  - Map: If you add a duplicate key using .set(), the new value will overwrite the old value associated with that key.
+  - Set: If you add a duplicate value using .add(), the Set object will silently ignore it and keep only one instance
+3. Iteration Behavior
+  - Map: Iterating with a for...of loop yields a two-element array of [key, value] for each step.
+  - Set: Iterating with a for...of loop yields the individual value directly
+
+Code Examples
+JavaScript Map Example
+Use a Map when you need to link lookup descriptions to identifiers.
 
 ```js
-JSON.stringify({ name: 'Paras' });
+const userRoles = new Map();
+
+// Adding elements
+userRoles.set('alice', 'admin');
+userRoles.set('bob', 'editor');
+
+// Accessing data
+console.log(userRoles.get('alice')); // Output: 'admin'
+console.log(userRoles.has('bob'));   // Output: true
+console.log(userRoles.size);         // Output: 2
 ```
 
-`JSON.parse` converts JSON string to object.
-
+JavaScript Set Example
+Use a Set when you want to enforce a list of unique entries.
 ```js
-JSON.parse('{"name":"Paras"}');
+const uniqueTags = new Set();
+
+// Adding elements
+uniqueTags.add('js');
+uniqueTags.add('css');
+uniqueTags.add('js'); // Duplicate ignored!
+
+// Accessing data
+console.log(uniqueTags.has('js'));   // Output: true
+console.log(uniqueTags.size);        // Output: 2
+
+// Quick trick: Remove duplicates from a standard Array
+const duplicateNumbers = [1, 2, 2, 3, 4, 4];
+const cleanNumbers = [...new Set(duplicateNumbers)]; 
+console.log(cleanNumbers);           // Output: [1, 2, 3, 4]
 ```
 
-## Most Important Short Interview Answers
-
-### 114. Explain closure in one line.
-
-```text
-A closure is when a function remembers variables from its outer scope even after the outer function has returned.
-```
-
-### 115. Explain event loop in one line.
-
-```text
-The event loop moves async callbacks and microtasks into the call stack when the stack is empty.
-```
-
-### 116. Explain promise in one line.
-
-```text
-A promise represents a future value that can be pending, fulfilled, or rejected.
-```
-
-### 117. Explain this in one line.
-
-```text
-this refers to the execution context and depends on how a function is called.
-```
-
-### 118. Explain prototype in one line.
-
-```text
-Prototype is JavaScript's inheritance mechanism where objects can access properties and methods from another object.
-```
-
-### 119. Explain hoisting in one line.
-
-```text
-Hoisting is JavaScript's behavior of processing declarations before code execution.
-```
-
-## Final Interview Preparation Checklist
-
-Must know:
-
-- `var`, `let`, `const`
-- hoisting
-- temporal dead zone
-- closures
-- scope
-- `this`
-- arrow functions
-- prototypes
-- inheritance vs composition
-- promises
-- async/await
-- event loop
-- microtask vs macrotask
-- array methods
-- object copying
-- equality and coercion
-- DOM events
-- debounce/throttle
-- AbortController
-- error handling
-- modules
-- security basics
-
-Strong answer pattern:
-
-```text
-Definition -> Example -> Use case -> Pitfall
-```
-
-Example:
-
-```text
-Closure is when a function remembers variables from its outer scope. For example, a counter function can keep count private. It is useful for private variables, memoization, and debounce. The pitfall is accidental memory retention if closures hold large objects.
-```
