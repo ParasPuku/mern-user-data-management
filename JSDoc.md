@@ -547,6 +547,8 @@ The TDZ is directly tied to hoisting. In JavaScript, all variable declarations a
 - let and const: They are hoisted to the top of their block, but they remain uninitialized. JavaScript forbids any interaction with an uninitialized variable, keeping it in the TDZ until the engine runs the exact line where it is declared.
 - var: Variables declared with var do not have a TDZ. They are hoisted and instantly initialized with a default value of undefined. This allows them to be accessed before their actual declaration line without crashing your program.
 
+- Yes, the TDZ still applies even without a block structure. If you place that code directly at the top level of your script (the global scope) or directly inside a function, the TDZ behaves exactly the same way.
+
 Comparison: let/const vs var
 Here is how let / const compare to var across key JavaScript features:
 
@@ -693,13 +695,68 @@ This architectural trick keeps primitives lightweight and fast, while giving dev
 3. The Grandparent: The Prototype Chain
 Every structural data type in JavaScript eventually traces back to Object.prototype. If you follow the internal prototype chain of an array, a custom class, or a function up to its logical end, it points back to the universal root object.
 
+```js
 // Following an array's prototype lineage
 myArray.__proto__ === Array.prototype;          // true
 Array.prototype.__proto__ === Object.prototype; // true
 Object.prototype.__proto__ === null;             // true (The end of the line)
+```
 
 Summary: What is Not an Object?
 To understand JavaScript fully, you must know what is explicitly excluded from the object family. JavaScript contains 7 primitive data types that are not objects and do not have prototypes:
+
+### 17. What are first class citizens or first class functions in javascript?
+In JavaScript, functions are first-class citizens (also known as First-class Functions). This means that functions are treated like any other value—such as strings, numbers, or objects—allowing them to be manipulated and passed around freely throughout your code.
+
+Core Capabilities of First-Class Functions
+An entity achieves "first-class" status if it supports all standard operational properties. In JavaScript, functions fulfill this criteria through three major abilities:
+- Assigned to variables: You can store a function inside a variable, an array, or an object property.
+- Passed as arguments: You can feed a function directly into another function as a parameter (commonly known as a callback).
+- Returned from functions: A function can generate and output a completely new function.
+
+Code Examples
+The following code snippets demonstrate how JavaScript treats functions as first-class citizens:
+
+1. Assigning a Function to a Variable
+Instead of declaring a function standardly, you can treat it like data and bind it to a variable name.
+
+```js
+const greet = function() {
+    return "Hello World!";
+};
+console.log(greet()); // Outputs: "Hello World!"
+```
+
+2. Passing a Function as an Argument
+Because functions are values, you can pass them into other functions to customize their runtime behaviors.
+
+```js
+function executeAction(actionFunc, name) {
+    return actionFunc(name);
+}
+const sayHi = (user) => `Hi, ${user}!`;
+// Passing 'sayHi' as data into 'executeAction'
+console.log(executeAction(sayHi, "Alex")); // Outputs: "Hi, Alex!"
+```
+
+3. Returning a Function from Another Function
+Functions can dynamically spawn and return other functional logic to create configurable utilities.
+```js
+function createMultiplier(factor) {
+    return function(num) {
+        return num * factor;
+    };
+}
+const double = createMultiplier(2);
+console.log(double(5)); // Outputs: 10
+```
+
+Why First-Class Status Matters
+This flexibility forms the baseline architectural pattern for modern JavaScript applications. It directly unlocks:
+
+- Higher-Order Functions: Built-in array tools like .map(), .filter(), and .reduce() rely entirely on taking functions as parameters.
+- Asynchronous Callbacks: Operations like setTimeout(), API fetches, and user event listeners require passing functions to execute later.
+- Closures: Functions returned from outer scopes safely remember the variables surrounding them, a cornerstone of data privacy in JavaScript.
 
 ## Scope and Closures
 
