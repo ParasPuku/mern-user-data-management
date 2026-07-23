@@ -4757,3 +4757,38 @@ const cleanNumbers = [...new Set(duplicateNumbers)];
 console.log(cleanNumbers);           // Output: [1, 2, 3, 4]
 ```
 
+### 112. difference between web worker and service worker?
+The core difference is that a Web Worker acts as a general-purpose background thread to handle heavy computations, while a Service Worker acts as a network proxy to manage caching and offline features.
+
+Both run on separate threads from the browser's main thread and lack access to the DOM, keeping your user interface fluid and responsive.
+
+Feature Comparison
+Web Worker Summary
+- Primary Job: Offloads complex, CPU-heavy calculations.
+- Core Concept: Parallel computing thread.
+- Lifetime: Tied to the tab; dies when the tab closes.
+- Scope: Restricted to the single script/tab that spawned it.
+- Network Control: Cannot intercept requests made by the page.
+- HTTPS Rule: Works on standard HTTP pages.
+
+Service Worker Summary
+- Primary Job: Manages network requests and offline capabilities.
+- Core Concept: Network proxy server.
+- Lifetime: Independent; lives on and wakes up via events.
+- Scope: Spans an entire domain or predefined path scope.
+- Network Control: Intercepts and alters network requests (fetch).
+- HTTPS Rule: Requires HTTPS (except on localhost) for security.
+
+
+When to Use a Web Worker
+- Use a Web Worker when your application needs to handle intense processing that would otherwise freeze the browser screen:
+- Data crunching: Parsing exceptionally large JSON files or handling massive datasets.
+- Media manipulation: Editing images, processing audio tracking, or decoding video files in real-time.
+- Complex math: Calculating physics loops for games or executing cryptographic functions.
+
+When to Use a Service Worker
+Use a Service Worker when building Progressive Web Apps (PWAs) or adding network-level controls:
+- Offline functionality: Serving cached pages and structural components when internet access drops.
+- Smart caching: Implementing advanced file caching strategies (like stale-while-revalidate).
+- Background updates: Receiving Push Notifications or triggering Background Data Syncs even when the site is closed.
+

@@ -5705,10 +5705,102 @@ Suspense shows fallback UI while a lazy component or supported async resource is
 
 Code splitting breaks app bundle into smaller chunks.
 
+Code splitting is a performance optimization technique that breaks down your application's single JavaScript bundle into smaller, manageable chunks that can be loaded dynamically on demand. By default, bundlers like Webpack, Vite, or Rollup combine all your code and third-party dependencies into one massive file, which can severely slow down your application's initial load time. Code splitting ensures that users only download the specific code necessary for the page or feature they are currently interacting with.
+
 Benefits:
 
 - faster initial load
 - load feature code only when needed
+
+How to Implement It in React
+React provides two built-in features to make code splitting easy: lazy and Suspense.
+- lazy(): A function that allows you to render a dynamic import as a regular component. It pauses the loading of the component until it is rendered.
+- Suspense: A wrapper component that catches loading states and displays a fallback UI (like a spinner) while the lazy component is fetching in the background.
+
+Code Example
+- Instead of importing a component normally at the top of the file, you use a dynamic import wrapped in lazy():
+
+```jsx
+import React, { lazy, Suspense } from 'react';
+
+// This chunk will be loaded dynamically on-demand
+const HugeDashboardComponent = lazy(() => import('./HugeDashboardComponent'));
+
+function App() {
+  return (
+    <div>
+      <h1>My Application</h1>
+      
+      {/* Suspense is required to provide a fallback during the download */}
+      <Suspense fallback={<div>Loading dashboard...</div>}>
+        <HugeDashboardComponent />
+      </Suspense>
+    </div>
+  );
+}
+
+export default App;
+```
+
+Common Strategies for Code Splitting
+- Route-Based Splitting: Splitting code based on the pages/routes of your app. For instance, a user visiting the /login route won't have to download the JavaScript code required for the /admin-dashboard route until they actually navigate there.
+- Component-Based Splitting: Splitting heavy, conditional elements within a page. Excellent candidates include modals, graphs/charts libraries, tabs, or rich text editors that aren’t visible immediately when the page loads.
+
+### 97. What is bundle optimization in React?
+Bundle optimization in React is the process of reducing the file size of your production JavaScript bundles to make your application load and run faster. While code splitting breaks your app into smaller pieces, bundle optimization focuses on making those pieces as light and efficient as possible.
+
+Smaller bundles mean less data for users to download, faster browser parsing times, and a significantly better user experience.
+
+Core Strategies for Bundle Optimization
+- Tree Shaking: Eliminates dead or unused code. It ensures that if you import only one function from a massive utility library, only that single function is included in your final bundle.
+- Minification and Compression: Removes whitespace, comments, and shortens variable names during production builds. It also uses compression algorithms like Gzip or Brotli on the server level to shrink file delivery sizes.
+- Dependency Auditing: Identifying and replacing heavy external libraries with lighter alternatives. For example, replacing Moment.js with date-fns or Day.js drastically reduces bundle weight.
+
+
+Tools to Analyze Your Bundle
+You cannot optimize what you cannot see. Use these visualizers to inspect exactly which libraries and components are taking up the most space:
+- source-map-explorer: Analyzes your bundle using source maps to show a tree-map of exactly how much space each file occupies.
+- webpack-bundle-analyzer / rollup-plugin-visualizer: Generates an interactive, zoomable visual map of all contents inside your final production build.
+
+Production Optimization Checklist
+- Run Production Builds: Always build using the production flag (npm run build). This automatically strips out development-only code, like React warnings and prop-types validation.
+- Optimize Images: Large images inside your source folder can bloat assets. Use modern formats like WebP or AVIF and implement lazy-loading for off-screen visuals.
+- Use CDNs for Heavy Assets: Move static assets, fonts, or even large unchanged dependencies out of your local bundle and host them on a Content Delivery Network (CDN).
+
+### 98. What is Tree Shaking in React?
+Tree shaking is a build-time optimization technique that automatically removes unused or "dead" JavaScript code from your final production bundle. In React applications, tree shaking is critical for keeping bundle sizes small, accelerating initial page load times, and ensuring a fast user experience.
+
+Modern bundlers like Vite and Webpack execute tree shaking automatically during a production build, provided your code follows standard conventions.
+
+How Tree Shaking Works
+Tree shaking relies entirely on the static architecture of ES Modules (ESM) using import and export statements.
+
+- Static Analysis: The bundler maps out your module dependency graph without executing the code. It determines exactly what is being used.
+- Dead Code Elimination: Any component, function, or library utility that has no active reference path is completely stripped away from the compiled production asset.
+- The Catch: Tree shaking does not work with CommonJS syntax (require() and module.exports) because those dependencies are determined dynamically at runtime.
+
+### 98. What is the difference between Vite and Webpack?
+The core difference between Vite and Webpack is how they handle your code during development. Webpack bundles your entire application before serving it, whereas Vite serves your source code directly to the browser using modern native browser features, making development speeds nearly instantaneous.
+
+1. Development Speed
+- Vite: Uses Native ESM (ECMAScript Modules). When you run a local server, Vite doesn't build a bundle. It loads the server instantly and lets the browser request individual files only when needed.
+- Webpack: Follows a Bundle-based approach. It must crawl, process, and build a massive, memory-bound bundle of your entire application before your local development server can start.
+
+2. Hot Module Replacement (HMR)
+- Vite: HMR speed is decoupled from application size. If you edit a file, Vite updates only that exact module in the browser. Changes appear in milliseconds, no matter how large the app gets.
+- Webpack: As your project grows larger, HMR slows down because Webpack often has to re-evaluate and re-bundle chunks of the dependency graph to apply changes.
+
+3. Under-the-Hood Technology
+- Vite: Written in Go using a tool called esbuild for pre-bundling dependencies. Go is a compiled language that executes orders of magnitude faster than JavaScript-based tools.
+- Webpack: Built entirely on Node.js (JavaScript). Because it runs on JavaScript, it hits inherent CPU performance bottlenecks when processing thousands of lines of code.
+
+4. Production Builds
+- Vite: Uses Rollup behind the scenes to compile your production code. Rollup produces highly optimized, clean, and smaller production chunks.
+- Webpack: Uses its own bundling engine for production. It is highly stable and battle-tested, but it generates slightly more "boilerplate" code inside the final bundle.
+
+5. Plugin Ecosystem & Configuration
+Vite: Uses an out-of-the-box configuration policy. It natively supports TypeScript, JSX, and CSS modules without manual setup. Its plugin system is built on Rollup's universal API.
+- Webpack: Offers total configuration control. It relies heavily on complex custom webpack.config.js setups, custom loaders (like babel-loader, css-loader), and plugins. It has the largest ecosystem of plugins in existence.
 
 ### 97. What is list virtualization? How do you optimize a large list (virtualization)??
 
@@ -10904,3 +10996,33 @@ Interview answer:
 ```text
 React 19 resource preloading APIs let components hint important resources to the browser early. APIs like preload, preinit, preconnect, and prefetchDNS help improve loading performance by preparing fonts, styles, scripts, modules, or network connections before they are needed.
 ```
+
+### 120. What is Progressive Web App(PWA)?
+PWA stands for Progressive Web App. In simple terms, a PWA is a website that looks, feels, and acts exactly like a native mobile or desktop application. It bridges the gap between regular web pages and traditional apps installed from an app store. 
+
+A PWA solves the loading limitation by adding a Service Worker and a Manifest file to your React app.
+- How it works: A Service Worker is a script that the browser runs in the background. It intercepts every network request your React app makes and caches the actual structural files (the HTML, Javascript files, CSS files, and images).
+
+- What it can do: Because the browser has a copy of your app's code saved locally, the user can type your URL while completely offline, and the application will still boot up and load perfectly
+
+- The "App-like" bonus: PWAs allow users to click an "Install" button to add your React app directly to their phone's home screen or desktop as a standalone app that works without a browser address bar.
+
+
+The name breaks down its core concept:
+- Progressive: It works for every user, on any browser, and gets progressively better based on the capabilities of the device.
+- Web: It is built using standard web technologies like HTML, CSS, and JavaScript (or React).
+- App: It provides an immersive, full-screen app experience, including offline access and push notifications.
+
+The 3 Core Requirements of a PWA
+To turn a regular website or React app into a PWA, it must include three specific technical components:
+- HTTPS: It must be served over a secure connection to protect data and user privacy.
+- Web App Manifest: A simple JSON file (manifest.json) that provides information about the app (like its name, author, icons, and theme colours). This is what allows a user to install the website onto their home screen.
+- Service Worker: A JavaScript file that runs in the background, separate from your website. It acts as a bridge between the browser and the network, enabling offline functionality, resource caching, and background sync.
+
+Why Companies Build PWAs (Key Benefits)
+- Instant Installation: Users can install the app directly from their browser with a single click, completely bypassing the Apple App Store or Google Play Store.
+- Offline Functionality: Because of service workers, the app can load and function smoothly even without an active internet connection.
+- Platform Independent: You write the code once in React. The same code runs on iPhones, Android devices, Windows laptops, and Macs.
+- Lightweight: PWAs typically take up less than 1MB of device storage, compared to native apps that can easily require 50MB to 200MB.
+- Hardware Access: Modern PWAs can access device features like the camera, GPS, microphone, Bluetooth, and biometric login (FaceID/TouchID).
+
