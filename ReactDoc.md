@@ -2243,6 +2243,68 @@ function ParentComponent() {
 
 ⚠️ Important Note: In the vast majority of cases, React favors a declarative data flow using props and state. You should only reach for useImperativeHandle as a last resort when passing props down does not cleanly solve the problem.
 
+### 36. What is forwardRef?
+In React, forwardRef is a utility function that allows a parent component to pass a reference (ref) down through a child component directly to one of its underlying DOM nodes. 
+
+By default, React functional components cannot receive a ref prop because they do not have component instances. Wrapping a child component in forwardRef fixes this limitation.
+
+Common Use Cases
+You typically use forwardRef when a parent component needs direct control over an HTML element inside a custom child component:
+- Focusing an input element (e.g., triggering .focus() from a parent button).
+- Measuring DOM elements (e.g., finding the exact width or height of a child element).
+- Controlling animations or playing/pausing media players.
+- Integrating third-party libraries that require a raw DOM node reference.
+
+Code Example (React 18 and Earlier)
+In older versions of React, you must explicitly wrap your child component with forwardRef. The utility exposes the ref as the second argument of the component's function.
+
+```jsx
+import React, { forwardRef, useRef } from 'react';
+
+// 1. Wrap the child component in forwardRef
+const MyInput = forwardRef((props, ref) => {
+  return (
+    <div className="input-wrapper">
+      <label>{props.label}</label>
+      {/* 2. Attach the forwarded ref to the native DOM element */}
+      <input ref={ref} type="text" />
+    </div>
+  );
+});
+
+// Parent Component
+function App() {
+  const inputRef = useRef(null);
+
+  const handleFocus = () => {
+    // 4. Access the internal child DOM node directly
+    inputRef.current.focus();
+  };
+
+  return (
+    <div>
+      {/* 3. Pass the ref to the custom component */}
+      <MyInput label="Username:" ref={inputRef} />
+      <button onClick={handleFocus}>Focus Input</button>
+    </div>
+  );
+}
+```
+
+Important Change: React 19 Update
+If you are using React 19 or newer, forwardRef has been deprecated. You no longer need to use it. React 19 allows functional components to accept ref as a normal, everyday prop just like any other data.
+
+```jsx
+// Modern React 19+ syntax: ref is just a regular prop!
+function MyInput({ label, ref }) {
+  return (
+    <div>
+      <label>{label}</label>
+      <input ref={ref} type="text" />
+    </div>
+  );
+}
+```
 
 
 ### 35. How to use the `useId` hook to generate unique IDs?
