@@ -2881,26 +2881,21 @@ Example:
 ### Code
 
 ```js
-function flattenObject(obj, prefix = '', result = {}) {
+function flatten(obj, prefix = '', result = {}) {
   for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      // Create the path string (e.g., "user.address.city")
-      const newKey = prefix ? `${prefix}.${key}` : key;
-
-      // Check if value is a non-null object and not an array
-      if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
-        flattenObject(obj[key], newKey, result);
-      } else {
-        result[newKey] = obj[key];
-      }
-    }
+    const newKey = prefix ? `${prefix}.${key}` : key;
+    if (typeof obj[key] === 'object' && obj[key] !== null) {
+      flatten(obj[key], newKey, result);
+    } else {
+      result[newKey] = obj[key];
+    } 
   }
   return result;
 }
 
-// --- Example Usage ---
-const user = {
-  name: "Alex",
+const data = {
+  id: 101,
+  tags: ['admin', 'editor'],
   info: {
     age: 28,
     location: {
@@ -2909,7 +2904,8 @@ const user = {
     }
   }
 };
-console.log(flattenObject(user));
+
+console.log(flatten(data));
 ```
 
 ### Output
@@ -2917,10 +2913,12 @@ console.log(flattenObject(user));
 ```js
 /* Output:
 {
-  "name": "Alex",
-  "info.age": 28,
-  "info.location.city": "New York",
-  "info.location.zip": 10001
+  id: 101,
+  'tags.0': 'admin',
+  'tags.1': 'editor',
+  'info.age': 28,
+  'info.location.city': 'New York',
+  'info.location.zip': 10001
 }
 */
 ```
