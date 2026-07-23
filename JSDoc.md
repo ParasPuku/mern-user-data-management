@@ -151,12 +151,22 @@ Primitive values are copied directly, while objects and arrays are copied by ref
 
 `var`:
 
-- Scope - function scoped
+- Scope - function scoped if variable declared inside the function and global scope if the variable is declared outside the function
 - ReDeclaration - Allowed
 - ReAssignment - Allowed
 - Initialization - Optional
 - Hoisting - hoisted with `undefined`
 - Use Case - Suitable for legacy code but avoid
+
+```js
+var globalScopeName = "Alex"; // Global scope
+function printName() {
+    var functionScopeName = "John"; // Function scope
+    console.log(globalName); // Works! Can read global variables inside functions
+}
+printName();
+console.log(window.globalScopeName); // Logs "Alex" in a browser environment
+```
 
 
 `let`:
