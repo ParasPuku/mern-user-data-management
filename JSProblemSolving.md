@@ -2881,36 +2881,48 @@ Example:
 ### Code
 
 ```js
-function flattenObject(obj, parentKey) {
-  var result = {};
+function flattenObject(obj, prefix = '', result = {}) {
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      // Create the path string (e.g., "user.address.city")
+      const newKey = prefix ? `${prefix}.${key}` : key;
 
-  for (var key in obj) {
-    if (obj.hasOwnProperty(key)) {
-      var newKey = parentKey ? parentKey + '.' + key : key;
-      var value = obj[key];
-
-      if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-        var nested = flattenObject(value, newKey);
-
-        for (var nestedKey in nested) {
-          result[nestedKey] = nested[nestedKey];
-        }
+      // Check if value is a non-null object and not an array
+      if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+        flattenObject(obj[key], newKey, result);
       } else {
-        result[newKey] = value;
+        result[newKey] = obj[key];
       }
     }
   }
-
   return result;
 }
 
-console.log(flattenObject({ a: { b: 1 }, c: 2 }));
+// --- Example Usage ---
+const user = {
+  name: "Alex",
+  info: {
+    age: 28,
+    location: {
+      city: "New York",
+      zip: 10001
+    }
+  }
+};
+console.log(flattenObject(user));
 ```
 
 ### Output
 
 ```js
-{ 'a.b': 1, c: 2 }
+/* Output:
+{
+  "name": "Alex",
+  "info.age": 28,
+  "info.location.city": "New York",
+  "info.location.zip": 10001
+}
+*/
 ```
 
 ### Explanation
