@@ -1384,11 +1384,12 @@ The main advantage of closures is that a function can remember variables from it
 
 ### 24. What are the potential pitfalls of using closures?
 - Closures can lead to memory leaks if not managed properly, especially when they capture variables that are no longer needed. 
-- They can also make debugging more difficult due to the complexity of the scope chain. Additionally, closures can cause performance issues if they are overused or used inappropriately, as they keep references to variables in their scope, which can prevent garbage collection.
+- They can also make debugging more difficult due to the complexity of the scope chain. 
+- Additionally, closures can cause performance issues if they are overused or used inappropriately, as they keep references to variables in their scope, which can prevent garbage collection.
 
 Potential pitfalls of using closures
-- Memory leaks
-Closures can cause memory leaks if they capture variables that are no longer needed. This happens because closures keep references to the variables in their scope, preventing the garbage collector from freeing up memory.
+Memory leaks
+- Closures can cause memory leaks if they capture variables that are no longer needed. This happens because closures keep references to the variables in their scope, preventing the garbage collector from freeing up memory.
 
 ```js
 function createClosure() {
@@ -1404,7 +1405,7 @@ closure(); // Output: 'some data'
 ```
 
 Debugging complexity
-Closures can make debugging more difficult due to the complexity of the scope chain. When a bug occurs, it can be challenging to trace the source of the problem through multiple layers of nested functions and scopes.
+- Closures can make debugging more difficult due to the complexity of the scope chain. When a bug occurs, it can be challenging to trace the source of the problem through multiple layers of nested functions and scopes.
 
 ```js
 function outerFunction() {
@@ -1422,7 +1423,7 @@ myFunction(); // Output: 'I am outside!'
 ```
 
 Performance issues
-Overusing closures or using them inappropriately can lead to performance issues. Since closures keep references to variables in their scope, they can prevent garbage collection, leading to increased memory usage and potential slowdowns.
+- Overusing closures or using them inappropriately can lead to performance issues. Since closures keep references to variables in their scope, they can prevent garbage collection, leading to increased memory usage and potential slowdowns.
 
 ```js
 function createManyClosures() {
@@ -1443,7 +1444,7 @@ createManyClosures();
 ```
 
 Unintended variable sharing
-Closures can lead to unintended variable sharing, especially in loops. This happens when all closures share the same reference to a variable, leading to unexpected behavior.
+- Closures can lead to unintended variable sharing, especially in loops. This happens when all closures share the same reference to a variable, leading to unexpected behavior.
 
 ```js
 function createFunctions() {
@@ -2154,124 +2155,72 @@ Use cases:
 
 ### 35. What are Web Workers and how can they be used to improve performance?
 
+Web Workers are a browser API that allows you to run JavaScript code in a background thread. Because JavaScript is single-threaded by default, heavy calculations can freeze your user interface (UI). Web Workers solve this problem by offloading intensive tasks—like data processing or image manipulation—to a separate thread, keeping your web page fast and responsive.
+
 Web Workers enable JavaScript code to run in the background, separate from the main execution thread of a web application. They handle intensive computations without freezing the user interface. Here's a concise example:
 
+Core Architecture
+Web Workers utilize thread-like message passing to achieve concurrency. Because they run in an isolated environment, they operate with critical restrictions:
+- No DOM Access: Workers cannot directly manipulate the window, document, or page elements.
+- Isolated Scope: They use self as their global context instead of the standard browser window object.
+- Data Copied, Not Shared: Data transferred between the main thread and workers is copied via the structured clone algorithm, meaning variables are not directly shared.
+
+Implementation Guide
+- To implement a dedicated Web Worker, you must separate your application into a main script and a worker file.
+
+
+1. The Main Script (main.js)
+- This script instantiates the worker using the Worker() constructor, listens for results, and sends data payloads using postMessage().
+
 ```js
-main.js:
+// Initialize the worker and point it to the worker file path
 const worker = new Worker('worker.js');
-worker.postMessage('Hello, worker!');
 
-worker.onmessage = (event) => console.log('Message from worker:', event.data);
-```
+// Send data to the background thread
+worker.postMessage({ number: 42 });
 
-```js
-worker.js:
-onmessage = (event) => {
-  console.log('Message from main script:', event.data);
-  postMessage('Hello, main script!');
+// Listen for the computed result back from the worker
+worker.onmessage = function(event) {
+    console.log('Data received from worker:', event.data);
+};
+
+// Handle any processing errors gracefully
+worker.onerror = function(error) {
+    console.error('Worker error:', error.message);
 };
 ```
 
-There are three main types of workers in JavaScript: Web Workers / Dedicated Workers, Service Workers and Shared Workers.
+2. The Worker Script (worker.js)
+- This script lives in its own file. It listens for incoming data using the global onmessage handler, performs the heavy computation, and passes the output back.
 
 ```js
-// Check if the browser supports workers
-if (window.Worker) {
-  // Create a new Worker
-  const myWorker = new Worker('worker.js');
-
-  // Post a message to the worker
-  myWorker.postMessage('Hello, Worker!');
-
-  // Listen for messages from the worker
-  myWorker.onmessage = function (event) {
-    console.log('Message from Worker:', event.data);
-  };
-
-  // Error handling
-  myWorker.onerror = function (error) {
-    console.error('Error from Worker:', error);
-  };
-}
-```
-
-Web Workers / Dedicated Workers
-  - Purpose: Handle CPU-intensive tasks (e.g., data processing, computations).
-  - Communication: Use postMessage() and onmessage.
-  - Security: No direct DOM access.
-  - Termination: Ends when the main script unloads or explicitly terminated.
-
-Example: Creating a Web Worker
-```js
-// Check if the browser supports workers
-main.js
-if (window.Worker) {
-  // Create a new Worker
-  const myWorker = new Worker('worker.js');
-
-  // Post a message to the worker
-  myWorker.postMessage('Hello, Worker!');
-
-  // Listen for messages from the worker
-  myWorker.onmessage = function (event) {
-    console.log('Message from Worker:', event.data);
-  };
-
-  // Error handling
-  myWorker.onerror = function (error) {
-    console.error('Error from Worker:', error);
-  };
-}
-worker.js:
-// Listen for messages from the main script
-onmessage = function (event) {
-  console.log('Message from Main Script:', event.data);
-
-  // Perform a task (e.g., some computation)
-  const result = event.data + ' - Processed by Worker';
-
-  // Post the result back to the main script
-  postMessage(result);
+// Listen for messages coming from the main thread
+self.onmessage = function(event) {
+    const data = event.data;
+    
+    // Perform intensive calculations (e.g., computing a heavy math operation)
+    const result = data.number * 2; 
+    
+    // Post the result back to the main thread
+    self.postMessage(result);
 };
 ```
 
-Service Workers
-- Purpose: Act as a network proxy, handle requests, and cache resources.
-- Capabilities: Enable offline functionality and push notifications.
-- Lifecycle: Managed by the browser (install, activate, update).
-- Security: No direct DOM access.
+Lifecycle Management
+- Terminating from Main: You can kill a running worker instantly from your main script by calling worker.terminate().
+Closing from Inside: A worker can shut itself down immediately by executing self.close().
 
-Example: Creating a Service Worker
+Types of Workers Available
+- According to the MDN Web Workers API documentation, the platform supports three main variations:
+- Dedicated Workers: Accessible exclusively by the single script instance that spawned them.
+- Shared Workers: Shared across multiple active scripts running on the same domain, such as different tabs or iFrames.
+- Service Workers: Act as proxy servers between the application and the network. They power Progressive Web Apps (PWAs) by managing offline caching, fetch interception, and push notifications.
 
-```js
-main.js:
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker
-    .register('/service-worker.js')
-    .then((registration) => {
-      console.log('Service Worker registered:', registration);
-    })
-    .catch((err) => {
-      console.log('Service Worker registration failed:', err);
-    });
-}
-
-service-worker.js:
-
-
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    }),
-  );
-});
-```
-
-Shared Workers
-
-Purpose: Shared across multiple scripts in different windows/tabs/iframes.
-Use Case: State sharing across multiple browser contexts.
+When to Use Web Workers
+- You should evaluate offloading tasks to a background thread for:Real-time encoding/decoding of audio and video.
+- Parsing massive raw JSON or CSV datasets.
+- Complex mathematical calculations like cryptography, canvas image filters, or pathfinding algorithms.
+- Prefetching and caching data for large dashboards.
 
 ### 36. Difference between normal script, async script, and defer script?
 
