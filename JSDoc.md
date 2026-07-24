@@ -1215,6 +1215,7 @@ A closure is a function bundled with its lexical environment. It allows an inner
 Use cases:
 
 - private variables
+- Promises
 - currying
 - memoization
 - function factories
@@ -1382,8 +1383,119 @@ The main advantage of closures is that a function can remember variables from it
 ```
 
 ### 24. What are the potential pitfalls of using closures?
-Closures can lead to memory leaks if not managed properly, especially when they capture variables that are no longer needed. They can also make debugging more difficult due to the complexity of the scope chain. Additionally, closures can cause performance issues if they are overused or used inappropriately, as they keep references to variables in their scope, which can prevent garbage collection.
+- Closures can lead to memory leaks if not managed properly, especially when they capture variables that are no longer needed. 
+- They can also make debugging more difficult due to the complexity of the scope chain. Additionally, closures can cause performance issues if they are overused or used inappropriately, as they keep references to variables in their scope, which can prevent garbage collection.
 
+Potential pitfalls of using closures
+- Memory leaks
+Closures can cause memory leaks if they capture variables that are no longer needed. This happens because closures keep references to the variables in their scope, preventing the garbage collector from freeing up memory.
+
+```js
+function createClosure() {
+  let largeArray = new Array(1000000).fill('some data');
+  return function () {
+    console.log(largeArray[0]);
+  };
+}
+
+let closure = createClosure();
+// The largeArray is still in memory because the closure keeps a reference to it
+closure(); // Output: 'some data'
+```
+
+Debugging complexity
+Closures can make debugging more difficult due to the complexity of the scope chain. When a bug occurs, it can be challenging to trace the source of the problem through multiple layers of nested functions and scopes.
+
+```js
+function outerFunction() {
+  let outerVar = 'I am outside!';
+
+  function innerFunction() {
+    console.log(outerVar); // What if outerVar is not what you expect?
+  }
+
+  return innerFunction;
+}
+
+let myFunction = outerFunction();
+myFunction(); // Output: 'I am outside!'
+```
+
+Performance issues
+Overusing closures or using them inappropriately can lead to performance issues. Since closures keep references to variables in their scope, they can prevent garbage collection, leading to increased memory usage and potential slowdowns.
+
+```js
+function createManyClosures() {
+  let counter = 0;
+
+  for (let i = 0; i < 1000000; i++) {
+    (function () {
+      counter++;
+    })();
+    // The closure is executed immediately, but it still holds onto the reference to the `counter` variable
+    // This prevents the counter from being garbage collected
+  }
+
+  console.log(counter); // This can be inefficient
+}
+
+createManyClosures();
+```
+
+Unintended variable sharing
+Closures can lead to unintended variable sharing, especially in loops. This happens when all closures share the same reference to a variable, leading to unexpected behavior.
+
+```js
+function createFunctions() {
+  let functions = [];
+
+  for (var i = 0; i < 3; i++) {
+    functions.push(function () {
+      console.log(i); // All functions will log the same value of i
+    });
+  }
+
+  return functions;
+}
+
+let funcs = createFunctions();
+funcs[0](); // 3
+funcs[1](); // 3
+funcs[2](); // 3
+```
+
+To avoid this, use let instead of var to create a new binding for each iteration:
+```js
+function createFunctions() {
+  let functions = [];
+
+  for (let i = 0; i < 3; i++) {
+    functions.push(function () {
+      console.log(i); // Each function will log its own value of i
+    });
+  }
+
+  return functions;
+}
+
+let funcs = createFunctions();
+funcs[0](); // 0
+funcs[1](); // 1
+funcs[2](); // 2
+```
+
+### 25. What is a closure and pros and cons?
+A closure is a function that remembers and accesses variables from its outer (enclosing) scope even after the outer function has returned.
+
+Pros of Using Closures
+- Data Privacy: Closures can create private variables and methods, simulating encapsulation in JavaScript.
+- State Preservation: They can maintain state between function calls without polluting the global namespace.
+- Flexibility: Closures enable powerful programming patterns like partial application and currying.
+
+Cons of Using Closures
+- Memory Consumption: Closures can lead to higher memory usage as they prevent variables from being garbage collected.
+- Complexity: They can make code harder to understand and debug, especially for less experienced developers.
+- Potential for Memory Leaks: Improper use of closures can cause unintended retention of large data structures.
 
 ### 25. Garbage collection in Javascript?
 JavaScript automatically allocates memory when objects are created and frees it when they are not used anymore (garbage collection). This automaticity is a potential source of confusion: it can give developers the false impression that they don't need to worry about memory management.
