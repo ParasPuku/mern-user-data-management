@@ -903,7 +903,9 @@ Key Characteristics
 - LIFO Structure: It operates on a Last-In, First-Out (LIFO) principle. The last function pushed onto the stack is the first one to be popped off (completed and removed).
 - Synchronous Execution: Code execution is synchronous. Each function call blocks the execution of the code below it until it finishes.
 
-How It Works (Step-by-Step)
+In JavaScript, the call stack is neither a script nor a standard JavaScript array; it is an internal data structure managed directly by the JavaScript runtime engine (like Google's V8) to track function execution. While it is not a literal JS array, it behaves conceptually like one because it operates on a Last-In, First-Out (LIFO) principle, similar to using an array with only .push() and .pop() methods.
+
+How It Works (Step-by-Step) or How the Call Stack Tracks Execution
 When your JavaScript file loads, the engine processes code sequentially through these phases:
 
 - Global Execution Context: Before any custom functions run, the engine creates a Global Execution Context and pushes it to the bottom of the stack.
