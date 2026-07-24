@@ -908,11 +908,13 @@ When your JavaScript file loads, the engine processes code sequentially through 
 
 - Global Execution Context: Before any custom functions run, the engine creates a Global Execution Context and pushes it to the bottom of the stack.
 
-- Pushing a Function: When a function is invoked, a new execution context (called a stack frame) is created for it and pushed onto the top of the stack.
+- Pushing(Adding) a Function: When a function is invoked, a new execution context (called a stack frame) is created for it and pushed onto the top of the stack.
 
 - Handling Nested Calls: If the current function calls another function, the script pauses execution, creates a new frame, and pushes the new function to the top of the stack.
 
-- Popping a Function: Once a function hits a return statement or reaches its final bracket, it finishes executing. The engine pops it off the top of the stack and resumes where it left off in the function below it.
+- Single Thread Execution: Because JavaScript is single-threaded, the engine only executes the function that is currently sitting at the very top of the stack.
+
+- Popping(Removing) a Function: Once a function hits a return statement or reaches its final bracket, it finishes executing. The engine pops it off the top of the stack and resumes where it left off in the function below it.
 
 Code Example and Stack Visualization
 Consider the following script:
