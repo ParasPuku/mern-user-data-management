@@ -4,7 +4,7 @@ Redux Saga is a middleware library designed to manage application side effects (
 Redux Saga is more powerful and uses generator functions to manage complex async flows like cancellation, retries, debouncing, background polling, and race conditions.
 
 Core Architecture
-Redux Saga intercepts ordinary Redux actions before they reach the reducer. It coordinates asynchronous flows using ES6 Generator functions (functions defined with an asterisk, like function*).
+## Redux Saga intercepts ordinary Redux actions before they reach the reducer. It coordinates asynchronous flows using ES6 Generator functions (functions defined with an asterisk, like function*).
 
 - The Watcher Saga: Listens for specific Redux actions to be dispatched.
 - The Worker Saga: Executes the actual asynchronous logic when the Watcher catches an action.
