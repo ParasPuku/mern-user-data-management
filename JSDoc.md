@@ -2160,7 +2160,7 @@ Web Workers are a browser API that allows you to run JavaScript code in a backgr
 Web Workers enable JavaScript code to run in the background, separate from the main execution thread of a web application. They handle intensive computations without freezing the user interface. Here's a concise example:
 
 Core Architecture
-Web Workers utilize thread-like message passing to achieve concurrency. Because they run in an isolated environment, they operate with critical restrictions:
+## Web Workers utilize thread-like message passing to achieve concurrency. Because they run in an isolated environment, they operate with critical restrictions:
 - No DOM Access: Workers cannot directly manipulate the window, document, or page elements.
 - Isolated Scope: They use self as their global context instead of the standard browser window object.
 - Data Copied, Not Shared: Data transferred between the main thread and workers is copied via the structured clone algorithm, meaning variables are not directly shared.
@@ -2208,16 +2208,17 @@ self.onmessage = function(event) {
 
 Lifecycle Management
 - Terminating from Main: You can kill a running worker instantly from your main script by calling worker.terminate().
-Closing from Inside: A worker can shut itself down immediately by executing self.close().
+- Closing from Inside: A worker can shut itself down immediately by executing self.close().
 
 Types of Workers Available
-- According to the MDN Web Workers API documentation, the platform supports three main variations:
+According to the MDN Web Workers API documentation, the platform supports three main variations:
 - Dedicated Workers: Accessible exclusively by the single script instance that spawned them.
 - Shared Workers: Shared across multiple active scripts running on the same domain, such as different tabs or iFrames.
 - Service Workers: Act as proxy servers between the application and the network. They power Progressive Web Apps (PWAs) by managing offline caching, fetch interception, and push notifications.
 
 When to Use Web Workers
-- You should evaluate offloading tasks to a background thread for:Real-time encoding/decoding of audio and video.
+You should evaluate offloading tasks to a background thread for:
+- Real-time encoding/decoding of audio and video.
 - Parsing massive raw JSON or CSV datasets.
 - Complex mathematical calculations like cryptography, canvas image filters, or pathfinding algorithms.
 - Prefetching and caching data for large dashboards.
@@ -2895,6 +2896,8 @@ class Admin extends User {
 
 ### 51. What is composition in JavaScript?
 
+In JavaScript, composition is the practice of combining smaller, simple pieces of code (functions or objects) to build larger, and more complex systems. Instead of relying on rigid structural hierarchies, it focuses on assembling independent units.
+
 Composition means building complex behavior by **combining smaller parts**, instead of creating a long parent-child inheritance chain.
 
 Composition in JS just means building something bigger by combining smaller, simple pieces — instead of one giant function or class trying to do everything, you build small focused pieces and snap them together like Lego blocks.
@@ -2985,34 +2988,21 @@ Here `User` does not inherit from `Logger`. It **uses** a logger. That is compos
 
 #### 2) Function composition
 
+Function composition is the process of chaining together multiple functions to form a new function. It involves applying a series of transformations or operations to an input value, where the output of one function becomes the input of the next function in the composition chain.
+
+The compose function takes in two or more functions and returns a new function that applies these functions in right-to-left order. This means that the rightmost function is applied first, followed by the next function to its left, and so on.
+
 Function composition means the output of one function becomes the input of the next.
 
 ```js
-const trim = (text) => text.trim();
-const toLower = (text) => text.toLowerCase();
-const exclaim = (text) => `${text}!`;
+const add5 = (x) => x + 5;
+const multiplyBy3 = (x) => x * 3;
+const subtract10 = (x) => x - 10;
 
-// compose right-to-left: exclaim(toLower(trim(value)))
-const compose =
-  (...fns) =>
-  (value) =>
-    fns.reduceRight((acc, fn) => fn(acc), value);
+const composedFunction = compose(subtract10, multiplyBy3, add5);
+const result = composedFunction(7);
 
-const formatMessage = compose(exclaim, toLower, trim);
-
-formatMessage('  Hello  '); // "hello!"
-```
-
-Pipe style (left-to-right, often easier to read):
-
-```js
-const pipe =
-  (...fns) =>
-  (value) =>
-    fns.reduce((acc, fn) => fn(acc), value);
-
-const formatMessage = pipe(trim, toLower, exclaim);
-formatMessage('  Hello  '); // "hello!"
+console.log(result); // Output: 36
 ```
 
 #### Composition vs inheritance
@@ -3208,6 +3198,8 @@ function greet(name = 'Guest') {
 
 Modules allow code to be split and reused.
 
+JavaScript modules allow you to break down large codebases into smaller, reusable, and encapsulated pieces. They help prevent global scope pollution by keeping variables, functions, and classes isolated within the file unless explicitly shared.
+
 Export:
 
 ```js
@@ -3220,30 +3212,132 @@ Import:
 import { add } from './math.js';
 ```
 
+The Two Primary Module Systems
+The JavaScript ecosystem primarily relies on two module patterns:
+- ES Modules (ESM): The official, standardized module system native to modern browsers and newer Node.js environments. It uses import and export statements.
+- CommonJS (CJS): The legacy module system built into Node.js by default. It relies on require() and module.exports.
+
+Working with ES Modules (ESM)
+- To use ESM in a browser, your HTML script tag must declare type="module". In a Node.js project, you must add "type": "module" to your package.json file.
+
+1. Named ExportsNamed exports allow you to export multiple values from a single file. When importing them, you must use their exact names wrapped in curly braces.
+
+```js
+// mathUtils.js
+export const PI = 3.14159;
+
+export function add(a, b) {
+  return a + b;
+}
+```
+
+```js
+// app.js
+import { PI, add } from './mathUtils.js';
+console.log(add(5, 10)); // 15
+```
+
+2. Default ExportsEach module can have exactly one default export. When importing a default export, you do not use curly braces, and you can rename the import to anything you like.
+
+```js
+// Logger.js
+export default function log(message) {
+  console.log(`[LOG]: ${message}`);
+}
+```
+
+```js
+// app.js
+import myCustomLogName from './Logger.js';
+
+myCustomLogName('Hello World!'); // [LOG]: Hello World!
+```
+
+3. Renaming & Bulk ImportsYou can rename imports on the fly using the as keyword, or bundle everything into a single namespace object.
+
+```js
+// Rename a specific import
+import { add as sum } from './mathUtils.js';
+
+// Import everything as a single object
+import * as MathTools from './mathUtils.js';
+console.log(MathTools.PI); 
+```
+
+4. Dynamic ImportsWhile standard imports are static, you can load modules asynchronously at runtime using import() as a function. This is ideal for code-splitting and performance optimization.
+
+```js
+// Dynamic loading inside an async function
+async function loadAnalytics() {
+  const module = await import('./analytics.js');
+  module.trackPageview();
+}
+```
+
 ## Copying and Immutability
+
+In JavaScript, the main difference between a shallow copy and a deep copy is how they handle nested objects or arrays. A shallow copy only duplicates the top-level properties and shares references to nested objects, whereas a deep copy recursively duplicates every level, creating a completely independent clone.
 
 ### 64. Shallow copy vs deep copy?
 
-Shallow copy copies only the first level.
+## Shallow copy
+A shallow copy creates a new object, but if any property value is a reference type (like an array or object), it only copies the memory pointer. Modifying a nested property in the copy will mutate the original object.
+
+## How to create a shallow copy
+- Spread Operator (...): { ...original } or [ ...originalArray ]
+- Object.assign(): Object.assign({}, original)
+- Array Methods: Array.from(), .slice(), or .concat()
 
 ```js
-const user = {
-  name: 'Paras',
-  address: {
-    city: 'Bengaluru'
-  }
+const original = {
+  name: "Alice",
+  skills: ["JavaScript", "React"] // Nested reference
 };
 
-const copy = { ...user };
-copy.address.city = 'Pune';
+// Create a shallow copy
+const shallowCopy = { ...original };
 
-console.log(user.address.city); // Pune
+// 1. Modifying top-level primitive does NOT affect original
+shallowCopy.name = "Bob"; 
+
+// 2. Modifying nested object/array DOES affect original
+shallowCopy.skills.push("Node.js");
+
+console.log(original.name);   // "Alice" (Safe)
+console.log(original.skills); // ["JavaScript", "React", "Node.js"] (Mutated!)
 ```
 
-Deep copy copies nested objects also.
+## Deep Copy
+A deep copy creates an entirely new structure in memory. It recursively clones all properties, ensuring no nested references are shared between the original and the duplicate.
+
+How to create a deep copy
+
+1. The Modern Way: structuredClone()
+This is the native, built-in global function available in modern JS environments. It safely deep-clones nested structures, handles circular references, and supports data types like Date, Set, Map, and RegExp.
+
+```js
+const deepCopy = structuredClone(original);
+```
+
+2. The Legacy Way: JSON.parse(JSON.stringify())
+An older trick that serializes the object to a string and parses it back into a new object.
+
+```js
+const deepCopy = JSON.parse(JSON.stringify(original));
+```
+
+- ⚠️ Limitations: It strips out methods/functions, symbols, and undefined properties. It also converts Date objects into plain strings.
 
 ```js
 const deepCopy = structuredClone(user);
+```
+
+3. Third-Party Utility: Lodash
+For complex edge cases in enterprise environments, the Lodash cloneDeep method remains highly popular because it handles complex object types and prototypes safely.
+
+```js
+import _ from 'lodash';
+const deepCopy = _.cloneDeep(original);
 ```
 
 ### 65. How to deep clone an object?
