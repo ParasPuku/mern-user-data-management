@@ -198,43 +198,6 @@ Important features:
 - resource preloading APIs
 - stable React Server Components related APIs for frameworks
 
-Example: React 19 Action style
-
-```tsx
-function UpdateName() {
-  const [name, setName] = useState('');
-
-  async function submitAction(formData: FormData) {
-    const newName = formData.get('name') as string;
-
-    await updateUserName(newName);
-    setName(newName);
-  }
-
-  return (
-    <form action={submitAction}>
-      <input name="name" />
-      <button type="submit">Update</button>
-      <p>{name}</p>
-    </form>
-  );
-}
-```
-
-#### React 18 vs React 19 comparison
-
-| Topic | React 18 | React 19 |
-|---|---|---|
-| Main focus | Rendering performance and concurrency foundation | Async workflows, forms, server integration, and DX |
-| Batching | Automatic batching added | Continues automatic batching |
-| Concurrent features | Introduced concurrent rendering foundation | Builds on the same foundation |
-| Forms | Mostly handled manually with state and submit handlers | Actions, `useActionState`, `useFormStatus`, `useOptimistic` |
-| Async data | Usually handled with `useEffect`, libraries, or framework loaders | Adds `use` API for promise/context reading in supported cases |
-| Refs | `forwardRef` commonly used to pass refs | Ref can be passed as a prop |
-| Hydration errors | Less detailed mismatch messages | Better hydration error diagnostics |
-| Metadata | Usually managed by framework or libraries | Built-in support for document metadata |
-| Server rendering | Streaming SSR improvements | Better Server Components and async resource support |
-
 #### Simple interview explanation
 
 ```text
@@ -348,7 +311,7 @@ createElement creates a new React element from a type, props, and children. JSX 
 
 #### What are React Fragments and when would you use them?
 
-React Fragment lets a component return multiple elements without adding an extra DOM node.
+React Fragment allows to return multiple elements without adding an extra DOM node.
 
 Without Fragment, we may add an unnecessary wrapper:
 
@@ -1144,7 +1107,7 @@ React update has two main phases:
 Render phase -> Commit phase
 ```
 
-Render phase means React calculates what the UI should look like.
+Render phase means React calls component function and calculates what the UI should look like.
 
 Commit phase means React applies the required changes to the real DOM.
 
@@ -1341,9 +1304,9 @@ Here is the step-by-step breakdown of how it executes:
 
 2. How many Virtual DOMs get created, and for which component?
 
-Conceptually, only 1 new Virtual DOM tree is created for this entire tree snapshot, but let's break down exactly what gets created for your components:V
+Conceptually, only 1 new Virtual DOM tree is created for this entire tree snapshot, but let's break down exactly what gets created for your components:
 
-- irtual DOM Element Creation: When App and UserCard re-run, React builds a brand new Virtual DOM representation (a lightweight JavaScript tree object) for both the App component and the entire UserCard component structure (the wrapper div and all four inner child divs).
+- Virtual DOM Element Creation: When App and UserCard re-run, React builds a brand new Virtual DOM representation (a lightweight JavaScript tree object) for both the App component and the entire UserCard component structure (the wrapper div and all four inner child divs).
 
 - The Reconciliation (Diffing) Process: React takes this newly generated Virtual DOM tree and compares it side-by-side with the old Virtual DOM tree from before the click.
 
@@ -1740,18 +1703,48 @@ Use functional update when next value depends on previous value.
 
 ### 28. Why state updates are asynchronous?
 
-React batches state updates for performance.
+React state updates behave asynchronously because they are batched together for performance optimization. While the state setter function itself executes synchronously under the hood to queue the update, React does not immediately mutate your state variable or trigger a re-render right after the function is called. Instead, it schedules the change to be applied on the next render cycle.
 
-State updates in frameworks like React aren't asynchronous in the traditional sense; rather, they are queued and batched. Instead of re-rendering the component for every single setState call, React waits until the current execution block finishes, groups multiple updates together, and processes them in a single render pass.
+👁️ Why React State Behaves Asynchronously
+React uses a strategy called batching. If you update multiple pieces of state within a single event handler (like a button click), React will group all the updates together into a single re-render cycle. This stops the browser from constantly re-drawing the UI, keeping your application fast and smooth.
 
-Example:
+Because state acts like a fixed "snapshot" of a component for the current render, reading a state variable immediately after setting it will only return its old value:
 
 ```tsx
-setCount(count + 1);
-console.log(count); // old value
+const [count, setCount] = useState(0);
+
+const handleClick = () => {
+  setCount(count + 1); 
+  console.log(count); // ❌ Logs 0, not 1!
+};
 ```
 
-The state variable updates on next render.
+🛠️ How to Handle Asynchronous State Updates
+If your code relies on the updated state value right away, you should handle it using one of the two standard React patterns:
+
+1. Use Functional Updates for Sequential Changes
+If you need to update a state variable multiple times in a row, or if the next state depends heavily on the previous state, pass a function into the setter. This guarantees you are working with the absolute newest, queued value.
+
+```tsx
+// ❌ Incorrect: All updates use the original stale "count" (0), resulting in 1
+setCount(count + 1);
+setCount(count + 1);
+
+//  Correct: Each update receives the latest queued value, resulting in 2
+setCount(prevCount => prevCount + 1);
+setCount(prevCount => prevCount + 1);
+```
+
+2. Use useEffect to Run Code After the State Changes
+If you want to trigger a side effect (like a network call or a calculation) only after the state has safely updated and re-rendered, place that logic inside a useEffect block with the state variable in its dependency array.
+
+```tsx
+useEffect(() => {
+  console.log("The count successfully updated to:", count);
+  // Your side-effect code here
+}, [count]); // Triggers automatically whenever 'count' changes
+```
+
 
 ### 29. What is the purpose of callback function argument format of setState, and when should it be used?
 
@@ -2176,8 +2169,8 @@ Use useEffect for side effects after paint.
 Use useLayoutEffect only when you must read or change layout before paint.
 ```
 
-### 35. What is useimperativehandle in react?
-The useImperativeHandle hook is a built-in React function that lets you customize the object instance and specific methods exposed through a ref from a child component to its parent.
+### 35. What is useImperativeHandle in react?
+The useImperativeHandle hook is a built-in React function that allows you to customize the object instance and specific methods exposed through a ref from a child component to its parent.
 
 By default, passing a ref down directly gives the parent access to the entire underlying DOM element or component instance. This hook lets you limit, control, or entirely redefine that access.
 
@@ -2821,7 +2814,15 @@ React Compiler is a build-time optimization tool that automatically memoizes Rea
 
 ### 41. How to find out the root cause for API slowness?
 
-API slowness can happen because of frontend code, network, backend logic, database queries, external services, server load, or very large response payloads.
+API slowness can happen because of - 
+- frontend code - Text inputs fire API calls on every single keystroke during a search. Broken scroll listeners trigger continuous, duplicate API requests. 
+- network - 'The Multi-Hop Penalty: If a user in London triggers an API in New York that queries a MongoDB instance in Tokyo, the physical distance introduces massive transit time.
+ Cross-Provider Lag: Routing traffic across different cloud providers (e.g., frontend on Vercel, API on AWS, MongoDB on Google Cloud) without internal peering creates unnecessary network hops.
+- backend logic - Running intense encryption, image processing, or deep loops in Node.js blocks the main thread.
+- database queries - Sorting data in memory without an index causes massive lag. Growing arrays inside a single document slow down read/write times.
+- external services, 
+- server load,
+- very large response payloads.
 
 The important interview point is:
 
@@ -4287,7 +4288,7 @@ Easy way to remember
 
 ### 54. What is useContext?
 
-`The useContext hook` in React is a built-in function that allows functional components to read and subscribe the data from a context object without manually passing props through intermediate components. 
+`The useContext hook` in React is a built-in function that allows functional components to access and subscribe the data from a context object without manually passing props through intermediate components. 
 
 It provides an elegant solution to prop drilling, which is the tedious process of passing props down multiple levels of a component tree just to reach a deeply nested child.
 
@@ -4506,7 +4507,9 @@ Pass value/callback to both
 
 ### 64. What is React Router?
 
-React Router is a routing library for React apps.
+React Router is a routing library for React apps and the current version of React Router is 7.18.1.
+
+React Router is the standard client-side routing library for React applications, enabling seamless navigation without full-page reloads. It synchronizes the browser URL with the user interface to deliver a smooth, single-page application (SPA) experience.
 
 It maps URL paths to components.
 
@@ -4518,6 +4521,24 @@ Example:
   <Route path="/" element={<Dashboard />} />
 </Routes>
 ```
+
+Core Routing Features
+- Declarative Routing: Define paths using a clear layout inside your codebase.
+- Nested Routes: Place child routes inside parent layouts using <Outlet />.
+- Dynamic Segments: Use param paths like /user/:id to extract values automatically.
+- Programmatic Navigation: Trigger page changes via JavaScript logic using the useNavigate hook.
+- Active Link Styling: Highlight the current tab using custom styles on the <NavLink> component.
+
+Built-in Hooks for State Management
+- useParams: Reads dynamic parameters out of the current URL string.
+- useLocation: Provides information about the active URL pathname and query strings.
+- useSearchParams: Manages the URL query parameters similarly to React's state hooks.
+
+Flexible Strategies & Environments
+The library provides different router types depending on your target deployment:
+- BrowserRouter: Uses standard HTML5 History API for clean web URLs.
+- HashRouter: Uses window.location.hash for legacy servers that cannot rewrite paths.
+- MemoryRouter: Keeps history entirely in memory, making it ideal for testing suites.
 
 ### 65. What is protected route?
 
