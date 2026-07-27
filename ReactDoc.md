@@ -3492,7 +3492,7 @@ It helps keep the UI responsive when an update may cause expensive rendering.
 Interview answer:
 
 ```text
-useTransition lets React separate urgent updates from non-urgent updates. Urgent updates like typing should update immediately. Non-urgent updates like filtering a large list can be wrapped in startTransition so React can keep the UI responsive.
+useTransition allows React to separate urgent updates from non-urgent updates. Urgent updates like typing should update immediately. Non-urgent updates like filtering a large list can be wrapped in startTransition so React can keep the UI responsive.
 ```
 
 Syntax:
@@ -3569,7 +3569,9 @@ useTransition is used when a state update is expensive and can be treated as low
 
 ### 51. What is useDeferredValue and why is React's useDeferredValue hook useful?
 
-`useDeferredValue` is a React hook that allows you to defer[delay] updating a value until the browser has time to handle less urgent rendering. [Overall - searchText updates instantly on every keystroke. deferredSearchText lags behind intentionally so the application does not freeze while filtering a large list.]
+`useDeferredValue` is a React hook that allows you to defer[delay] updating a value until the browser has time to handle less urgent rendering. 
+
+[Overall - searchText updates instantly on every keystroke. deferredSearchText lags behind intentionally so the application does not freeze while filtering a large list.]
 
 Interview answer:
 
@@ -4932,10 +4934,13 @@ This issue happened in this app in the skills selector and was fixed by using a 
 Securing a React app requires layers of protection at both the client level and the server level. The most critical step is preventing Cross-Site Scripting (XSS) by allowing React to auto-escape data, avoiding dangerouslySetInnerHTML, and sanitizing user inputs. Always treat the frontend as untrusted.
 
 - Prevent Cross-Site Scripting (XSS)
+- Avoiding dangerouslySetInnerHTML
 - Protect Environment Variables & Secrets
 - Implement Robust Authentication[JWT]
 - Rely on the Backend for Security
 - Keep Dependencies Updated [Vulnerability]
+- Avoid direct DOM Access
+- Secure react server-side rendering
 
 ### 83. How to optimize React performance?
 
@@ -4951,26 +4956,6 @@ Common ways:
 - virtualize large lists
 - split code with lazy loading
 - avoid unnecessary global state changes
-
-### 84. What is React.memo?
-
-`React.memo` prevents re-render if props did not change.
-
-Example:
-
-```tsx
-const UserRow = React.memo(({ user }: { user: User }) => {
-  return <tr>{user.name}</tr>;
-});
-```
-
-Useful for expensive child components.
-
-### 85. React.memo vs useMemo?
-
-`React.memo` memoizes a component render based on props.
-
-`useMemo` memoizes a calculated value inside a component.
 
 ### 86. What causes unnecessary re-render?
 
@@ -5541,7 +5526,7 @@ Micro-frontend architecture splits a large frontend into smaller independently o
 
 ### 92. What is Suspense and what is the use of Suspense?
 
-`Suspense` is a React component that lets us show fallback UI while part of the UI is not ready yet.
+`Suspense` is a React component that helps to show fallback UI while part of the UI is not ready yet.
 
 Most common use:
 
@@ -6155,73 +6140,6 @@ Frontend role checks improve UX but are not security by themselves.
 
 Backend must also enforce authorization.
 
-## TypeScript With React
-
-### 108. Why use TypeScript with React?
-
-Benefits:
-
-- catches mistakes early
-- typed props
-- typed API responses
-- better autocomplete
-- safer refactoring
-
-### 109. How to type component props?
-
-```tsx
-type UserCardProps = {
-  name: string;
-  email: string;
-};
-
-const UserCard = ({ name, email }: UserCardProps) => {
-  return <p>{name} - {email}</p>;
-};
-```
-
-### 110. How to type useState?
-
-```tsx
-const [user, setUser] = useState<User | null>(null);
-```
-
-For inferred values:
-
-```tsx
-const [count, setCount] = useState(0);
-```
-
-### 111. How to type event handlers?
-
-Input change:
-
-```tsx
-const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-  setName(event.target.value);
-};
-```
-
-Form submit:
-
-```tsx
-const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-  event.preventDefault();
-};
-```
-
-### 112. How to type useRef?
-
-```tsx
-const inputRef = useRef<HTMLInputElement | null>(null);
-```
-
-Use:
-
-```tsx
-inputRef.current?.focus();
-```
-
 ## React Patterns
 
 ### 113. What is composition?
@@ -6353,37 +6271,6 @@ Interview answer:
 
 ```text
 A Higher-Order Component is a function that takes a component and returns a new component with extra behavior. It is useful for reusing common component logic like authentication, permissions, logging, or loading UI. HOCs follow composition and do not mutate the original component. In modern React, custom hooks are often preferred for sharing stateful logic, but HOCs are still important to understand.
-```
-
-### 115. Controlled modal pattern?
-
-Parent controls open/close state.
-
-```tsx
-const [isOpen, setIsOpen] = useState(false);
-
-{isOpen ? <Modal onClose={() => setIsOpen(false)} /> : null}
-```
-
-### 116. Container vs presentational components?
-
-Container component:
-
-- fetches data
-- manages state
-- dispatches actions
-
-Presentational component:
-
-- receives props
-- renders UI
-- minimal logic
-
-Example:
-
-```text
-UserManagementPage -> container
-UserTable -> presentational
 ```
 
 ### 117. What is children prop?
@@ -6573,354 +6460,12 @@ Client-side rendering means browser receives minimal HTML and JavaScript builds 
 
 Vite React apps are usually client-side rendered.
 
-## Testing
-
-### 130. What should we test in React?
-
-Test user behavior, not implementation details.
-
-Examples:
-
-- form validation
-- button click
-- API success/error state
-- route protection
-- role-based UI
-
-### 131. What is React Testing Library?
-
 React Testing Library helps test components from user perspective.
 
 Example:
 
 ```tsx
 expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
-```
-
-## React App Architecture
-
-### 132. How is this app structured?
-
-This app uses feature-based structure:
-
-```text
-frontend/src/features/auth
-frontend/src/features/users
-frontend/src/features/teams
-frontend/src/features/skills
-frontend/src/features/admin
-frontend/src/components
-frontend/src/app
-frontend/src/services
-```
-
-Benefits:
-
-- related code stays together
-- easier scaling
-- easier maintenance
-
-### 133. What is feature-based folder structure?
-
-Feature-based structure groups code by business feature instead of file type.
-
-Example:
-
-```text
-features/users/UserManagementPage.tsx
-features/users/usersSlice.ts
-features/users/usersApi.ts
-features/users/types.ts
-```
-
-This is better for medium/large apps.
-
-### 134. What is reusable component?
-
-A reusable component is generic enough to be used in many places.
-
-Examples in this app:
-
-```text
-LoadingButton
-StatusBanner
-CustomDropdown
-ToastViewport
-ProtectedRoute
-PublicRoute
-```
-
-## Interview Questions Based on This App
-
-### 135. How does auth bootstrap work in this app?
-
-On app load:
-
-```tsx
-if (authStatus === 'idle') {
-  dispatch(bootstrapAuth());
-}
-```
-
-Frontend calls backend session API.
-
-If cookie is valid, user becomes authenticated.
-
-If not, user is unauthenticated.
-
-### 136. How does session refresh work in this app?
-
-The app listens to user activity and periodically verifies/refreshes session.
-
-Concept:
-
-```text
-User active -> refresh session
-No activity -> verify session without extending it
-```
-
-### 137. How does role-based UI work in this app?
-
-Admin route is visible only when:
-
-```tsx
-account?.role === 'admin'
-```
-
-But backend also enforces authorization.
-
-Important interview answer:
-
-```text
-Frontend role checks are for UX. Backend authorization is the real security.
-```
-
-### 138. How are API calls centralized?
-
-This app uses:
-
-```text
-frontend/src/services/http.ts
-```
-
-It centralizes:
-
-- base URL
-- JSON headers
-- request timeout
-- `credentials: 'include'`
-- error parsing
-
-### 139. How are toasts handled?
-
-This app uses Redux listener middleware.
-
-When async actions succeed/fail, middleware dispatches toast notifications.
-
-This keeps toast logic centralized instead of duplicating it in every component.
-
-## Most Important Short Answers
-
-### 140. React in one line
-
-```text
-React is a JavaScript library for building reusable, state-driven UI components.
-```
-
-### 141. Component in one line
-
-```text
-A component is a reusable function/class that returns UI.
-```
-
-### 142. Props in one line
-
-```text
-Props are read-only inputs passed from parent to child.
-```
-
-### 143. State in one line
-
-```text
-State is component-managed data that triggers re-render when changed.
-```
-
-### 144. useEffect in one line
-
-```text
-useEffect runs side effects after render and can clean them up.
-```
-
-### 145. useLayoutEffect in one line
-
-```text
-useLayoutEffect runs after DOM updates but before browser paint, mainly for layout measurement or pre-paint visual fixes.
-```
-
-### 146. useTransition in one line
-
-```text
-useTransition marks expensive state updates as non-urgent so urgent UI like typing can stay responsive.
-```
-
-### 147. useDeferredValue in one line
-
-```text
-useDeferredValue defers a fast-changing value so expensive rendering can update later without blocking urgent UI.
-```
-
-### 148. Virtual DOM in one line
-
-```text
-Virtual DOM is a lightweight representation of UI used to calculate efficient real DOM updates.
-```
-
-### 149. Redux in one line
-
-```text
-Redux is a centralized state management library where state changes through actions and reducers.
-```
-
-### 150. React Router in one line
-
-```text
-React Router maps URL paths to React components.
-```
-
-### 151. Controlled component in one line
-
-```text
-A controlled component is a form element whose value is controlled by React state.
-```
-
-### 152. Custom hook in one line
-
-```text
-A custom hook is a reusable function that uses React hooks to share stateful logic.
-```
-
-## Quick Revision Map
-
-### Must Know
-
-Revise these first:
-
-- React basics: component, JSX, props, state
-- rendering and re-rendering
-- state batching and functional updates
-- `useState`
-- `useEffect`
-- dependency arrays
-- cleanup functions
-- `useRef`
-- `useMemo`
-- `useCallback`
-- `React.memo`
-- shallow vs deep comparison
-- list keys
-- controlled vs uncontrolled forms
-- API calls and cleanup with `AbortController`
-- routing and protected routes
-- Redux Toolkit basics
-- Context API and re-render behavior
-
-### Frequently Asked
-
-Revise these after the Must Know list:
-
-- React 18 vs React 19
-- React 19 `use()` API
-- `useLayoutEffect`
-- `useTransition`
-- `useDeferredValue`
-- `useId`
-- custom hooks
-- `useReducer`
-- prop drilling and lifting state up
-- code splitting
-- lazy loading
-- Suspense
-- Suspense vs manual loader
-- error boundaries
-- StrictMode
-- stale closure
-- functional state update
-- avoiding new object/function props
-
-### Advanced
-
-Revise these for deeper rounds:
-
-- React Fiber
-- React Compiler
-- reconciliation
-- hydration
-- hydration mismatch
-- SSR vs CSR
-- server component vs client component
-- performance profiling
-- React Query vs RTK Query
-- accessibility in React
-- Higher-Order Components
-- portals
-- route change during API call
-- component unmount before API response
-
-### Low Priority
-
-Revise these after the above topics:
-
-- detailed Vite vs Create React App setup
-- Webpack vs Babel
-- low-priority SSR edge cases
-- extra architecture questions specific to this app
-
-## Final React Interview Checklist
-
-Must know:
-
-- components
-- JSX
-- props
-- state
-- rendering
-- keys
-- virtual DOM
-- reconciliation
-- hooks
-- `useState`
-- `useEffect`
-- `useLayoutEffect`
-- `useRef`
-- `useMemo`
-- `useCallback`
-- `useTransition`
-- `useDeferredValue`
-- `useContext`
-- controlled forms
-- routing
-- protected routes
-- Redux basics
-- async thunks
-- selectors
-- performance optimization
-- memoization
-- error boundaries
-- StrictMode
-- authentication flow
-- role-based UI
-- TypeScript props/events
-
-Strong answer pattern:
-
-```text
-Definition -> Example -> Use case -> Common mistake
-```
-
-Example:
-
-```text
-useEffect is a hook for side effects after render. For example, we use it to call an API or attach an event listener. It is useful for syncing React with external systems. A common mistake is missing dependencies or updating state in a way that creates an infinite loop.
 ```
 
 ## DEEP Understanding TOPICS
@@ -8100,277 +7645,6 @@ oldProps.user.name === newProps.user.name -> true
 ```
 
 React usually avoids deep comparison because it can be expensive for large objects.
-
-### 9. Closures in JavaScript
-
-Interview answer:
-
-```text
-A closure is created when a function remembers variables from the scope where it was created, even after that outer function has finished running. React hooks rely heavily on closures because every render creates a new scope with its own props, state, and functions.
-```
-
-Basic example:
-
-```tsx
-function createCounter() {
-  let count = 0;
-
-  return function increment() {
-    count += 1;
-    return count;
-  };
-}
-
-const increment = createCounter();
-
-console.log(increment()); // 1
-console.log(increment()); // 2
-```
-
-`increment` remembers `count`.
-
-#### What causes stale closures?
-A stale closure occurs when an inner function (closure) captures variables from an outer scope, but that function continues to hold onto the old, outdated values even after those variables have been updated
-
-This happens because of a mismatch between when a function "captures" its environment and when the data actually changes. It is a particularly common issue in modern front-end frameworks like React.
-
-```tsx
-// ❌ THE PROBLEM: Stale Closure Example
-import React, { useState, useEffect } from 'react';
-
-function Counter() {
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      // This alerts "0" forever because it captured count = 0 at creation
-      console.log(`Count is: ${count}`); 
-      setCount(count + 1); 
-    }, 1000);
-
-    return () => clearInterval(id);
-  }, []); // ⚠️ Empty array means this only runs once and stays stale
-
-  return <h1>{count}</h1>;
-}
-```
-
-Why it breaks
-- useEffect runs only once on mount.
-- The setInterval callback captures count when it was 0.
-- Every second, the loop runs setCount(0 + 1).
-- The screen updates to 1, but the interval remains trapped in the first render where count is always 0.
-
-Fix this by updating - 
-```tsx
-//  THE FIX: Functional Update
-useEffect(() => {
-  const id = setInterval(() => {
-    // Correct: updates based on the absolute latest live state
-    setCount(prevCount => prevCount + 1); 
-  }, 1000);
-
-  return () => clearInterval(id);
-}, []); 
-```
-
-#### Closure in React
-
-```tsx
-function Counter() {
-  const [count, setCount] = useState(0);
-
-  const handleClick = () => {
-    console.log(count);
-  };
-
-  return <button onClick={handleClick}>Log</button>;
-}
-```
-
-`handleClick` closes over the `count` value from the render where it was created.
-
-Every render has its own values:
-
-```text
-render 1 -> count is 0 -> handleClick remembers 0
-render 2 -> count is 1 -> handleClick remembers 1
-render 3 -> count is 2 -> handleClick remembers 2
-```
-
-#### Stale closure
-
-```tsx
-function Counter() {
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    const timerId = window.setInterval(() => {
-      console.log(count);
-    }, 1000);
-
-    return () => window.clearInterval(timerId);
-  }, []);
-
-  return <button onClick={() => setCount(count + 1)}>Increment</button>;
-}
-```
-
-The interval logs the initial `count` forever because the effect runs once and the callback closes over the first render's `count`.
-
-Fix with dependency:
-
-```tsx
-useEffect(() => {
-  const timerId = window.setInterval(() => {
-    console.log(count);
-  }, 1000);
-
-  return () => window.clearInterval(timerId);
-}, [count]);
-```
-
-Fix with ref:
-
-```tsx
-const countRef = useRef(count);
-
-useEffect(() => {
-  countRef.current = count;
-}, [count]);
-
-useEffect(() => {
-  const timerId = window.setInterval(() => {
-    console.log(countRef.current);
-  }, 1000);
-
-  return () => window.clearInterval(timerId);
-}, []);
-```
-
-Important interview point:
-
-```text
-Dependency arrays are connected to closures. Dependencies tell React when to recreate an effect or memoized callback so it can see fresh values.
-```
-
-### 10. Dependency Arrays
-
-Interview answer:
-
-```text
-A dependency array tells React when to re-run an effect or recompute a memoized value/function. React compares each dependency with its previous value using Object.is. If any dependency changed, React runs the hook logic again.
-```
-
-Used by:
-
-- `useEffect`
-- `useMemo`
-- `useCallback`
-
-#### useEffect with empty array
-
-```tsx
-useEffect(() => {
-  console.log('Runs after mount');
-}, []);
-```
-
-Meaning:
-
-```text
-This effect does not depend on changing values from renders.
-```
-
-It runs after initial mount.
-
-#### useEffect with dependencies
-
-```tsx
-useEffect(() => {
-  console.log(count);
-}, [count]);
-```
-
-Meaning:
-
-```text
-Run this effect after mount and whenever count changes.
-```
-
-#### useEffect without dependency array
-
-```tsx
-useEffect(() => {
-  console.log('Runs after every render');
-});
-```
-
-Meaning:
-
-```text
-React should run this effect after every render.
-```
-
-#### Object and array dependencies
-
-Bad:
-
-```tsx
-useEffect(() => {
-  console.log('filter changed');
-}, [{ status: 'active' }]);
-```
-
-This object is recreated on every render, so the effect runs every render.
-
-Better:
-
-```tsx
-const filter = useMemo(() => {
-  return { status: 'active' };
-}, []);
-
-useEffect(() => {
-  console.log('filter changed');
-}, [filter]);
-```
-
-Or depend on the primitive value:
-
-```tsx
-const status = 'active';
-
-useEffect(() => {
-  console.log('status changed');
-}, [status]);
-```
-
-#### Dependency array and useMemo
-
-```tsx
-const total = useMemo(() => {
-  return items.reduce((sum, item) => sum + item.price, 0);
-}, [items]);
-```
-
-React recalculates `total` when `items` reference changes.
-
-#### Dependency array and useCallback
-
-```tsx
-const handleDelete = useCallback((id: string) => {
-  dispatch(deleteUser(id));
-}, [dispatch]);
-```
-
-React returns the same function reference until `dispatch` changes.
-
-Common mistake:
-
-```text
-Do not remove dependencies just to stop an effect from running. That usually creates stale closure bugs.
-```
 
 ### 11. State Batching
 
@@ -10341,7 +9615,9 @@ Actions in React 19 let us pass async functions to forms or transitions. They si
 
 ### 2. What is `useOptimistic` in React 19?
 
-`useOptimistic` lets the UI show an expected result immediately before the server confirms the change.
+useOptimistic is a built-in React Hook introduced in React 19 that allows you to optimistically update the UI while an asynchronous operation (like a network request) is still processing. Instead of leaving users staring at a loading spinner, it temporarily renders the expected successful outcome immediately. 
+
+If the background operation succeeds, the UI smoothly transitions to the real persisted data; if it fails, React automatically rolls back the UI to the last confirmed state.
 
 It is useful for:
 
@@ -10350,6 +9626,16 @@ It is useful for:
 - chat messages
 - todo creation
 - fast-feeling form submissions
+
+💡 Core Syntax
+```tsx
+const [optimisticState, addOptimistic] = useOptimistic(passthroughState, updateFn);
+```
+
+- passthroughState: The actual, true source of truth state (e.g., from useState or server props). When no async operation is happening, useOptimistic returns this value directly.
+- updateFn(currentState, optimisticValue): A pure function that determines how to merge the current state with the user's action to compute the temporary state.
+- optimisticState: The temporary state you use in your JSX to render the interface.
+- addOptimistic: The trigger function you call right before making your async API request to inject the temporary change.
 
 #### Legacy approach
 
@@ -10364,27 +9650,50 @@ async function handleLike() {
 
 The UI updates only after the server responds.
 
-#### React 19 `useOptimistic` approach
+#### React 19 `useOptimistic` approach like button
+
+🛠️ Practical Example: 
+
+Creating a "Like" ButtonThis pattern is highly effective for low-stakes interactions like toggling favorites, appending chat messages, or deleting list entries.
+
+The following example leverages useOptimistic inside a React 19 Action framework (or wrapped inside a useTransition) to instantly increment a like counter.
 
 ```tsx
-import { useOptimistic } from 'react';
+import { useOptimistic, useState } from 'react';
 
-function LikeButton({ initialLikes }: { initialLikes: number }) {
-  const [likes, addOptimisticLike] = useOptimistic(
-    initialLikes,
-    (currentLikes) => currentLikes + 1
+function LikeButton({ initialLikes, postId }) {
+  // 1. The real source of truth state
+  const [likes, setLikes] = useState(initialLikes);
+
+  // 2. The optimistic state layer
+  const [optimisticLikes, addOptimisticLike] = useOptimistic(
+    likes,
+    (currentLikes, delta) => currentLikes + delta // updateFn
   );
 
-  async function likeAction() {
-    addOptimisticLike(null);
-    await likePost();
-  }
+  // 3. The action triggered by user interaction
+  const handleLikeAction = async () => {
+    // Instantly updates UI state by +1 before the server is hit
+    addOptimisticLike(1); 
+    
+    try {
+      // Trigger background API request
+      await sendLikeToServer(postId); 
+      
+      // If success, permanently update the actual source of truth
+      setLikes((prev) => prev + 1); 
+    } catch (error) {
+      console.error("Failed to save like:", error);
+      // NOTE: If an error is caught, you do NOT need to manually reverse anything.
+      // Once this async action function completes without updating `likes`,
+      // React automatically discards the optimistic state and rolls back to `likes`.
+    }
+  };
 
   return (
-    <form action={likeAction}>
-      <button type="submit">Like</button>
-      <p>{likes} likes</p>
-    </form>
+    <button onClick={handleLikeAction}>
+      👍 {optimisticLikes} Likes
+    </button>
   );
 }
 ```
