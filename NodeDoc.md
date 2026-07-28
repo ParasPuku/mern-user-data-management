@@ -462,7 +462,7 @@ Each phase possesses a first-in, first-out (FIFO) queue of callbacks to execute.
 The Microtask Intermission
 - Though they are not official phases of the main loop, Microtasks (such as process.nextTick() and resolved Promises) are highly prioritized. Node.js fully drains the microtask queue immediately after any phase finishes, right before it advances to the next phase. process.nextTick() takes precedence and executes before Promise callbacks.
 
-### 12. What is setImmediate().
+### 12. What is setImmediate()?
 setImmediate() is a built-in timer function used to schedule a callback function to execute asynchronously in the "Check" phase of the Node.js Event Loop. It is specifically designed to run code immediately after the current I/O polling operations finish, helping break up long-running tasks without blocking incoming requests.
 
 ```js
@@ -545,6 +545,41 @@ Output:
 4. Promise (Micro-task)
 5. setTimeout (Macro-task)
 6. setImmediate (Macro-task)
+
+## Why setImmediate will not run before the setTimeout?
+- Because setImmediate can run before setTimeout in this specific code snippet.
+- Since these functions are placed in the main global scope (and not inside an I/O callback), the execution order between them is unpredictable and depends entirely on machine performance.
+- Here is the exact reason why setImmediate sometimes runs after setTimeout, and why it sometimes runs before it:
+
+The Race Condition Explained
+- The Timer Delay: When you write setTimeout(fn, 0), Node.js actually caps the minimum delay to 1ms. It cannot physically register a true 0ms timer.
+- The Event Loop Start: After the synchronous script finishes, Node.js starts the event loop and enters the Timers Phase.
+- The Decision Point:
+  - If the machine takes >1ms to spin up the event loop, the timer has already expired. The loop fires setTimeout first, and setImmediate must wait for the Check phase.
+  - If the machine takes <1ms to spin up the event loop, the timer has not expired yet. The loop skips the Timers phase, enters the Check phase, and fires setImmediate first.
+
+How to Guarantee setImmediate Runs First
+- If you want to force setImmediate to always execute before setTimeout, you must wrap them inside an I/O callback (like a file read or a network request).
+
+```js
+const fs = require('fs');
+
+fs.readFile(__filename, () => {
+  // Now inside the "Poll Phase" of the event loop
+  setTimeout(() => console.log('setTimeout'), 0);
+  setImmediate(() => console.log('setImmediate')); 
+});
+
+// GUARANTEED OUTPUT:
+// setImmediate
+// setTimeout
+```
+
+Why this guarantees the order:
+- When the file reading finishes, the event loop is sitting in the Poll Phase.
+- The next phase in the loop cycle is the Check Phase (setImmediate).
+- The Timers Phase (setTimeout) is further away at the very start of the next loop cycle.
+- Therefore, setImmediate is guaranteed to win every single time.
 
 ## Why and When to Use It
 According to the official Node.js Documentation on nextTick, there are two primary use cases:
