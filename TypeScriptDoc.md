@@ -1628,6 +1628,67 @@ const errors: Errors = {
 
 Use this when you do not know all property names in advance.
 
+### 30. What is declaration merging in TypeScript?
+Declaration merging is a unique feature where the TypeScript compiler automatically combines multiple separate declarations with the exact same name into a single definition possessing the features of all. Instead of throwing a "duplicate identifier" error, TypeScript blends the structures together.
+
+This behavior is incredibly helpful when you need to safely patch third-party library types, extend global variables, or split massive types into logical files.
+
+Interface Merging (Most Common)
+The most frequent application of declaration merging is with interfaces. TypeScript mechanically joins the properties of all same-named interfaces together.
+
+```ts
+// First declaration
+interface User {
+  name: string;
+}
+
+// Second declaration with the exact same name
+interface User {
+  age: number;
+}
+
+// TypeScript merges them into a single User type
+const person: User = {
+  name: "Alex",
+  age: 30
+};
+```
+
+Key Rules for Interface Merging:
+- Non-function members must have unique names, or they must be of the identical type. Declaring age: number in one and age: string in another triggers a compiler error.
+- Function members with the same name are treated as function overloads.
+- Precedence rules dictate that later interface declarations take a higher priority (ordered first in overloads) than earlier ones.
+
+Namespace Merging
+When namespaces share a name, their exported members are combined into a single group.
+
+```ts
+namespace Database {
+  export class Client {}
+}
+
+namespace Database {
+  export class QueryBuilder {}
+}
+
+// Resulting namespace contains both classes
+const dbClient = new Database.Client();
+const dbQuery = new Database.QueryBuilder();
+```
+
+Advanced Merging (Classes and Namespaces)
+- TypeScript lets you stack different types of entities—such as a namespace, a type, and a value—on top of each other. For instance, merging a namespace with a class allows you to design inner classes or attach static properties to a class
+
+```ts
+class Album {
+  label: Album.AlbumLabel;
+}
+
+namespace Album {
+  export class AlbumLabel {} // Inner class behavior
+}
+```
+
 ## Functions
 
 ### 31. How to type function parameters and return?

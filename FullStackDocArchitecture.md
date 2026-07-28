@@ -1415,6 +1415,7 @@ router.delete('/users/:id', requireAuth, authorize('admin'), deleteUser);
 For RBAC, React hides actions based on role to improve UX, but Node.js must enforce authorization on every protected endpoint. Users can bypass frontend UI, so backend authorization is the real security layer.
 ```
 
+
 ---
 
 ## 35. How do you handle high traffic in a React and Node.js application?
@@ -1455,6 +1456,14 @@ Scale each layer separately.
 For high traffic, I scale the frontend with CDN and caching, scale Node.js horizontally behind a load balancer, use Redis for caching, move heavy work to queues, and optimize the database with indexes and pagination. Each layer must be monitored independently.
 ```
 
+### 12. Duplicate paymenet request
+### 12. Database query 20 sec?
+### 12. Memory usage increases everyday
+### 12. CPU usage reaches 100%
+### 12. Millions of concurrent users
+### 12. External api fails?
+### 12. Authentication tokens expires?
+### 12. Production bug debugging?
 ---
 
 # Quick Frontend Architecture Checklist

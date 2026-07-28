@@ -1346,648 +1346,260 @@ Interview answer:
 ```text
 Avoid custom globals because they hide dependencies, cause collisions, make testing harder, and create unexpected shared state. Prefer modules, dependency injection, or a config file that you import explicitly.
 ```
+### 12. What happend if one callback functions run for 10sec?
+If a callback function runs for 10 seconds on a single-threaded main thread, it will block the entire execution loop, cause UI freezing, and trigger timeout errors in systems with strict watchdog limits.
 
-## Express.js
+Main Effects of a Blocking Callback
+- UI Freezing: Buttons won't click, animations stop, and the app or webpage appears completely dead to the user.
+- Event Loop Block: Other queued tasks, network responses, and user inputs wait in the queue and cannot execute.
+- Watchdog Terminations: Operating systems or frameworks (like Android or iOS extensions) often kill processes if a main-thread callback exceeds limits like 5 to 10 seconds.
 
-### 21. What is Express.js?
+How to Fix It
+- Offload Work: Move heavy 10-second tasks to background threads, worker threads, or use asynchronous tasks/promises.
+- Break Up Tasks: Slice the work into small chunks under 16ms so the main thread stays free between slices.
 
-Express.js is a minimal Node.js web framework used to build APIs and web servers.
+### 12. Why nodejs is single threaded and how does it handles thousand of request?
+Node.js uses a single thread for its Event Loop to avoid the high memory and CPU cost of creating a new thread for every user. Managing thousands of threads causes heavy context-switching overhead and complex thread-synchronization bugs.
 
-Interview answer:
+By staying single-threaded, Node.js remains lightweight, fast, and highly efficient for data-intensive applications.
 
-```text
-Express is a Node.js framework that provides routing, middleware support, request/response handling, and utilities for building APIs.
+How It Handles Thousands of Requests
+- Node.js achieves high concurrency not by processing requests simultaneously, but by handling them asynchronously without waiting around.
+- Non-Blocking I/O: When a request asks for a database query or a file read, Node.js hands that task over to the operating system or its internal C++ thread pool (libuv).
+- The Event Loop: Instead of waiting for the database to respond, the single thread immediately moves on to accept the next incoming request.
+- Callback Execution: When the database task finishes, it triggers a callback. The Event Loop picks up this callback and sends the response back to the user.
+
+### 12. What is cluster module in nodejs?
+The Cluster module is a built-in Node.js feature that allows you to run multiple instances of your application simultaneously to utilize all available CPU cores.
+
+Because Node.js runs on a single thread by default, it only uses one CPU core. If your server has 8 cores, 7 of them sit idle. The cluster module solves this limitation.
+
+How the Cluster Module Works
+- Master Process: The main application process that starts first. It does not handle network requests itself. Instead, it spawns worker processes and manages them.
+- Worker Processes: Duplicate instances of your application running on separate threads/cores. They share the same server port (e.g., port 3000).
+- Load Balancing: The master process automatically distributes incoming network requests among the worker processes using a Round-Robin algorithm.
+
+Key Benefits
+- True Parallelism: Your app can handle multiple heavy CPU tasks at the exact same time.
+- Zero Downtime: If one worker process crashes due to a bug, the master process can instantly spawn a new one without taking your website offline.
+- Increased Throughput: It allows a single server to handle significantly more concurrent requests.
+
+### 12. When do we use cluster module in nodejs?
+We use the Cluster module in Node.js when an application needs to scale horizontally across multiple CPU cores on a single machine.
+
+Key Scenarios for Using the Cluster Module
+- Maximizing Multi-Core Hardware: Use it when deploying to a production server with multiple CPUs so that background cores do not sit idle.
+- Handling High Network Traffic: Use it for high-volume HTTP servers or API gateways to distribute the incoming request load across multiple processes.
+- Achieving High Availability: Use it to prevent app downtime. If a bug crashes one worker process, the remaining workers keep serving users while the master restarts the failed one.
+- Isolating CPU-Intensive Tasks: Use it when your route handlers perform moderate CPU tasks (like JSON parsing or cryptography) so they do not block requests for other users.
+
+When NOT to Use It
+- Cloud-Native Containers: Do not use it if you deploy via Docker, Kubernetes, or AWS ECS, as these platforms handle scaling and load balancing externally.
+- Stateful Applications: Avoid it if your app stores sessions or data in local server memory. Workers do not share memory, so you must use an external database like Redis.
+
+### 12. What is PM2 and how do we manage clusters automatically using a tool like PM2?
+PM2 is a production-grade, open-source Process Manager for Node.js applications. It keeps your application alive forever, reloads it with zero downtime, balances network traffic across CPU cores, and simplifies logging and monitoring.
+
+In production, developers rarely write custom cluster-module code. Instead, they use PM2 to handle clustering automatically via configuration.
+
+1. Automatic Load BalancingPM2 shares the network ports between all workers and uses a round-robin algorithm to distribute incoming HTTP/API requests evenly. Your code does not change at all.
+
+2. Self-Healing & Zero DowntimeAuto-Restart: If a worker process crashes due to an unhandled error or a memory leak, PM2 instantly kills it and spawns a new one.Hot Reloading: When you update your code, PM2 reloads workers one by one (pm2 reload). Users experience zero downtime because some workers stay online while others restart.
+
+
+### 12. Child process vs worker thread?
+The primary difference is that Child Processes run in completely separate operating system processes with isolated memory, while Worker Threads run inside the same process and share memory.
+
+Child Processes
+Child processes spin up entirely new instances of the Node.js runtime environment.
+- Memory: Isolated. Processes cannot directly access each other's variables.
+- Overhead: High. Each process takes around 30MB of memory and requires significant CPU to spin up.
+- Communication: Message-based (Serialization/IPC). Data must be turned into a string, sent over, and parsed.
+- Best Used For: Running external system commands (like a bash script), executing independent applications, or isolating risky tasks that might crash the process.
+
+Worker Threads
+Worker threads (worker_threads module) allow you to run CPU-intensive tasks on background threads within the main process.
+- Memory: Shared. Threads share the same application memory space and can utilize ArrayBuffer objects for zero-copy data transfer.
+- Overhead: Low. Threads are lightweight, fast to create, and share the single Node.js runtime instance.
+- Communication: Direct or message-based. Communication is much faster because data can be shared directly via shared memory.
+- Best Used For: Heavy CPU-intensive mathematical or data calculations inside Node.js (like image processing, cryptography, or parsing massive JSON objects) without blocking the main event loop.
+
+### 12. Can nodejs use multiple CPU cores?
+Yes, Node.js can use multiple CPU cores, even though its main event loop runs on a single thread. It achieves this by using built-in modules or internal architecture to spread tasks across your processor's cores.
+
+How Node.js Uses Multiple Cores
+- The Internal Thread Pool (libuv): Node.js automatically shifts heavy tasks like file system operations (fs), cryptography (crypto), and compression (zlib) onto a background C++ thread pool. This pool utilizes multiple CPU cores out of the box without any extra code.
+- The Cluster Module: This allows you to spawn copy instances of your application (worker processes) that run simultaneously. Each worker runs on its own CPU core and shares the same network port to handle incoming traffic.
+- Worker Threads: The worker_threads module lets you execute heavy JavaScript CPU calculations (like data processing or image manipulation) on separate threads inside parallel CPU cores.
+- Process Managers (PM2): Tools like PM2 automate the setup of the Cluster module in production, instantly scaling your single application to use every available core on the server machine.
+
+### 12. What is heap snapshot and startup snapshot?
+Heap Snapshot
+A Heap Snapshot is a diagnostic tool that captures a complete picture of your application's memory usage at a specific moment in time. It records every JavaScript object, closure, and DOM node currently allocated in the V8 engine's heap memory.
+
+- Primary Use Case: Troubleshooting and fixing memory leaks.
+- How it helps: By taking two separate snapshots (before and after a heavy task), you can compare them to see which objects were created but never cleaned up by the Garbage Collector.
+- How to generate it: You can capture one programmatically using the built-in v8 module via v8.getHeapSnapshot(), or externally by connecting Google Chrome DevTools to a running Node.js process using the --inspect flag.
+
+Startup Snapshot
+A Startup Snapshot is a performance optimization tool that serializes the state of a fully initialized Node.js application into a binary file. Instead of forcing Node.js to parse JavaScript code, resolve dependencies (require/import), and initialize variables every single time your server boots up, it loads the pre-compiled snapshot directly into memory.
+
+- Primary Use Case: Accelerating application startup time and reducing cold start latencies (highly critical for Serverless functions, AWS Lambda, and microservices).
+- How it helps: It cuts down boot times from seconds to milliseconds by executing initialization code once during a build step rather than at runtime.
+- How to use it: You can use the built-in v8.startupSnapshot API and build your application using the --snapshot-blob flag in the Node.js CLI.
+
+### 12. What if cpu usage becomes 100 percent how to fix this?
+When CPU usage hits 100%, the Node.js single thread is completely starved. The event loop cannot process incoming requests, the application stops responding, and health checks will begin to fail.
+
+Step 1: Diagnose the Cause (Find the Culprit)
+You cannot fix the issue until you know exactly what is locking up the CPU.
+
+- Generate a Flame Graph / Profile: Start Node.js with the built-in profiler:
+```js
+node --prof app.js
 ```
+Run traffic against it, then process the generated log file to see exactly which functions are consuming the most CPU cycles.
 
-### 22. Why use Express?
+- Take a Heap Snapshot: High CPU usage is often caused by the Garbage Collector working in overdrive trying to free up memory during a memory leak. Check if memory usage is spiking alongside the CPU.
 
-Reasons:
+- Use APM Tools: In production, tools like New Relic, Datadog, or PM2 Plus can pinpoint the exact route or function causing the spike.
 
-- simple routing
-- middleware support
-- request/response helpers
-- large ecosystem
-- easy REST API creation
+Step 2: Immediate Production Quick Fixes
+If your production server is down right now, use these infrastructure fixes to restore service immediately.
 
-### 23. How to create Express app?
+Restart with PM2: Force a clean slate to clear stuck infinite loops:
+
+pm2 reload all
+Scale Horizontally (Cluster Mode): If you are running on a single core, scale to all available cores instantly:
 
 ```js
-import express from 'express';
-
-const app = express();
-
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
-});
-
-app.listen(5001);
+pm2 restart app.js -i max
 ```
 
-In this app:
+Add a Reverse Proxy Rate Limiter: If the spike is caused by a DDoS attack or scraping bots, block them at the Nginx or Cloudflare level before they hit Node.js.
 
-```text
-backend/src/app.js
-backend/src/server.js
-```
+Step 3: Permanent Code Fixes
+Once the server is stable, rewrite the problematic code using these strategies.
 
-### 24. app.js vs server.js?
-
-In this app:
-
-`app.js`:
-
-```text
-creates Express app
-adds middleware
-registers routes
-adds error handlers
-```
-
-`server.js`:
-
-```text
-connects database
-starts HTTP server
-handles shutdown
-```
-
-This separation helps testing and maintainability.
-
-### 25. What is middleware?
-
-Middleware is a function that runs between request and response.
-
-Signature:
+1. Offload Heavy CPU Calculations
+Never perform heavy math, image processing, or massive loops on the main thread. Move them to Worker Threads
 
 ```js
-(req, res, next) => {}
+const { Worker } = require('worker_threads');
+
+// Instead of doing heavy work here, offload it
+const worker = new Worker('./cpu-intensive-task.js');
+worker.on('message', (result) => console.log(result));
 ```
 
-Example:
+2. Avoid Synchronous APIsReplace blocking synchronous methods with their asynchronous equivalents.
+- Bad: fs.readFileSync() or crypto.pbkdf2Sync()
+- Good: fs.promises.readFile() or crypto.pbkdf2()
+
+3. Break Up Massive Loops
+- If you must process a massive array (e.g., 1 million items), split the execution using setImmediate() to let the event loop breathe between chunks:
 
 ```js
-const logger = (req, res, next) => {
-  console.log(req.method, req.url);
-  next();
-};
-```
-
-### 26. Types of middleware?
-
-Common types:
-
-- application middleware
-- router middleware
-- error middleware
-- built-in middleware
-- third-party middleware
-
-In this app:
-
-```js
-app.use(helmet());
-app.use(cors(...));
-app.use(express.json(...));
-app.use(cookieParser());
-app.use(morgan(...));
-```
-
-### 27. What is next()?
-
-`next()` passes control to the next middleware.
-
-Example:
-
-```js
-const requireAuth = (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
-
-  next();
-};
-```
-
-### 28. What is error handling middleware?
-
-Error middleware has four parameters:
-
-```js
-(error, req, res, next) => {}
-```
-
-In this app:
-
-```text
-backend/src/middleware/errorHandler.js
-```
-
-### 29. Why error middleware should be last?
-
-Because it catches errors from routes/middleware registered before it.
-
-In this app:
-
-```js
-app.use(notFound);
-app.use(errorHandler);
-```
-
-### 30. What is express.json()?
-
-It parses JSON request body which is passed data via modern Axios/Fetch API calls from your React frontend.
-
-JSON text payloads ({ "key": "value" }) from the frontend side.
-
-Example:
-
-```js
-app.use(express.json({ limit: '1mb' }));
-```
-
-Without it, `req.body` may be undefined for JSON requests.
-
-### 31. What is express.urlencoded()?
-
-It parses form URL-encoded data like URL query text strings (key=value&key2=value2) which gets attach when Traditional HTML <form> submissions sending raw browser requests.
-
-Example:
-
-```js
-app.use(express.urlencoded({ extended: true }));
-```
-
-### 32. What is express.static()?
-
-It serves static files.
-
-express.static() is a built-in middleware function in Express used to serve static files directly to the browser.
-
-Static files are assets that do not change dynamically when the application runs—such as images, PDF documents, raw CSS stylesheets, and client-side JavaScript files.
-
-Without this middleware, if a client requests an image via a URL (like http://localhost:5001/logo.png), Express will treat it as an unhandled API route and return a 404 Not Found error.
-
-A Quick Recap of Why Your Logic is Spot-On
-
-- The 404 Problem (Without the middleware): Express is strictly a routing engine by default. If you ask for /logo.png, it searches through your manual endpoint list (app.get('/logo.png')). When it can't find a matching route declaration, it returns a 404 Not Found error.
-
-- The Interception Fix (With the middleware): When you add express.static('public'), you are telling Express: "Before throwing a 404 error, check if a file named logo.png physically exists inside my public folder.
-
-- "The File Type Freedom: It automatically reads, handles, and streams any binary or text file format to the browser—including PDF documents, JPEGs, PNGs, MP3 audio tracks, MP4 video snippets, favicon icons, and raw CSS files—setting the correct browser headers for you automatically.
-
-In this app:
-
-```js
-app.use('/uploads', express.static(uploadsDir));
-```
-
-This serves uploaded avatars.
-
-## Error Handling
-### 33. How to handle error in Backend side 
-
-The 3 Pillars of Backend Error Handling
-
-1. Always Use Try-Catch in Asynchronous Code
-Because database operations (like MongoDB/Mongoose lookups) are asynchronous, an unhandled error inside a Promise will crash your entire server node. You must wrap them in a try/catch block.
-
-2. Pass Errors to the next() Function
-Express has a special built-in parameter called next. When you pass an error into it (next(error)), Express will immediately halt the current request loop, skip all regular routes, and shoot the error straight down to your global error-handling workspace.
-
-3. Create a Single Global Error Middleware (The Control Hub)
-Instead of copy-pasting res.status(500).json(...) into 50 different files, you write one global middleware function at the bottom of your server script to format and deliver all system alerts uniformly.
-
-Complete code
-=============
-
-const express = require('express');
-const app = express();
-
-app.use(express.json());
-
-// --- 1. SAMPLE ROUTE HANDLER ---
-app.get('/api/users/:id', async (req, res, next) => {
-    try {
-        const userId = req.params.id;
-        
-        // Simulating a database validation check
-        if (userId === "invalid") {
-            // Create a custom error and assign an accurate HTTP Status Code
-            const err = new Error("User profile not found in our records.");
-            err.statusCode = 404;
-            throw err; // Blow the whistle! Jumps directly to the catch block below
-        }
-
-        res.json({ id: userId, name: "Paras" });
-    } catch (error) {
-        // 💡 CRITICAL: Pass the error to the next() tracker to send it down the pipeline
-        next(error); 
-    }
-});
-
-// --- 2. THE GLOBAL ERROR HANDLING MIDDLEWARE ---
-// 💡 Rule: It MUST have exactly 4 arguments (err, req, res, next) so Express recognizes it.
-// Put this line at the absolute bottom of your file, after all your routes.
-app.use((err, req, res, next) => {
-    // Fall back to a 500 Internal Server error if a specific code wasn't provided
-    const statusCode = err.statusCode || 500;
-    const message = err.message || "Something went wrong on our servers.";
-
-    console.error(`🚨 [SERVER ERROR] Status: ${statusCode} | Message: ${message}`);
-
-    // Send a clean, unified response to your React frontend application
-    res.status(statusCode).json({
-        success: false,
-        status: statusCode,
-        error: message,
-        // Only reveal the raw stack trace during local development, hide it in live production
-        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
-    });
-});
-
-app.listen(5001, () => console.log('🚀 Secure Server running on port 5001'));
-
-
-## Routing
-
-### 33. What is routing in Express?
-
-Routing maps HTTP method and URL path to handler.
-
-Example:
-
-```js
-app.get('/api/users', getUsers);
-app.post('/api/users', createUser);
-```
-
-### 34. What is Express Router?
-
-Router groups related routes.
-
-Example:
-
-```js
-import { Router } from 'express';
-
-export const userRoutes = Router();
-
-userRoutes.route('/').get(getUsers).post(createUser);
-```
-
-In this app:
-
-```text
-backend/src/routes/authRoutes.js
-backend/src/routes/userRoutes.js
-backend/src/routes/teamRoutes.js
-backend/src/routes/skillRoutes.js
-backend/src/routes/adminRoutes.js
-```
-
-### 35. What are route params?
-
-Route params are dynamic URL parts.
-
-Example:
-
-```js
-app.get('/users/:id', (req, res) => {
-  console.log(req.params.id);
-});
-```
-
-### 36. What are query params?
-
-Query params come after `?`.
-
-Example:
-
-```text
-/api/users?page=1&limit=5
-```
-
-Access:
-
-```js
-req.query.page
-req.query.limit
-```
-
-### 37. What is req.body?
-
-`req.body` contains parsed request body.
-
-Example:
-
-```js
-const { email, password } = req.body;
-```
-
-Requires body parser middleware like `express.json()`.
-
-## REST API
-
-### 38. What is REST API?
-
-REST API uses HTTP methods and resources to expose data/actions.
-
-Example:
-
-```text
-GET /api/users
-POST /api/users
-PATCH /api/users/:id
-DELETE /api/users/:id
-```
-
-### 39. HTTP methods?
-
-Common methods:
-
-- `GET`: read
-- `POST`: create/action
-- `PUT`: replace
-- `PATCH`: partial update
-- `DELETE`: delete
-
-### 40. Common HTTP status codes?
-
-Common codes:
-
-- `200`: success
-- `201`: created
-- `204`: no content
-- `400`: bad request
-- `401`: unauthenticated
-- `403`: forbidden
-- `404`: not found
-- `409`: conflict
-- `429`: too many requests
-- `500`: server error
-
-### 41. 401 vs 403?
-
-`401 Unauthorized` means user is not authenticated.
-
-`403 Forbidden` means user is authenticated but does not have permission.
-
-Example:
-
-```text
-No login cookie -> 401
-Logged in as member trying admin action -> 403
-```
-
-## Async JavaScript in Node
-
-### 42. How does Node handle async code?
-
-Node handles async code with:
-
-- callbacks
-- promises
-- async/await
-- event loop
-
-Example:
-
-```js
-const users = await User.find();
-```
-
-### 43. What is async/await?
-
-`async/await` is syntax for writing promise-based code in a readable way.
-
-Example:
-
-```js
-export const getUsers = async (req, res) => {
-  const users = await User.find();
-  res.json({ data: users });
-};
-```
-
-### 44. Why use try/catch with async?
-
-To handle rejected promises.
-
-Example:
-
-```js
-try {
-  const user = await User.findById(id);
-} catch (error) {
-  next(error);
+function processLargeArray(items) {
+  if (items.length === 0) return;
+  
+  // Process a small chunk of 1000 items
+  const chunk = items.splice(0, 1000);
+  doMath(chunk);
+  
+  // Yield control back to the event loop before doing the next chunk
+  setImmediate(() => processLargeArray(items));
 }
 ```
 
-### 45. What is asyncHandler?
-
-`asyncHandler` wraps async Express handlers and forwards errors to error middleware.
-
-Example:
+4. Stream Large Files
+-Do not load massive files or database dumps entirely into memory using fs.readFile(), as parsing them spikes the CPU. Use Streams to process the data chunk-by-chunk:
 
 ```js
-export const asyncHandler = (handler) => (req, res, next) =>
-  Promise.resolve(handler(req, res, next)).catch(next);
+const fs = require('fs');
+// Uses minimal memory and CPU
+fs.createReadStream('huge-file.log').pipe(res); 
 ```
 
-Use:
+### 12. CPU profiling?
+CPU Profiling is the process of measuring how much CPU time your code functions consume while executing. It helps you pinpoint exactly which lines of code, loops, or third-party libraries are causing your Node.js application to slow down or hit 100% CPU usage.
+
+Method 1: The Built-In Node.js Profiler (Quickest)
+Node.js has a built-in profiler that samples your application's stack at regular intervals.
+
+1. Start your application with the profile flag:
 
 ```js
-export const getUsers = asyncHandler(async (req, res) => {
-  const users = await User.find();
-  res.json({ data: users });
-});
+node --prof app.js
 ```
 
-Benefit:
+2. Simulate traffic:
+- Run your application and hit the slow routes using a tool like autocannon or ab, or just browse the app to trigger the high CPU usage.
 
-```text
-No need to write try/catch in every controller.
-```
-
-### 110. What is health endpoint?
-
-Health endpoint checks server status.
-
-In this app:
-
-```text
-GET /api/health
-```
-
-It returns:
-
-```json
-{
-  "status": "ok",
-  "uptime": 123,
-  "timestamp": "..."
-}
-```
-
-## Negative Oriented Node.js Interview Questions
-
-### 111. What can go wrong if error handling is missing?
-
-Problems:
-
-- unhandled promise rejections
-- server crashes
-- inconsistent responses
-- leaked stack traces
-- hard-to-debug failures
-
-### 112. What happens if MongoDB is down?
-
-Backend cannot read/write permanent data.
-
-Good behavior:
-
-- fail startup if DB is required
-- log meaningful error
-- return proper 500/503 responses
-- monitor database health
-
-### 113. What happens if JWT secret is weak?
-
-Attackers may guess or brute-force token signature.
-
-Use strong secret in production.
-
-### 114. What happens if CORS allows all origins with credentials?
-
-This is dangerous.
-
-If credentials are allowed, origins should be restricted.
-
-Bad:
+3. Process the log file:
+- When you stop the server, Node.js generates a file named something like isolate-0xXXXXXXXXXXXX-v8.log. This file is unreadable by humans. Process it using the built-in tick processor:
 
 ```js
-origin: true,
-credentials: true
+node --prof-process isolate-0xXXXXXXXXXXXX-v8.log > processed_profile.txt
 ```
 
-without proper control.
+### 12. What is streams?
+A Stream is a built-in Node.js feature designed to handle reading or writing data chunk-by-chunk, rather than loading an entire file or dataset into memory all at once.
 
-### 115. What happens if request body limit is too high?
+If you try to read a 4GB file using standard methods like fs.readFile(), Node.js will attempt to load all 4GB into RAM simultaneously, causing a crash (JavaScript heap out of memory). Streams solve this by processing the file in small, manageable pieces (usually 64KB chunks).
 
-Attackers can send huge payloads and consume memory.
+The Four Types of Streams
+- Readable Streams: Used to read data from a source.
+  Examples: fs.createReadStream(), an incoming HTTP client request (req).
+- Writable Streams: Used to write data to a destination.
+  Examples: fs.createWriteStream(), an HTTP server response (res).
+- Duplex Streams: Streams that are both Readable and Writable simultaneously.
+  Example: A network socket connection (net.Socket).
+- Transform Streams: A type of Duplex stream that can modify or transform the data as it is being read and written.
+  Examples: zlib.createGzip() (to compress data on the fly), crypto.createCipheriv() (to encrypt data).
 
-This app uses:
+Why Streams are Crucial (Key Benefits)
+- Memory Efficiency: You can process files larger than your server's total RAM. Only a tiny chunk is loaded into memory at any given second.
+- Time Efficiency: You can start processing or sending data to the client as soon as the first chunk arrives, instead of waiting for the entire payload to be read from disk.
+- Composability (Piping): You can cleanly connect streams together like LEGO blocks using the .pipe() method.
+
+Code Comparison: Standard vs. Streams
+
+❌ The Bad Way (Loads everything into RAM)javascriptconst fs = require('fs');
+```js
+const http = require('http');
+
+http.createServer((req, res) => {
+  // If the file is 2GB, this uses 2GB of RAM instantly
+  fs.readFile('huge-video.mp4', (err, data) => {
+    res.end(data);
+  });
+}).listen(3000);
+```
+
+The Streams Way (Uses minimal RAM)javascriptconst fs = require('fs');
 
 ```js
-express.json({ limit: '1mb' });
+const http = require('http');
+http.createServer((req, res) => {
+  // Reads and sends the video in tiny 64KB pieces
+  const stream = fs.createReadStream('huge-video.mp4');
+  
+  // Combines the readable stream to the writable response stream
+  stream.pipe(res); 
+}).listen(3000);
 ```
 
-### 116. What happens if file uploads are not validated?
+### 12. How to scale node.js application?
+- Horizontal scaling
+- Use cluster mode
+- Use load balancer
+- Use Worker thread
+- Use PM2
 
-Risks:
+### 11. How to debug nodejs app in production issue?
 
-- malware upload
-- huge file upload
-- path traversal
-- storage exhaustion
-
-Validate type, size, and path.
-
-### 117. What happens if passwords are stored plain text?
-
-If database leaks, all passwords are exposed.
-
-Always hash passwords using bcrypt/argon2.
-
-### 118. What happens if API has no pagination?
-
-Large collections can return too much data.
-
-Problems:
-
-- slow API
-- high memory usage
-- poor frontend performance
-
-### 119. What happens if event loop is blocked?
-
-All requests become slow or stuck.
-
-Avoid CPU-heavy sync code in request handlers.
-
-### 120. What happens if Redis cache has stale data?
-
-Users may see outdated data.
-
-Solutions:
-
-- TTL
-- cache invalidation
-- update cache on mutation
-- avoid caching sensitive rapidly changing data
-
-## Most Important Short Answers
-
-### 121. Node.js in one line
-
-```text
-Node.js is a JavaScript runtime that runs JS outside the browser using V8.
-```
-
-### 122. Express in one line
-
-```text
-Express is a Node.js web framework for building APIs using routes and middleware.
-```
-
-### 123. Middleware in one line
-
-```text
-Middleware is a function that runs between request and response and can modify req/res or pass control using next.
-```
-
-### 124. Event loop in one line
-
-```text
-The event loop allows Node.js to handle asynchronous callbacks without blocking the main thread.
-```
-
-### 125. JWT auth in one line
-
-```text
-JWT auth verifies a signed token to identify the user making the request.
-```
-
-### 126. Mongoose in one line
-
-```text
-Mongoose is an ODM that provides schemas, models, validation, and query helpers for MongoDB.
-```
-
-### 127. Redis in one line
-
-```text
-Redis is an in-memory key-value store used for fast temporary data like OTP, sessions, cache, and rate limits.
-```
-
-### 128. CORS in one line
-
-```text
-CORS controls which browser origins are allowed to call the backend.
-```
-
-### 129. Rate limiting in one line
-
-```text
-Rate limiting restricts request count in a time window to reduce abuse.
-```
-
-### 130. Graceful shutdown in one line
-
-```text
-Graceful shutdown closes server and database connections before process exit.
-```
+### 12. When do we use worker threads in nodejs?
 
 ## Core Architecture and Event Loop (Advanced)
 
