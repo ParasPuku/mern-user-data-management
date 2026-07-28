@@ -441,7 +441,7 @@ Main phases:
 - idle/prepare
 - poll
 - check
-- close 
+- close callback
 
 https://medium.com/@kunaltandon.kt/process-nexttick-vs-setimmediate-vs-settimeout-explained-wrt-different-event-loop-phases-c0506b12921d
 
@@ -449,6 +449,107 @@ Important queues:
 
 - microtask queue
 - nextTick queue
+
+## Explanation of Each Phase
+Each phase possesses a first-in, first-out (FIFO) queue of callbacks to execute.
+- Timers: Executes callbacks scheduled by setTimeout() and setInterval() once their threshold expires.
+- Pending Callbacks: Executes I/O callbacks deferred from the previous loop iteration (e.g., specific TCP errors).
+- Idle, Prepare: Used exclusively by Node.js for internal housekeeping and preparation.
+- Poll: Retrieves new I/O events, reads files, manages network connections, and executes their callbacks. Node.js may block or pause here if appropriate.
+- Check: Executes callbacks scheduled specifically by setImmediate() right after the poll phase finishes.
+- Close Callbacks: Handles cleanup and resource teardown, such as socket.on('close', ...)
+
+The Microtask Intermission
+- Though they are not official phases of the main loop, Microtasks (such as process.nextTick() and resolved Promises) are highly prioritized. Node.js fully drains the microtask queue immediately after any phase finishes, right before it advances to the next phase. process.nextTick() takes precedence and executes before Promise callbacks.
+
+### 12. What is setImmediate().
+setImmediate() is a built-in timer function used to schedule a callback function to execute asynchronously in the "Check" phase of the Node.js Event Loop. It is specifically designed to run code immediately after the current I/O polling operations finish, helping break up long-running tasks without blocking incoming requests.
+
+```js
+const immediateObj = setImmediate((arg1, arg2) => {
+  console.log(`Executed with: ${arg1} and ${arg2}`);
+}, 'Hello', 'World');
+
+// Optional: Cancel the execution if needed
+// clearImmediate(immediateObj);
+```
+
+## Where It Sits in the Event Loop
+The Node.js event loop executes in specific phases. setImmediate() interacts with them like this:
+- Poll Phase: Node.js retrieves new I/O events and executes their callbacks. If the poll queue becomes empty and setImmediate() scripts are waiting, the event loop advances to the next phase.
+- Check Phase: This phase is entirely dedicated to executing callbacks scheduled via setImmediate().
+
+## Code Execution Comparison
+To understand setImmediate(), it must be compared to process.nextTick() and setTimeout(fn, 0).
+
+```js
+const fs = require('fs');
+
+fs.readFile(__filename, () => {
+    setTimeout(() => console.log('1. setTimeout (Timer Phase)'), 0);
+    setImmediate(() => console.log('2. setImmediate (Check Phase)'));
+    process.nextTick(() => console.log('3. process.nextTick (Microtask)'));
+});
+```
+
+Output order inside an I/O callback:
+- 3. process.nextTick (Executes immediately after the current operation finishes, before the phase ends).
+- 2. setImmediate (Executes as soon as the event loop moves from the Poll phase into the Check phase).
+- 1. setTimeout (Executes in the Timers phase of the next loop iteration)
+
+When to Use setImmediate()
+- Chunking CPU-heavy jobs: Use it to yield control back to the event loop so network requests or file reads can be handled between your CPU execution blocks.
+- Queueing after I/O: Use it when you want to guarantee your function executes right after the current I/O polling ends.
+
+### 12. What is process.nextTick()?
+In Node.js, process.nextTick() is a built-in method used to schedule a callback function to execute immediately after the current operation finishes, but before the Node.js Event Loop moves on to any other phase or handles any I/O or timers.
+
+It bypasses the main phases of the event loop by adding callbacks to a specialized microtask queue known as the nextTick queue.
+
+## How It Fits into the Event Loop
+- Every time Node.js transitions between different event loop phases (like Timers, Poll, or Check), it checks the nextTick queue. If there are any callbacks waiting in this queue, Node.js pauses everything else and executes all of them until the queue is completely empty.
+
+## The execution order generally follows this priority:
+- Synchronous Code (Executes first).
+- process.nextTick() Callbacks (Executes right after the current operation finishes).
+- Promises / Microtasks (Executes after nextTick but before standard I/O/timers).
+- setTimeout / setImmediate (Executes in subsequent macro-task phases).
+
+```js
+Code Example: Understanding Execution Order
+console.log('1. Start Synchronous');
+
+setTimeout(() => {
+  console.log('5. setTimeout (Macro-task)');
+}, 0);
+
+setImmediate(() => {
+  console.log('6. setImmediate (Macro-task)');
+});
+
+Promise.resolve().then(() => {
+  console.log('4. Promise (Micro-task)');
+});
+
+process.nextTick(() => {
+  console.log('3. process.nextTick (Highest priority micro-task)');
+});
+
+console.log('2. End Synchronous');
+```
+
+Output:
+1. Start Synchronous
+2. End Synchronous
+3. process.nextTick (Highest priority micro-task)
+4. Promise (Micro-task)
+5. setTimeout (Macro-task)
+6. setImmediate (Macro-task)
+
+## Why and When to Use It
+According to the official Node.js Documentation on nextTick, there are two primary use cases:
+- Ensuring 100% Asynchronous Behavior: If an API is asynchronous in some conditions but synchronous in others, it can cause unpredictable bugs (often called "releasing Zalgo"). Wrapping a synchronous return in process.nextTick() guarantees it always runs asynchronously.
+- Allowing Event Handlers to Bind First: It allows an object to emit an event after it has been fully constructed, giving the surrounding script time to attach event listeners first.
 
 ### 12. setInterval vs setTimeout vs setImmediate?
 

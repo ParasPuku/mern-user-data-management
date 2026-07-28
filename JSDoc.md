@@ -36,6 +36,13 @@ Interview answer:
 JavaScript is a single-threaded, dynamically typed, high-level language mainly used to build interactive web applications. It runs in browsers and also on servers through Node.js.
 ```
 
+## 2. Difference betwenn JavaScript Engine and Chrome V8 engine?
+The General Concept: JavaScript Engine
+- A JavaScript engine is a general category of software. Its only job is to read JavaScript code (which humans understand) and translate it into machine code (which computer processors understand).Every modern web browser needs a JavaScript engine to work, but they do not all use the same one.
+
+The Specific Example: V8
+- V8 is a specific, real-world product built by Google. It is just one version of a JavaScript engine. Google built it using the C++ programming language to power the Google Chrome browser.Because V8 is incredibly fast, other companies and developers decided to use it for their own projects too.
+
 ### 2. Is compile time the same as runtime?
 Compile-time and Runtime are the two programming terms used in the software development. 
 

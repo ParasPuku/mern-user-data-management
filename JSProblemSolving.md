@@ -2245,6 +2245,28 @@ We check divisibility from `2` to square root of the number.
 
 ---
 
+## 2. Please logs prime number between 1 to 20
+```
+function isPrime(num) {
+    
+    if (num < 2) return false; 
+
+    for(var i=2; i<num; i++) {
+        if(num % i === 0) {
+            return false
+        }
+    }
+    return true;
+}
+for(var i = 1; i<=20; i++) {
+    if(isPrime(i)) {
+        console.log(i)
+    }
+}
+```js
+
+Output - 2 3 5 7 11 13 17 19
+
 ## 3. FizzBuzz
 
 ### Question
@@ -2258,25 +2280,22 @@ Print numbers from `1` to `n`.
 ### Code
 
 ```js
-function fizzBuzz(n) {
-  var result = [];
-
-  for (var i = 1; i <= n; i++) {
-    if (i % 3 === 0 && i % 5 === 0) {
-      result.push('FizzBuzz');
-    } else if (i % 3 === 0) {
-      result.push('Fizz');
-    } else if (i % 5 === 0) {
-      result.push('Buzz');
-    } else {
-      result.push(i);
+function fizzBuzz(num) {
+    var result = [];
+    for(var i=1; i<=num; i++) {
+        if(i % 15 === 0) {
+            result.push("FizzBuzz");
+        } else if(i % 5 === 0) {
+            result.push("Buzz");
+        } else if(i % 3 === 0) {
+            result.push("Fizz");
+        } else {
+            result.push(i);
+        }
     }
-  }
-
-  return result;
+    return result;
 }
-
-console.log(fizzBuzz(15));
+console.log(fizzBuzz(15))
 ```
 
 ### Output
