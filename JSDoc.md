@@ -2031,6 +2031,157 @@ useEffect(() => {
 AbortController lets us cancel async work through a signal. For fetch, I pass controller.signal and call controller.abort() to cancel. For fast typing or filters, I abort the previous request before starting a new one. For retries, each attempt gets a new controller, and a parent signal can stop the whole retry loop. Besides fetch, it can cancel timeouts, event listeners, and unmount/cleanup work.
 ```
 
+### 30. What is race condition and how we can handle this?
+A race condition is a software bug that happens when two or more tasks try to access or change the same data at the exact same time. Because the system can't control which task finishes first, they "race" each other, often corrupting the data or causing unexpected crashes.
+
+The Real-World Analogy
+Imagine you and your friend both open the same shared bank account app to pay different bills at the exact same time.
+- The starting balance is $100.
+- You and your friend's phones both read the balance as $100.
+- You pay a bill of $20, so your phone updates the balance to $80.
+- Meanwhile, your friend pays a bill of $30. Their phone deducts $30 from its initial read of $100, and updates the balance to $70.
+
+Because your friend's phone "raced" to finish last and overwrote your update, the final balance becomes $70 instead of the correct $50.
+
+Why It Happens in Programming
+This occurs when programs use shared resources (like memory or a variable) across multiple threads without synchronization.
+- A process isn't instant. It requires a read, a modification, and a write.
+- If the operation is interrupted halfway through by another process doing the same thing, you end up with unpredictable outcomes.
+
+To prevent this, programmers use locks (or mutexes) which freeze access to the data while one task is updating it, ensuring the "race" never negatively impacts the outcome.
+
+Example -
+
+```js
+let balance = 100;
+
+// Simulate a network delay or database call
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function withdraw(amount, person) {
+    console.log(`${person} checks balance: $${balance}`);
+    
+    if (balance >= amount) {
+        // Simulating the time it takes to process the request
+        await delay(100); 
+        
+        balance -= amount;
+        console.log(`${person} successfully withdrew $${amount}. New Balance: $${balance}`);
+    } else {
+        console.log(`${person} failed to withdraw $${amount}. Insufficient funds.`);
+    }
+}
+
+// Both people try to withdraw at the exact same time
+withdraw(80, "Alice");
+withdraw(50, "Bob");
+```
+
+The OutputIf you run this code, you will see the system accidentally hand out more money than it actually has:
+- Alice checks balance: $100
+- Bob checks balance: $100
+- Alice successfully withdrew $80. New Balance: $20
+- Bob successfully withdrew $50. New Balance: $-30
+
+Why it Failed
+- Alice checks the balance. It is $100. She qualifies for an $80 withdrawal.
+- The code pauses (await delay).
+- While Alice is waiting, Bob checks the balance. Because Alice hasn't updated it yet, Bob also sees $100. He qualifies for a $50 withdrawal.
+- Alice finishes waiting and sets the balance to $20.
+- Bob finishes waiting and subtracts $50 from the $20, resulting in a broken negative balance ($-30).
+
+The Fixed Code
+
+```js
+let balance = 100;
+let isLocked = false; // The gatekeeper variable
+
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function withdraw(amount, person) {
+    // If the system is locked, wait and check again shortly
+    while (isLocked) {
+        await delay(10); 
+    }
+
+    isLocked = true; // Close the gate behind you
+
+    console.log(`${person} checks balance: $${balance}`);
+    
+    if (balance >= amount) {
+        await delay(100); 
+        balance -= amount;
+        console.log(`${person} successfully withdrew $${amount}. New Balance: $${balance}`);
+    } else {
+        console.log(`${person} failed to withdraw $${amount}. Insufficient funds.`);
+    }
+
+    isLocked = false; // Open the gate for the next person
+}
+
+// Both people still try to trigger the function at the exact same time
+withdraw(80, "Alice");
+withdraw(50, "Bob");
+
+```
+
+The Correct Output
+- Alice checks balance: $100
+- Alice successfully withdrew $80. New Balance: $20
+- Bob checks balance: $20
+- Bob failed to withdraw $50. Insufficient funds.
+
+
+To handle race conditions in asynchronous JavaScript, you must enforce a deterministic execution order using strategies like aborting outdated network requests, maintaining execution queues, using transaction counters, or implementing mutual exclusion locks (Mutex). 
+
+1. Cancel Outdated Tasks (AbortController)
+When a user triggers multiple API requests in rapid succession (e.g., typing in a search bar or switching tabs), network latency can cause an older request to resolve after a newer one. You can resolve this by invalidating prior requests via the native AbortController global API.
+
+```js
+let currentController = null;
+
+async function fetchUserData(userId) {
+  // Cancel the pending request if a new one is fired
+  if (currentController) {
+    currentController.abort();
+  }
+
+  // Create a brand new controller for this specific request
+  currentController = new AbortController();
+  const { signal } = currentController;
+
+  try {
+    const response = await fetch(`/api/user/${userId}`, { signal });
+    const data = await response.json();
+    updateUI(data);
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      console.log('Fetch successfully aborted; ignored older race result.');
+    } else {
+      handleErrors(error);
+    }
+  }
+}
+```
+
+2. Debouncing and Throttling
+Preventing race conditions at the UI level is often the most performant strategy. Implement a debounce utility to ensure that an asynchronous callback is delayed until user-generated inputs (such as keystrokes) pause for a defined duration.
+
+```js
+function debounce(func, delayMillis) {
+  let timeoutId;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delayMillis);
+  };
+}
+
+const safeInputHandler = debounce((event) => {
+  executeAsyncFetch(event.target.value);
+}, 300);
+```
+
+
 ### 31. What is the typical use case for anonymous functions?
 
 Anonymous functions are commonly used when a function is needed only once.

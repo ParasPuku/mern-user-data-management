@@ -3664,7 +3664,7 @@ Unlike traditional server-side technologies that spawn a new thread for every in
 Key Technical Advantages
 - JavaScript Everywhere: Developers can write both frontend and backend code in the same language, maximizing code reuse and drastically reducing context switching.
 - Non-Blocking I/O Architecture: It handles requests asynchronously, meaning the server never idles while waiting for database or file system responses.
-Massive Ecosystem: The npm registry provides millions of reusable packages, which dramatically accelerates production timelines.
+- Massive Ecosystem: The npm registry provides millions of reusable packages, which dramatically accelerates production timelines.
 - Real-Time Efficiency: The underlying Google V8 engine compiles JavaScript directly into machine code, making Node.js the industry favorite for live-updating applications like chat systems and streaming platforms.
 
 When to Choose (and Avoid) Node.js
@@ -3836,6 +3836,23 @@ Summary Checklist
 - Node.js JavaScript: Runs on one core at a time by default.
 - Node.js C++ Internal Tasks: Can use multiple cores automatically behind the scenes.
 - Maximizing Power: Developers use Clusters or Worker Threads to manually force Node.js to use all available CPU cores.
+
+### 5. Is node app will get multiple copies and shared to other cpu core with the help of cluster module?
+Yes, that is exactly correct.
+
+By default, Node.js runs on a single CPU core, leaving your other CPU cores completely untouched. The cluster module solves this by launching a "Master" process that creates multiple identical copies (called Worker processes) of your application, automatically spreading them across the rest of your computer's CPU cores.
+
+1. The Master and the Workers
+- The Master Process: This does not handle network requests. Its only job is to look at your CPU, see how many cores you have, and launch the workers.
+- The Worker Processes: These are the actual "copies" of your Node.js application. Each worker runs independently on its own dedicated CPU core.
+
+2. How Traffic is Shared
+- All workers share the exact same server port (for example, Port 3000).
+- The Master process acts like a traffic cop. When a user visits your site, the Master uses a Round-Robin strategy to distribute the incoming traffic evenly among the workers.
+
+3. Total Isolation
+- Every worker process has its own memory space, its own event loop, and its own V8 engine instance.
+- Because they are completely isolated, if one copy crashes due to a code error, the other copies keep running without any downtime. The Master process can simply spin up a fresh copy immediately
 
 ### 6. How cluster use CPU core for maximising power?
 The cluster module maximizes power by running multiple independent copies (processes) of your Node.js application simultaneously, with each copy automatically assigned to its own CPU core.
