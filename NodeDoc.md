@@ -117,6 +117,67 @@ console.log('Runs first');
 
 Node starts file reading and continues executing other code.
 
+### 8. Can you access DOM in Node?
+No, you cannot access the DOM in Node.js because Node.js is a server-side environment, while the DOM (Document Object Model) is a client-side concept used in browsers to interact with HTML and XML documents.
+
+Node.js runs on the server and does not have access to a browser's DOM, which is part of the browser's environment. The DOM allows you to manipulate the content and structure of web pages, but it is not available in Node.js, as it operates on the backend, outside the context of a web page or browser.
+
+### Explain the event driven architecture?
+Event-Driven Architecture (EDA) is a software design pattern where the flow of your application is determined by events rather than a strict sequence of function calls. Instead of Component A calling Component B directly, Component A simply announces that "something happened" (an event), and any other component can choose to listen and react to it.
+
+Node.js is built from the ground up around this pattern using a single-threaded, non-blocking Event Loop.
+
+Here is how it works broken down into 4 simple steps.
+
+Step 1: The Core Components
+To understand the flow, you only need to know three main concepts:
+- Event: A signal or named string indicating that something just occurred (e.g., userRegistered, paymentReceived).
+- Emitter (Publisher): The part of your code that triggers or broadcasts the event.
+- Listener (Subscriber): The part of your code that waits for the event to happen and runs a function (callback) when it does.
+
+Step 2: Import the Built-in EventEmitter
+Node.js comes with a built-in module called events specifically designed to handle this pattern. You do not need to install anything.
+
+```js
+// Import the core events module
+const EventEmitter = require('events');
+
+// Create a new instance of the emitter
+const eventBus = new EventEmitter();
+```
+
+Step 3: Create a Listener
+Before you broadcast an event, you must define who is listening for it and what they should do. You do this using the .on() method.
+
+```js
+// This listener waits for the 'userRegistered' event
+eventBus.on('userRegistered', (userData) => {
+    console.log(`Sending a welcome email to ${userData.email}`);
+});
+
+// You can add multiple independent listeners to the exact same event!
+eventBus.on('userRegistered', (userData) => {
+    console.log(`Creating a database profile for user ID: ${userData.id}`);
+});
+```
+
+Step 4: Emit the Event
+When an action takes place in your app, you trigger the event using the .emit() method and pass along any relevant data.
+
+```js
+// Simulating a registration process
+const newUser = { id: 101, email: 'hello@example.com' };
+
+// Broadcast the event to the system
+eventBus.emit('userRegistered', newUser);
+```
+
+Why use this in Node.js?
+Benefits - How it works
+- Loose Coupling - The registration code doesn't need to know how to send emails. It just screams "Registration happened!" and walks away.
+- Easy Scalability - If you want to add a third feature later (like sending an SMS notification), you just write a new listener. You don't have to touch your original registration code.
+- High Performance - It maps perfectly to Node's asynchronous environment, keeping the main thread free to handle other requests while waiting for I/O tasks.
+
 ### 8. What is blocking I/O?
 
 Blocking I/O stops execution until operation finishes.
@@ -1700,6 +1761,16 @@ Interview answer:
 ```text
 nextTick runs first and can starve the loop if overused. queueMicrotask and Promises are microtasks with normal priority. setImmediate runs later in the check phase, after I/O polling.
 ```
+
+### 132. What are the potential pitfalls of using closures?
+Potential pitfalls of using closures in JavaScript include:
+
+- Memory Leaks: Closures can unintentionally keep outer function scopes alive, causing memory leaks.
+- Variable Sharing: They can lead to unexpected variable sharing between closures.
+- Performance Issues: Overuse can impact performance due to increased memory usage.
+- Debugging Complexity: Understanding and debugging code with closures can be challenging due to the complexity of the scope chain.
+
+### 
 
 ### 133. How does Node.js handle asynchronous I/O at the OS level via libuv?
 
@@ -3579,3 +3650,649 @@ Example:
 ```text
 Middleware is a function that runs between request and response. For example, requireAuth verifies JWT before protected routes. It matters because it centralizes cross-cutting concerns like auth, logging, and validation. In our app, authMiddleware attaches req.account after verifying the JWT.
 ```
+
+
+**********************************************************************
+******************DEEP UNDERSTANDING OG NODEJS************************
+**********************************************************************
+
+### 1. What is i/o task in nodejs, and why it matters?
+I/O stands for Input/Output, and it refers to any time your code talks to the outside world. It is not just about reading and writing files; it includes any operation where data enters or leaves your computer's memory.
+
+Understanding I/O is the single most important concept in Node.js because Node.js was specifically designed to handle I/O tasks differently than traditional programming languages.
+
+What counts as an I/O operation?
+Think of I/O as any task that takes place outside your main CPU (the computer's brain). Here are the primary examples:
+- File I/O: Reading a .json file, writing a log file, or uploading an image.
+- Network I/O: Making an API call to Google Maps, fetching data from a third-party payment gateway, or a user requesting a webpage from your server.
+- Database I/O: Asking MongoDB, MySQL, or PostgreSQL to find a user profile or save a new password.
+- Hardware I/O: Listening for a keystroke, clicking a mouse, or printing a document.
+
+The Problem: Why I/O is "Heavy"Compared to the CPU, I/O operations are incredibly slow.
+- Changing a variable in code takes less than a nanosecond.
+- Reading a file from a hard drive or waiting for a database to reply can take 10 to 100 milliseconds.
+
+In the tech world, that time difference is massive. If your CPU is a supersonic jet, waiting for a database to respond feels like waiting for a snail to cross a highway.
+
+How Node.js Handles I/O (The Restaurant Analogy)
+To understand why this matters, imagine a busy restaurant with customers ordering food. The "kitchen cooking the food" is the slow I/O operation.
+
+1. Traditional Languages (The "One Waiter per Table" Approach)
+Languages like PHP or Java (traditionally) assign one waiter to a single table. The waiter takes the order, goes to the kitchen, and stands there doing nothing until the food is ready.
+- If 100 customers walk in, the restaurant needs 100 waiters.
+- If they run out of waiters, the 101st customer has to wait outside. This consumes a massive amount of computer memory (RAM).
+
+2. Node.js (The "Smart Waiter" Approach)Node.js uses a single waiter (a single thread) for the entire restaurant.
+- The Node.js waiter takes your order, gives it to the kitchen, and immediately moves to the next table to take their order.
+- The waiter never stands around waiting for the kitchen.
+- When the kitchen finishes cooking a meal, they ding a bell (an Event).
+- The waiter hears the bell, picks up the food, and delivers it to your table.
+
+Why is this so important to know?
+Because Node.js only has one waiter, you must never give the waiter a task that blocks them from moving to the next table.
+- Good (Asynchronous I/O): You tell Node.js to read a massive file. Node.js hands the task to the operating system and keeps answering other user requests. When the file is ready, Node.js triggers a callback function to handle the data. Your app stays lightning-fast.
+- Bad (Blocking Code): If you write a massive math calculation that loops a billion times directly in your main code, you are forcing the waiter to sit at a table and do math. The entire server freezes, and no other users can load your website until the math is done.
+
+In short, Node.js is famous because it excels at handling thousands of simultaneous I/O tasks (like database queries and web requests) on a single thread without slowing down.
+
+### 3. The difference between a blocking (sync) file read and a non-blocking (async) file read in Node.js?
+This demonstrates exactly how the "Smart Waiter" behavior works using the built-in File System (fs) module in Node.js.
+
+1. The Bad Way: Blocking (Synchronous) I/O
+In this approach, the code executes sequentially line-by-line. The entire application pauses and freezes while the file is being read.
+
+```js
+const fs = require('fs');
+console.log("1. Waiter takes Customer A's order.");
+// Node.js freezes here until the heavy file is completely read
+const data = fs.readFileSync('large_file.txt', 'utf8'); 
+console.log("2. Kitchen finished cooking Customer A's food.");
+console.log("3. Waiter moves to Customer B.");
+```
+
+The Output:
+
+1. Waiter takes Customer A's order.
+2. Kitchen finished cooking Customer A's food.
+3. Waiter moves to Customer B.
+
+
+2. The Node.js Way: Non-Blocking (Asynchronous) I/O
+In this approach, Node.js hands the heavy lifting to the computer's operating system and immediately moves to the next line of code.
+
+```js
+const fs = require('fs');
+console.log("1. Waiter takes Customer A's order.");
+// Node.js hands the file task to the OS and immediately moves on
+fs.readFile('large_file.txt', 'utf8', (err, data) => {
+    if (err) throw err;
+    console.log("3. Kitchen dings the bell! Customer A's food is ready.");
+});
+console.log("2. Waiter immediately moves to Customer B.");
+```
+
+The Output:
+1. Waiter takes Customer A's order.
+2. Waiter immediately moves to Customer B.
+3. Kitchen dings the bell! Customer A's food is ready.
+
+
+The Magic: Notice how line 2 prints before line 3. The single-threaded "waiter" never stopped moving. Customer B was served instantly, and Customer A's food was delivered the exact millisecond it was ready.
+
+Summary Checklist
+- fs.readFileSync = Blocking. Blocks the thread. Avoid using this in production servers.
+- fs.readFile (with callback or promises) = Non-blocking. Hands off the task, frees the thread. This is how Node.js achieves high performance.
+
+### 4. Why callback considered as non blocking, how it has been implemented that it will not execute in main thread instead it will go to callback queues?
+To understand exactly why callbacks do not block the main thread, we need to lift the hood of Node.js.
+A callback function itself is just a regular piece of JavaScript code. What makes it non-blocking is not the function itself, but who manages the execution of that function.
+
+Here is the exact mechanism of how Node.js achieves this behind the scenes.
+The Secret Architecture: Node.js is a Team
+When people say Node.js is "single-threaded," they are only telling half the story.
+- The Main Thread (V8 Engine): This is the single thread that runs your JavaScript code. It is the "Smart Waiter.
+- "Libuv (The C++ Background Worker Pool): This is a powerful multi-threaded library built into Node.js written in C++. These are the "Kitchen Staff.
+
+"When you use an asynchronous function like fs.readFile(), you are interacting with both sides of this team.
+
+Step-by-Step: The Journey of an Asynchronous Operation
+Let's look at what happens step-by-step when you execute this line:
+
+```js
+fs.readFile('file.txt', 'utf8', myCallbackFunction);
+```
+
+1. Offloading to the Kitchen (Libuv)
+- When the Main Thread hits fs.readFile, it does not read the file. Instead, it instantly packages two things and hands them over to Libuv (the C++ background layer):The request (e.g., "Read file.txt").
+- The callback function (myCallbackFunction).
+
+2. The Main Thread is Freed InstantlyAs soon as Libuv takes the package, the Main Thread says "Great, not my problem right now," and immediately moves down to execute the next line of your JavaScript file. This is why it is non-blocking.
+
+3. Background Work Happening in ParallelWhile the Main Thread is busy handling other user requests or printing logs, Libuv assigns the heavy file-reading task to one of its C++ background threads (the Worker Pool). This worker interacts directly with the computer's Operating System to fetch the data.
+
+4. Moving to the Callback QueueWhen the C++ background worker finishes reading the file, it takes your myCallbackFunction, pairs it with the freshly retrieved data, and pushes it into the Callback Queue.
+- The Callback Queue is essentially a waiting room for functions that are fully ready to execute.
+
+How the Callback Queue gets Executed: The Event LoopNow your callback function is sitting in the Callback Queue, but it cannot just interrupt the Main Thread whenever it wants. JavaScript is strictly single-threaded and cannot do two things at once.
+
+This is where the Event Loop comes in. The Event Loop acts as a traffic cop with one simple, continuous job:
+- It looks at the Main Thread (Call Stack) and asks: "Is the Main Thread currently busy executing JavaScript code?"
+- If the Main Thread is busy, the Event Loop waits.
+- The exact millisecond the Main Thread finishes all its current code and becomes empty, the Event Loop looks at the Callback Queue.- It grabs the first callback waiting in line and pushes it onto the Main Thread to be executed.
+
+To answer your specific questions directly:
+- Why are callbacks considered non-blocking? Because the function initiating the task returns immediately, allowing the main thread to continue. The callback is simply a placeholder for work to be done later.
+- How is it implemented so it doesn't run on the main thread initially? Node.js offloads the actual heavy lifting (the waiting part) to Libuv's C++ worker threads. Your JavaScript main thread is completely oblivious to the heavy work until the final callback is sitting in the queue ready to be processed.
+
+### 5. What are CPU cores and how do they works?
+What is a CPU Core in Simple Terms?
+- Think of your CPU (Central Processing Unit) as the main brain of your computer.
+- A CPU Core is like an individual worker inside that brain.
+- Old computers only had one core (one worker). If you wanted to browse the internet, listen to music, and write a document at the same time, that single worker had to switch between those tasks incredibly fast to make it look like they were happening together.
+- Today, computers have Multi-Core CPUs (e.g., Dual-Core has 2 workers, Quad-Core has 4 workers, Octa-Core has 8 workers). This means your computer can literally do 4 or 8 things at the exact same millisecond because it has multiple separate workers.
+
+How Cores Work in Node.js
+- By default, Node.js only uses exactly ONE CPU Core for your JavaScript code.
+- Going back to our restaurant analogy: even if your computer has an 8-core CPU (8 workers available), Node.js will only hire one waiter (the Main Thread) to handle your JavaScript code.
+
+Here is exactly how Node.js interacts with your computer's cores:
+1. The Main Core (Core 1)Your primary JavaScript code, your API routes, your Event Loop, and your Callback Queue all run on Core 1. If 10,000 people visit your website, that single core handles all of their requests using the non-blocking pattern we discussed earlier.
+
+2. The Background Cores (Cores 2, 3, 4...)Remember Libuv (the C++ kitchen staff that handles heavy file reading or database waiting)? Libuv is smart. It does use your other CPU cores!
+- While Core 1 is busy running your JavaScript website code, Libuv will automatically send a heavy file-reading task to Core 2, and a crypto-hashing task to Core 3.
+
+The Waste Problem (and The Fix)
+- Because Node.js runs its main JavaScript engine on just one core, a major problem arises with heavy web servers. If you host a Node.js app on an expensive server with 16 CPU cores, 15 of those cores will sit mostly idle while Core 1 does 90% of the heavy lifting.
+- To fix this and use 100% of your computer's power, Node.js provides two built-in solutions:
+
+Solution A: The Cluster Module (Multiple Restaurants)
+- Instead of running one instance of your app, the cluster module lets you spawn a copy of your application for every core you have. If you have a 4-core CPU, Node.js launches 4 identical copies of your server. A built-in load balancer automatically splits incoming traffic among them.
+
+Solution B: Worker Threads (Adding More Waiters)
+- If you have a single app that needs to do heavy CPU math (like video processing or AI calculations), you can use worker_threads to manually create a second JavaScript thread and point it to a different CPU core.
+
+Summary Checklist
+- CPU Core: An independent physical worker inside your computer's processor.
+- Node.js JavaScript: Runs on one core at a time by default.
+- Node.js C++ Internal Tasks: Can use multiple cores automatically behind the scenes.
+- Maximizing Power: Developers use Clusters or Worker Threads to manually force Node.js to use all available CPU cores.
+
+### 6. How cluster use CPU core for maximising power?
+The cluster module maximizes power by running multiple independent copies (processes) of your Node.js application simultaneously, with each copy automatically assigned to its own CPU core.
+
+If you have a server with 4 CPU cores, the cluster module launches 4 identical instances of your web server. Instead of 1 core doing all the work while 3 sit idle, all 4 cores handle incoming traffic together.
+
+Here is exactly how it works under the hood and how to implement it.
+
+How Clustering Works (The Airport Check-in Analogy)
+Imagine a busy airport with 4 check-in counters (Cores), but only one counter is open (Default Node.js). A massive line of passengers forms. The other 3 counters are closed and the workers are sleeping.
+
+When you use the Cluster Module, you introduce a Primary (Master) Process who acts as a line manager:
+- The Primary process opens all 4 counters and places a Worker Process at each one.
+- The Primary process takes the main network port (e.g., Port 3000) and stands at the front of the line.
+- When a passenger (an HTTP request) arrives, the Primary process instantly hands that passenger to the least busy counter using a technique called Round-Robin load balancing.
+
+Step-by-Step Code Example
+- Node.js has a built-in cluster module and an os module to make this incredibly easy. Here is a complete, production-ready example:
+
+```js
+const cluster = require('cluster');
+const http = require('http');
+const os = require('os');
+
+// 1. Count how many CPU cores your computer actually has
+const numCPUs = os.cpus().length; 
+
+if (cluster.isPrimary) {
+    console.log(`Primary system started. Core count: ${numCPUs}`);
+    console.log(`Spawning ${numCPUs} worker processes...`);
+
+    // 2. Loop through the cores and spawn a worker process for each one
+    for (let i = 0; i < numCPUs; i++) {
+        cluster.fork(); // This clones your application onto a new CPU core
+    }
+
+    // Optional: If a worker dies (crashes), automatically start a new one
+    cluster.on('exit', (worker, code, signal) => {
+        console.log(`Worker process ${worker.process.pid} died. Reviving...`);
+        cluster.fork();
+    });
+
+} else {
+    // 3. This is the code that the Workers run on their individual cores.
+    // Every single worker shares the EXACT SAME port (Port 3000)!
+    http.createServer((req, res) => {
+        res.writeHead(200);
+        res.end(`Handled by worker process ID: ${process.pid}\n`);
+    }).listen(3000);
+
+    console.log(`Worker process ${process.pid} is listening on Port 3000`);
+}
+```
+
+Why this Maximizes Power
+- True Parallelism: If 4 users hit your website at the exact same millisecond, all 4 requests are processed at the exact same time on 4 different physical chips inside your computer.
+- No Code Sharing (Isolated Memory): Each worker process is completely independent. They have their own memory space and their own Event Loop. If Worker 1 encounters a terrible bug and crashes, Workers 2, 3, and 4 keep running completely unaffected. Your website never goes down.
+- Zero Port Conflicts: Normally, you cannot run two programs on Port 3000 at the same time. The cluster module handles the networking magic behind the scenes so all workers can secretly share Port 3000 without throwing an "Address Already In Use" error.
+
+The Modern Alternative: PM2
+- In real-world production environments, developers rarely write the cluster code manually. Instead, they use a popular, free production process manager called PM2.
+- With PM2 installed, you write your standard single-threaded Node.js code normally, and you launch it via your terminal like this:
+
+pm2 start app.js -i max
+
+The -i max flag tells PM2 to automatically look at your machine's CPU cores, duplicate your application to match that number, and manage the clustering and load-balancing for you instantly.
+
+### 7. How Worker thread use CPU core for maximising power? 
+While the Cluster module maximizes power by duplicating your entire application across multiple cores, Worker Threads maximize power by letting a single application split up heavy, complex math problems and run them on different cores at the same time.
+
+Think of a Cluster as opening multiple identical branches of a restaurant, while a Worker Thread is like adding more chefs inside the same kitchen.
+
+How Worker Threads Maximize Power
+- By default, your Node.js application executes JavaScript on a single thread (Core 1). If you ask Core 1 to calculate the 50th Fibonacci number or process a heavy image, Core 1 completely freezes. It cannot respond to new web requests.
+- With Worker Threads, you can spawn a new thread (e.g., Core 2) and hand that heavy math problem directly to it.
+- Core 1 stays completely free to handle user requests, listen to APIs, and keep the website responsive.
+- Core 2 runs at 100% capacity calculating the heavy math problem.
+- When Core 2 finishes, it sends a message back to Core 1 with the result.
+
+Step-by-Step Worker Thread Code Example
+Node.js provides a built-in module called worker_threads. Here is a simple example showing how the main thread sends heavy work to a worker thread:
+
+
+```js
+const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
+
+if (isMainThread) {
+    // 1. THIS IS THE MAIN THREAD (Core 1)
+    console.log("Main Thread: Starting a heavy calculation on Core 2...");
+
+    // Spawn a worker thread using this exact same file
+    const worker = new Worker(__filename, {
+        workerData: { number: 40 } // Pass data to the worker
+    });
+
+    // Listen for the result from the worker thread
+    worker.on('message', (result) => {
+        console.log(`Main Thread: Received result from Core 2: ${result}`);
+    });
+
+    console.log("Main Thread: I am completely free to handle web traffic right now!");
+
+} else {
+    // 2. THIS IS THE WORKER THREAD (Core 2)
+    // It gets its own isolated thread to do heavy CPU tasks without blocking anyone
+    const num = workerData.number;
+    
+    // Simulate a heavy, blocking CPU calculation
+    let result = 0;
+    for (let i = 0; i < num * 100000000; i++) {
+        result += i;
+    }
+
+    // Send the final answer back to the main thread
+    parentPort.postMessage(result);
+}
+```
+
+The Output:
+Main Thread: Starting a heavy calculation on Core 2...
+Main Thread: I am completely free to handle web traffic right now!
+Main Thread: Received result from Core 2: 7999999980000000
+
+Notice how the main thread printed its "completely free" message before the heavy math loop finished. The main thread never froze.
+
+When to use which?
+- Use Cluster if you are building a standard web app or REST API. You want to duplicate the app so that if 1,000 users visit, the network traffic is evenly distributed across all your CPU cores.
+- Use Worker Threads if your web app has a specific feature that requires massive computing power—like resizing user profile pictures, generating PDFs, data analytics, or heavy encryption.
+
+### 9. Difference between Cluster and Worker Thread?
+
+The direct comparison between the Cluster Module and Worker Threads organized as a clean, scannable list:
+Cluster Module (Multiple Processes)
+- Analogy: Opening 4 separate restaurant branches.What it creates: Multiple independent Processes.
+- Memory (RAM): Isolated. Each process has its own locked memory space.
+- Communication: Slow. It must serialize data into strings to talk between processes.
+- Network Port: Shared. All copies share the exact same port (e.g., Port 3000).
+- Best Used For: I/O Bound Tasks (Web servers, APIs, routing incoming traffic).
+
+Worker Threads Module (Single Process)
+- Analogy: Adding 4 chefs inside the same kitchen.
+- What it creates: Multiple Threads inside one single Process.
+- Memory (RAM): Shared. Threads can share the exact same memory space.
+- Communication: Fast. It can pass memory objects directly between threads.
+- Network Port: Not Shared. They cannot share a port. Only the main thread handles networking.
+- Best Used For: CPU Bound Tasks (Image processing, video encoding, AI/Math).
+
+### 10. Streams and Buffers (Handling Massive Data)
+What is a Buffer?A Buffer is a temporary holding chunk of physical memory (RAM) that Node.js allocates outside the V8 JavaScript engine. It holds raw binary data (0s and 1s). Think of a Buffer as a small bucket that collects water from a faucet before you pour it into a glass.
+
+What is a Stream?
+A Stream is the continuous movement of data from one place to another, processed chunk-by-chunk over time, rather than all at once.
+- The Problem: If you have a 4GB video file and you use fs.readFile(), Node.js will attempt to load all 4GB into your computer's RAM simultaneously. If your server only has 2GB of RAM, your application will instantly crash with an "Out of Memory" error.
+- The Solution (Streams): Node.js breaks that 4GB file down into tiny chunks (usually 64KB each) called Buffers. It reads chunk 1, processes it, throws it away, and moves to chunk 2.
+
+
+Code Deep Dive:
+```js
+const fs = require('fs');
+
+// Create a readable stream from a massive file
+const readableStream = fs.createReadStream('massive_video.mp4');
+// Create a writable stream to a new destination
+const writableStream = fs.createWriteStream('destination_video.mp4');
+
+// Stream chunks from source to destination automatically
+readableStream.pipe(writableStream);
+
+writableStream.on('finish', () => {
+    console.log("Entire file copied using less than 64KB of RAM total!");
+});
+```
+
+### 11. The 6 Phases of the Event Loop
+Earlier, we looked at the Event Loop as a single queue. In reality, the Libuv Event Loop executes callbacks by cycling through 6 distinct phases in a strict loop. Each phase has its own dedicated FIFO (First In, First Out) queue of callbacks.
+
+   ┌───────────────────────────────────────────────┐
+   │ 1. Timers (setTimeout, setInterval)           │
+   └───────────────────────┬───────────────────────┘
+                           ▼
+   ┌───────────────────────────────────────────────┐
+   │ 2. Pending Callbacks (System errors, TCP)     │
+   └───────────────────────┬───────────────────────┘
+                           ▼
+   ┌───────────────────────────────────────────────┐
+   │ 3. Idle, Prepare (Internal Node tasks)        │
+   └───────────────────────┬───────────────────────┘
+                           ▼
+   ┌───────────────────────────────────────────────┐
+   │ 4. Poll (Incoming I/O data, HTTP requests)    │
+   └───────────────────────┬───────────────────────┘
+                           ▼
+   ┌───────────────────────────────────────────────┐
+   │ 5. Check (setImmediate)                       │
+   └───────────────────────┬───────────────────────┘
+                           ▼
+   ┌───────────────────────────────────────────────┐
+   │ 6. Close Callbacks (socket.on('close'))       │
+   └───────────────────────▲───────────────────────┘
+                           │
+                           └───────────────────────┘ (Loops back to Phase 1)
+
+The Execution Flow:
+- Timers Phase: Executes callbacks scheduled by setTimeout() and setInterval().
+- Pending Callbacks Phase: Executes system-level callbacks (e.g., if a TCP socket connection throws an error).
+- Idle, Prepare Phase: Used internally by Node.js for engine optimization. You cannot write code that executes here.
+- Poll Phase: This is where Node.js spends 90% of its time. It waits for incoming I/O data (database responses, file reads, incoming network requests) and executes their callbacks.
+- Check Phase: Executes callbacks scheduled by setImmediate(). If you want a callback to execute immediately after the Poll phase completes, put it here.
+- Close Callbacks Phase: Executes clean-up callbacks like socket.on('close').
+
+Topic 3: Microtask Queues (process.nextTick and Promises)The 6 phases above handle Macrotasks. However, Node.js has a parallel, high-priority system called the Microtask Queue that bypasses the 6 phases completely.The Microtask Queue consists of two lines, ranked by priority:process.nextTick() queue (Highest VIP priority in all of Node.js).Promise callback queue (e.g., .then(), .catch(), or async/await returns).
+
+The VIP Rule:
+- Whenever the Event Loop is moving between any of the 6 phases, or even between individual callbacks within a phase, it will completely pause what it is doing, look at the Microtask Queue, and empty it out fully before continuing to the next phase.
+
+Code Deep Dive: 
+- Predicting the output of this code separates junior developers from masters:
+
+```js
+setTimeout(() => console.log("1. Timeout (Phase 1 Macrotask)"), 0);
+setImmediate(() => console.log("2. Immediate (Phase 5 Macrotask)"));
+
+Promise.resolve().then(() => console.log("3. Promise (Microtask)"));
+process.nextTick(() => console.log("4. NextTick (VIP Microtask)"));
+
+console.log("5. Synchronous Main Thread");
+```
+
+The Output:
+5. Synchronous Main Thread   // Runs instantly on the main stack
+4. NextTick (VIP Microtask)   // VIP queue empties before loop even starts phase 1
+3. Promise (Microtask)        // Remaining microtask queue empties
+1. Timeout (Phase 1 Macrotask)// Loop starts, hits Phase 1 (Timers)
+2. Immediate (Phase 5 Macrotask)// Loop continues through phases to Phase 5 (Check)
+
+
+### 12. Event-Driven Architecture in Practice (Streams + EventEmitters)
+Now we can connect everything together. Your first question was about Event-Driven Architecture (EDA). Node's core modules are fundamentally built by combining Streams and EventEmitters.
+
+Every Stream in Node.js inherits from the EventEmitter class. This means Streams do not just move data—they broadcast events as the data flows through them.
+
+Core Stream Events:
+- data: Emitted when a new, small buffer chunk is available to read.
+- end: Emitted when there is no more data left to read from the file.
+- error: Emitted if something goes wrong (e.g., file permissions error).
+
+Deep Dive Architectural Integration Code:
+
+```js
+const fs = require('fs');
+
+const reader = fs.createReadStream('source.txt', { encoding: 'utf8' });
+
+// Behind the scenes, the Stream uses .emit('data', chunk) inside Libuv
+reader.on('data', (chunk) => {
+    console.log("--- Received a 64KB Buffer Chunk ---");
+    console.log(chunk); // Processes just this small chunk
+});
+
+reader.on('end', () => {
+    console.log("--- Finished reading the entire stream! ---");
+});
+
+reader.on('error', (err) => {
+    console.error("An error occurred:", err.message);
+});
+```
+
+Why this architecture works beautifully:
+Libuv reads a chunk from the disk on a background thread. It pushes the data to the Callback Queue. The Event Loop hits the Poll phase, grabs the callback, and uses an EventEmitter to alert your JavaScript code (reader.on('data')) that the data is ready. It is a completely connected, closed-loop machine.
+
+Now that you have a deep conceptual foundation of Node.js internals, we can move toward building real systems. If you want to continue, let me know if you would like to explore:
+
+- Writing a script that safely manipulates raw binary data using Buffers.
+- Designing a custom module that extends EventEmitter to handle custom application business logic.
+- Visualizing a complex code execution scenario to see how async/await interacts with the microtask queue.
+
+### 13. Deep diving into how to spot and fix a memory leak in Node.js.
+A memory leak occurs when your code creates data in the computer's memory (RAM) but accidentally keeps a reference to it long after it is no longer needed. Because Node.js thinks you might still use it, the Garbage Collector is not allowed to clean it up.
+
+Over time, your RAM usage climbs higher and higher until your server runs out of memory and crashes.
+Here is a deep dive into how memory leaks happen, how to spot them, and how to fix them.
+
+Part 1: Three Common Ways We Accidentally Leak Memory
+1. Global Variables or Long-Lived Closures
+If you assign data to a global variable (or attach it to global), that memory lives forever until the server shuts down.
+
+// ❌ THE LEAK: A global array that grows forever
+const requestLogs = []; 
+
+app.get('/user', (req, res) => {
+    requestLogs.push(req.headers); // Memory grows with every single API call!
+    res.send("User data");
+});
+
+The Fix: Never use global arrays to store request-scoped data. Use a proper external database (like Redis) or short-lived local variables that disappear when the function ends.
+
+2. Forgotten setInterval or setTimeout
+If you start a timer that references a massive object inside its callback, that object cannot be garbage collected as long as the timer is running.
+
+app.get('/start-task', (req, res) => {
+    const massiveData = new Array(1000000).fill("data");
+
+    // ❌ THE LEAK: This interval runs forever and locks 'massiveData' in memory
+    setInterval(() => {
+        console.log("Task is still alive...");
+    }, 1000); 
+
+    res.send("Started");
+});
+
+
+The Fix: Always store the timer ID and clear it using clearInterval(timerId) when the work is complete.
+
+3. Unclosed Event Listeners
+If you attach a listener to a long-lived object (like process or a global emitter), but never remove it, that function pointer stays stuck in RAM forever.
+
+const myGlobalEmitter = require('./globalEmitter');
+
+app.get('/subscribe', (req, res) => {
+    const userData = { name: "John", largePayload: {} };
+
+    // ❌ THE LEAK: Every request attaches a NEW listener that never detaches
+    myGlobalEmitter.on('update', () => {
+        console.log(`Updating ${userData.name}`);
+    });
+
+    res.send("Subscribed");
+});
+
+The Fix: Use emitter.once() if you only need it to run one time, or manually call emitter.off() to clean it up when the user disconnects.
+
+Part 2: How to Spot a Memory Leak
+
+You cannot easily spot a memory leak by just staring at code. You need to observe the application's behavior under heavy traffic.
+
+1. The Symptom (The Sawtooth Graph)
+If you monitor your server's RAM usage over 24 hours:
+- Healthy App: The RAM graph goes up, then abruptly drops back down to a baseline (this is the Garbage Collector working).
+- Leaky App: The graph looks like a sawtooth blade—it goes up, drops slightly, but the baseline keeps creeping higher and higher until the app crashes.
+
+2. Spotting it in Development (The Node Inspector)
+You can look inside Node's memory using Google Chrome's developer tools.
+- Start your Node app with the inspect flag:
+
+node --inspect server.js
+
+- Open Google Chrome and visit chrome://inspect.
+- Click "Open dedicated DevTools for Node".
+- Go to the Memory tab.
+- Select Heap snapshot and click Take snapshot. This captures exactly what is in your RAM right now.
+- Use a tool like autocannon to simulate 10,000 users hitting your server:
+
+npx autocannon -c 100 -d 10 http://localhost:3000/user
+
+- Take a Second Heap Snapshot and click Comparison. Chrome will show you exactly which objects grew in size and didn't get deleted.
+
+Part 3: How to Fix a Leak (Production Safety Nets)
+If you are running in production and want to automate memory protection, you can use built-in V8 flags to force Node.js to log leaks or crash safely before exhausting the host machine's RAM.
+- Limit Max Memory: By default, Node.js might try to claim more RAM than your tiny AWS or Heroku server actually has. Prevent this by setting a strict limit
+
+node --max-old-space-size=1500 server.js  
+
+- Automatic Heap Dumps: You can tell Node.js to automatically take a snapshot file and write it to your disk right before it crashes from an out-of-memory error:
+
+node --heapsnapshot-near-heap-limit=3 server.js
+
+You can then load this snapshot file directly into Chrome DevTools later to see exactly who leaked the memory.
+
+### 14. What is load balancing and how it works with an example?
+Load balancing is the process of distributing incoming network traffic evenly across a group of backend servers.
+
+Think of a load balancer as a traffic cop standing in front of your infrastructure. Instead of allowing millions of users to hit a single server and crash it, the load balancer intercepts every request and routes it to the least busy server in your fleet.
+
+Real-World Analogy: The Bank Teller Line
+Imagine a popular bank branch. If there is only one teller counter open (one server), a massive line forms. Customers get frustrated, and the teller gets completely overwhelmed and burns out (Server Crash).
+
+Now, the bank manager upgrades the system:
+- They open 4 separate teller counters (a cluster of 4 Node.js servers).
+- They hire a security guard to stand at the entrance (The Load Balancer).
+- When a customer walks into the bank, they do not choose a counter. The security guard looks at the open counters and says, "You go to Counter 1. Next customer, go to Counter 2."
+
+Because of the security guard, no single teller is ever overwhelmed, and customers are served 4 times faster.
+
+How it Works (Step-by-Step Example)
+
+Let's look at how a load balancer handles traffic for a real website, like ://mycoolapp.com.
+               [ USER TRAFFIC ]
+         (Millions of HTTP Requests)
+                     │
+                     ▼
+         ┌───────────────────────┐
+         │     LOAD BALANCER     │  <-- Intercepts everything at Port 80/443
+         └───────────┬───────────┘
+                     │
+      ┌──────────────┼──────────────┐
+      ▼              ▼              ▼
+┌───────────┐  ┌───────────┐  ┌───────────┐
+│ Server A  │  │ Server B  │  │ Server C  │  <-- Identical Node.js instances
+└───────────┘  └───────────┘  └───────────┘
+
+Step 1: The Request Arrives
+- A user types your website URL into their browser. The Domain Name System (DNS) points your domain directly to the IP address of the Load Balancer, not the actual backend servers.
+
+Step 2: The Load Balancer Applies an Algorithm
+The load balancer receives the request and decides which backend server should handle it using a specific strategy. The most common algorithms are:
+
+- Round Robin: Passes requests sequentially down the line (Server A, then Server B, then Server C, then back to A).
+- Least Connections: Checks the active workload and sends the user to whichever server currently has the fewest open connections.
+- IP Hash: Uses the user's IP address to ensure that a specific user always lands on the exact same backend server (useful for keeping user sessions intact).
+
+Step 3: Routing the Traffic
+The load balancer acts as a reverse proxy. It forwards the request to the chosen server (e.g., Server B) via a private internal network.
+
+Step 4: The Health Check (The Safety Net)
+A load balancer continuously pings your backend servers every few seconds (called a Health Check). If Server C suddenly runs out of memory and crashes, the load balancer instantly flags it as "unhealthy" and stops sending traffic there. Users never see an error page because their requests are seamlessly routed to Server A and B instead.
+
+Popular Tools Used for Load Balancing
+In professional environments, developers rarely write load balancers from scratch. They use highly optimized, battle-tested software or cloud infrastructure:
+- NGINX: A lightning-fast, open-source software reverse proxy frequently used to load balance Node.js applications.
+- AWS ALB (Application Load Balancer): A cloud service managed by Amazon that automatically scales up to handle millions of requests without manual configuration.
+
+======================================================
+**************** REAL TIME SCENARIO ****************** 
+======================================================
+
+### 14. What we can do when CPU usage reaches 100%?
+When your Node.js application hits 100% CPU usage, it means your single-threaded event loop is completely overwhelmed. It cannot accept new connections, and incoming HTTP requests will start timing out, causing your application to appear "frozen" to users.
+
+Phase 1: Immediate Triage (Stop the Bleeding)
+If your live production server is sitting at 100% CPU right now, do these three things immediately:
+- Restart the Server with a Process Manager: If you are using a tool like PM2, a simple restart will clear the blocked call stack and drop CPU back to baseline.
+
+pm2 reload all
+
+- Horizontal Scaling: Temporarily spin up 2 or 3 more instances of your server behind your cloud load balancer (e.g., AWS, GCP, or DigitalOcean). This spreads the massive wave of traffic across more machines.
+
+- Locate the Culprit Node: Check if a single route or a specific background task triggered the spike. Look at your server logs to see what was executing right before the 100% jump.
+
+
+Phase 2: How to Identify the Exact Cause
+If the 100% CPU usage keeps happening, you have a code-level bottleneck. You need to profile your app to find out which function is hogging the CPU core.
+
+Use the Built-in Node.js Profiler
+You can start your application in production or staging with a built-in profiler flag:
+
+node --prof server.js
+
+- Run a load test against your app.
+- Node.js will generate a file that looks like isolate-0xnnnnnnnnnnnn-v8.log.
+- Process this log into human-readable text using Node's built-in tool:
+
+node --prof-process isolate-0xnnnnnnnnnnnn-v8.log > processed_profile.txt
+
+- Open processed_profile.txt. Look at the [Bottom up (heavy) functions] section. It will list the exact file name and line number of the JavaScript function consuming the most CPU cycles.
+
+Phase 3: Long-Term Architectural Fixes
+Once you find out what is causing the high CPU load, apply the correct Node.js architecture pattern to fix it permanently.
+
+1. Implement the Cluster Module or PM2 Cluster Mode
+If you are running your app on a multi-core server but haven't enabled clustering, only 1 core is working while the others sit idle.
+- Run your application using PM2 Cluster Mode to automatically distribute the workload across every single CPU core on your machine.
+
+pm2 start server.js -i max
+
+2. Offload CPU-Bound Code to Worker Threads
+If the 100% CPU is caused by heavy, non-I/O calculations within your code (such as image resizing, PDF generation, or heavy cryptography), do not run it on the main thread.
+
+Move that specific blocking function into a separate Worker Thread so it executes on an isolated background core without freezing your main event loop.
+
+3. Offload Tasks to a Background Job Queue
+If the heavy task takes longer than a few seconds (e.g., sending 10,000 marketing emails or video transcoding), it does not belong in the Node.js runtime process at all.
+
+- Use a robust queue system like BullMQ (backed by Redis).
+- Your main Node.js app simply creates a job ticket and pushes it to Redis. A completely separate background worker script (running on a different server) processes the heavy job asynchronously.
+
+4. Paginate Your Database Queries
+A very common hidden cause of 100% CPU is fetching too much data. If an API route does a SELECT * FROM users on a database with 500,000 rows, Node.js has to spend a massive amount of CPU energy deserializing that gigantic JSON object into your memory.
+- Always enforce database pagination limits (e.g., LIMIT 50) to keep payloads small and fast.
+

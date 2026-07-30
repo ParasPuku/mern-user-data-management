@@ -786,9 +786,42 @@ db.users.findOne({ email: "paras@example.com" });
 
 Projection returns only selected fields.
 
+Yes, that is exactly correct. In MongoDB, a projection is used to specify or restrict the fields returned from a query. Instead of transferring entire documents over the network, projection allows you to filter the data at the database level.
+
+Projection is passed as the second argument to the find() method:
+
+Key Rules of Projection
+- Inclusion (1 or true): Specifies the exact fields you want to return. All other fields are automatically excluded.
+- Exclusion (0 or false): Specifies fields you want to omit. All unlisted fields are returned.
+- The _id Exception: The _id field is always returned by default. You must explicitly set _id: 0 to remove it.
+- No Mixing: You cannot mix inclusion and exclusion rules in a single projection document (e.g., { name: 1, age: 0 } throws an error). The only exception to this rule is suppressing the _id field while including other fields.
+
+Common Examples
+- Return only specific fields:
+
+// Returns ONLY the 'name', 'email', and default '_id' fields
+```js
+db.users.find({}, { name: 1, email: 1 })
+```
+
+- Return specific fields without _id:
+// Returns ONLY 'name' and 'email'
+```js
+db.users.find({}, { name: 1, email: 1, _id: 0 })
+```
+
+- Exclude a noisy field:
+// Returns all document fields EXCEPT the 'password' field
+```js
+db.users.find({}, { password: 0 })
+```
+
 Example:
 
 ```js
+
+db.collection.find( { <query_filter> }, { <projection> } )
+
 db.users.find(
   { city: "Bangalore" },
   { name: 1, email: 1, _id: 0 }
@@ -1348,6 +1381,8 @@ Group products by price ranges.
 
 Replication means keeping copies of data on multiple MongoDB servers.
 
+Replication copies an entire collection (or database/table), not just a single document. It is an ongoing process that keeps entire sets of data in sync across different servers. When a single document changes, that specific change is sent to update the replicated collection.
+
 Why:
 
 - high availability
@@ -1357,6 +1392,18 @@ Why:
 ### 52. What is a Replica Set?
 
 A replica set is a group of MongoDB nodes.
+
+A replica set in MongoDB is a group of mongod database instances that maintain the same data set to provide data redundancy, fault tolerance, and high availability. It consists of a single primary node, multiple secondary nodes, and optionally an arbiter node.
+
+Core Components
+- Primary Node: Receives and processes all write operations from client applications, logging every data change into its oplog (operations log).
+- Secondary Nodes: Copy the primary node's oplog asynchronously and apply the changes to maintain an identical copy of the data. They can also be configured to handle read operations.
+- Arbiter Node: Does not hold any data or accept writes; it is used strictly to cast votes during automated primary elections to help achieve a voting majority.
+
+Key Features
+- Automatic Failover: If the primary node goes offline or stops responding, the remaining nodes hold an election to automatically promote a secondary node to the primary role.
+- Read Scaling: Client applications can direct read queries to secondary nodes to reduce the load on the primary.
+- Quorum Requirement: Most configurations require an odd number of voting members (minimum of 3 nodes recommended) to ensure proper consensus during elections.
 
 Usually:
 
@@ -1485,7 +1532,19 @@ Durability  -> committed data is saved
 
 ### 61. What is sharding?
 
-Sharding means splitting data across multiple servers.
+Sharding means splitting large datasets[collections] across multiple servers.
+
+Sharding in MongoDB is a method for horizontal scaling that splits large datasets across multiple machines. The key components of a sharded cluster are shards, config servers, and query routers (mongos).
+
+Core Components
+- Shards: Store a subset of the actual data; each shard can be run as a replica set for high availability.
+- Config Servers: Store metadata and the cluster's data routing configuration.
+- Query Routers (mongos): Act as an interface for client applications, directing operations to the correct shard.
+
+How It Works
+- Shard Key: A field or group of fields in a collection used to slice data into smaller chunks.
+- Distribution Strategies: Split data using either range-based methods (grouping by value ranges) or hashed methods (using an MD5 hash).
+- Balancing: MongoDB tracks chunk distribution and auto-migrates data across shards to prevent performance bottlenecks.
 
 Why:
 
@@ -1693,6 +1752,14 @@ db.orders.watch();
 View is a saved aggregation query.
 
 It does not store data separately.
+
+MongoDB views are read-only virtual collections whose contents are computed dynamically using an aggregation pipeline. MongoDB supports standard views, which calculate data on read without storing it to disk, and on-demand materialized views, which store pre-computed results on disk.
+
+Key Characteristics
+- Standard Views: Computed on the fly every time you query them; they do not use extra disk storage for data and rely on the indexes of the underlying source collection.
+- On-Demand Materialized Views: Pre-computed results stored directly on disk using a $merge or $out aggregation stage, offering faster reads for heavy datasets.
+- Read-Only: You cannot perform insert, update, or delete operations directly on a view.
+- Creation: Built using the db.createView() method or via platform tools like the MongoDB Atlas UI.
 
 Use case:
 
