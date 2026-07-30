@@ -1431,6 +1431,9 @@ How It Handles Thousands of Requests
 - Callback Execution: When the database task finishes, it triggers a callback. The Event Loop picks up this callback and sends the response back to the user.
 
 ### 12. What is cluster module in nodejs?
+
+In simple terms, a Node.js cluster is a way to make your application run faster and handle more traffic by duplicating itself across all available cores of your computer's CPU.
+
 The Cluster module is a built-in Node.js feature that allows you to run multiple instances of your application simultaneously to utilize all available CPU cores.
 
 Because Node.js runs on a single thread by default, it only uses one CPU core. If your server has 8 cores, 7 of them sit idle. The cluster module solves this limitation.
@@ -1458,6 +1461,9 @@ When NOT to Use It
 - Cloud-Native Containers: Do not use it if you deploy via Docker, Kubernetes, or AWS ECS, as these platforms handle scaling and load balancing externally.
 - Stateful Applications: Avoid it if your app stores sessions or data in local server memory. Workers do not share memory, so you must use an external database like Redis.
 
+### 12. What is Worker Thread?
+In simple terms, a Worker Thread in Node.js is like a helper clone that you can spin up to do heavy math or data processing in the background, so your main app doesn't freeze.
+
 ### 12. What is PM2 and how do we manage clusters automatically using a tool like PM2?
 PM2 is a production-grade, open-source Process Manager for Node.js applications. It keeps your application alive forever, reloads it with zero downtime, balances network traffic across CPU cores, and simplifies logging and monitoring.
 
@@ -1467,6 +1473,9 @@ In production, developers rarely write custom cluster-module code. Instead, they
 
 2. Self-Healing & Zero DowntimeAuto-Restart: If a worker process crashes due to an unhandled error or a memory leak, PM2 instantly kills it and spawns a new one.Hot Reloading: When you update your code, PM2 reloads workers one by one (pm2 reload). Users experience zero downtime because some workers stay online while others restart.
 
+
+### What is Child Process in nodejs?
+In simple terms, a child process in Node.js is like hiring an assistant to do a job for you so you can keep working without interruption.
 
 ### 12. Child process vs worker thread?
 The primary difference is that Child Processes run in completely separate operating system processes with isolated memory, while Worker Threads run inside the same process and share memory.
@@ -1479,6 +1488,8 @@ Child processes spin up entirely new instances of the Node.js runtime environmen
 - Best Used For: Running external system commands (like a bash script), executing independent applications, or isolating risky tasks that might crash the process.
 
 Worker Threads
+In simple terms, a Worker Thread in Node.js is like a helper clone that you can spin up to do heavy math or data processing in the background, so your main app doesn't freeze.
+
 Worker threads (worker_threads module) allow you to run CPU-intensive tasks on background threads within the main process.
 - Memory: Shared. Threads share the same application memory space and can utilize ArrayBuffer objects for zero-copy data transfer.
 - Overhead: Low. Threads are lightweight, fast to create, and share the single Node.js runtime instance.
@@ -3983,6 +3994,10 @@ When to use which?
 - Use Worker Threads if your web app has a specific feature that requires massive computing power—like resizing user profile pictures, generating PDFs, data analytics, or heavy encryption.
 
 ### 9. Difference between Cluster and Worker Thread?
+
+Cluster - In simple terms, a Node.js cluster is a way to make your application run faster and handle more traffic by duplicating itself across all available cores of your computer's CPU.
+
+Worker Thread - In simple terms, a Worker Thread in Node.js is like a helper clone that you can spin up to do heavy math or data processing in the background, so your main app doesn't freeze.
 
 The direct comparison between the Cluster Module and Worker Threads organized as a clean, scannable list:
 Cluster Module (Multiple Processes)
