@@ -3656,7 +3656,7 @@ Middleware is a function that runs between request and response. For example, re
 ******************DEEP UNDERSTANDING OG NODEJS************************
 **********************************************************************
 
-### 0. Why nodejs compare to other server side technologies?
+### 0. Why nodejs? compare to other server side technologies?
 Node.js stands out because it allows developers to build high-performance backend systems using JavaScript, eliminating the need to learn different languages for the frontend and backend. 
 
 Unlike traditional server-side technologies that spawn a new thread for every incoming connection, Node.js uses a single-threaded, event-driven architecture that handles thousands of concurrent requests with minimal memory overhead.
