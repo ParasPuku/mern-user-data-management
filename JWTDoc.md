@@ -1236,6 +1236,8 @@ const expiresAtMs = expiryCandidates.length
   : null;
 ```
 
+### Difference between HS256, RS256 and SHA256
+
 ### What is Refresh Token?
 A refresh token is a special key used to get a new access token (JWT) when the old one expires, It allow us to stay logged in without typing your password again. 
 
