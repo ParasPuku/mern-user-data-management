@@ -1236,6 +1236,23 @@ const expiresAtMs = expiryCandidates.length
   : null;
 ```
 
+### What is Refresh Token?
+A refresh token is a special key used to get a new access token (JWT) when the old one expires, It allow us to stay logged in without typing your password again. 
+
+Think of it like a digital "parking pass" that lets you trade in an expired hourly ticket for a new one without leaving your car.
+
+How It Works
+- The Login: You log in once with your username and password. The server gives you two things: a short-lived access token (JWT) and a long-lived refresh token.
+- The Routine Use: Your app uses the short-lived access token to fetch your data every time you click around.
+- The Expiration: After a short time (like 15 minutes), the access token dies for safety.
+- The Refresh: Instead of kicking you out to a login screen, your app secretly hands the refresh token to the server.
+- The New Pass: The server checks the refresh token, sees it is valid, and hands back a brand new access token.
+
+Why We Use Both Tokens
+- Better Security: Access tokens live for only a few minutes. If a hacker steals an access token, they can only use it for a tiny window of time.
+- Great Experience: You do not have to log in every 15 minutes because the refresh token quietly keeps your session alive in the background.
+- Easy Revocation: If you log out or if someone steals your account, the server can block your refresh token instantly to cut off access.
+
 ## Access Token and Refresh Token
 
 Many production apps use two tokens:

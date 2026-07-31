@@ -546,12 +546,19 @@ To understand setImmediate(), it must be compared to process.nextTick() and setT
 ```js
 const fs = require('fs');
 
+
 fs.readFile(__filename, () => {
     setTimeout(() => console.log('1. setTimeout (Timer Phase)'), 0);
-    setImmediate(() => console.log('2. setImmediate (Check Phase)'));
+    setImmediate(() => console.log('2. setImmediate (Check Phase)'), 0);
     process.nextTick(() => console.log('3. process.nextTick (Microtask)'));
 });
+
+// GUARANTEED OUTPUT:
+// setImmediate
+// setTimeout
 ```
+
+// NOTE ---- setImmediate execution gets matter with synchronous and asynchronous case - Priority of setImmediate is more in file i/o execution than synchronous execution.
 
 Output order inside an I/O callback:
 - 3. process.nextTick (Executes immediately after the current operation finishes, before the phase ends).
@@ -736,20 +743,22 @@ promise
 
 ```js
 setImmediate(() => console.log("🎫 4. setImmediate"), 0);
-
 setTimeout(() => console.log("⏱️ 3. setTimeout (0ms)"), 0);
 console.log("✍️ 0. Main Synchronous Code Execution");
 process.nextTick(() => {
   console.log("🚀 2. process.nextTick - The Line Jumper!");
 });
+queueMicrotask(() => {
+    console.log("queueMicrotask")
+})
 ```
 
 Output
 // --- EXECUTING THE CODE TRACKS ---
 ```js
 ✍️ 0. Main Synchronous Code Execution
-✍️ 1. Main Synchronous Code Execution
-🚀 2. process.nextTick - The Line Jumper!
+🚀 1. process.nextTick - The Line Jumper!
+2. queueMicrotask
 ⏱️ 3. setTimeout (0ms)
 🎫 4. setImmediate
 ```
@@ -4016,7 +4025,8 @@ Worker Threads Module (Single Process)
 - Best Used For: CPU Bound Tasks (Image processing, video encoding, AI/Math).
 
 ### 10. Streams and Buffers (Handling Massive Data)
-What is a Buffer?A Buffer is a temporary holding chunk of physical memory (RAM) that Node.js allocates outside the V8 JavaScript engine. It holds raw binary data (0s and 1s). Think of a Buffer as a small bucket that collects water from a faucet before you pour it into a glass.
+What is a Buffer?
+A Buffer is a temporary holding chunk of physical memory (RAM) that Node.js allocates outside the V8 JavaScript engine. It holds raw binary data (0s and 1s). Think of a Buffer as a small bucket that collects water from a faucet before you pour it into a glass.
 
 What is a Stream?
 A Stream is the continuous movement of data from one place to another, processed chunk-by-chunk over time, rather than all at once.
@@ -4078,7 +4088,9 @@ The Execution Flow:
 - Check Phase: Executes callbacks scheduled by setImmediate(). If you want a callback to execute immediately after the Poll phase completes, put it here.
 - Close Callbacks Phase: Executes clean-up callbacks like socket.on('close').
 
-Topic 3: Microtask Queues (process.nextTick and Promises)The 6 phases above handle Macrotasks. However, Node.js has a parallel, high-priority system called the Microtask Queue that bypasses the 6 phases completely.The Microtask Queue consists of two lines, ranked by priority:process.nextTick() queue (Highest VIP priority in all of Node.js).Promise callback queue (e.g., .then(), .catch(), or async/await returns).
+Topic 3: Microtask Queues (process.nextTick and Promises)
+- The 6 phases above handle Macrotasks. However, Node.js has a parallel, high-priority system called the Microtask Queue that bypasses the 6 phases completely.
+- The Microtask Queue consists of two lines, ranked by priority:process.nextTick() queue (Highest VIP priority in all of Node.js).Promise callback queue (e.g., .then(), .catch(), or async/await returns).
 
 The VIP Rule:
 - Whenever the Event Loop is moving between any of the 6 phases, or even between individual callbacks within a phase, it will completely pause what it is doing, look at the Microtask Queue, and empty it out fully before continuing to the next phase.
@@ -4097,11 +4109,11 @@ console.log("5. Synchronous Main Thread");
 ```
 
 The Output:
-5. Synchronous Main Thread   // Runs instantly on the main stack
-4. NextTick (VIP Microtask)   // VIP queue empties before loop even starts phase 1
-3. Promise (Microtask)        // Remaining microtask queue empties
-1. Timeout (Phase 1 Macrotask)// Loop starts, hits Phase 1 (Timers)
-2. Immediate (Phase 5 Macrotask)// Loop continues through phases to Phase 5 (Check)
+- 5. Synchronous Main Thread   // Runs instantly on the main stack
+- 4. NextTick (VIP Microtask)   // VIP queue empties before loop even starts phase 1
+- 3. Promise (Microtask)        // Remaining microtask queue empties
+- 1. Timeout (Phase 1 Macrotask)// Loop starts, hits Phase 1 (Timers)
+- 2. Immediate (Phase 5 Macrotask)// Loop continues through phases to Phase 5 (Check)
 
 
 ### 12. Event-Driven Architecture in Practice (Streams + EventEmitters)
