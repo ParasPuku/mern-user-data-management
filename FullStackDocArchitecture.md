@@ -1456,6 +1456,146 @@ Scale each layer separately.
 For high traffic, I scale the frontend with CDN and caching, scale Node.js horizontally behind a load balancer, use Redis for caching, move heavy work to queues, and optimize the database with indexes and pagination. Each layer must be monitored independently.
 ```
 
+### 36. How can we perform zero downtime strategy deployment?
+Performing zero downtime deployment requires separating code release from user activation using strategies like blue-green deployments, rolling updates, and canary releases. 
+
+Key practices include maintaining multiple synchronized server instances, configuring load balancer health checks, and ensuring backward-compatible database schemas.
+
+Core Deployment Strategies
+- Blue-Green Deployment: Run two identical production environments (Blue is current, Green is new); switch the load balancer router instantly once Green is tested.
+- Rolling Updates: Replace old server instances or pods gradually with new ones in small batches, ensuring maxUnavailable is set to zero.
+- Canary Releases: Route a tiny percentage of live user traffic to the new version to verify stability before rolling it out completely.
+
+Technical Enablers
+- Health and Readiness Probes: Ensure load balancers send traffic only to fully initialized and healthy application instances.
+- Graceful Shutdowns: Configure servers to catch termination signals, finish active user requests, and drain connections safely.
+- Backward-Compatible Migrations: Execute additive database changes ahead of time so both old and new code versions can read and write data safely.
+
+### What is Backend For Frontend - backend for frontend?
+Backend For Frontend (BFF) is an architectural design pattern where you build a separate, dedicated backend service for each type of frontend client (such as a web application, mobile app, or smart TV interface) instead of using a single, one-size-fits-all API gateway.
+
+💡 Why It Is Used
+When a single, general-purpose API serves multiple platforms, it often causes performance bottlenecks.
+- Mobile apps usually operate on slower cellular networks and need small, highly condensed data payloads.
+- Web apps have more screen real estate and can handle heavy, deeply nested data payloads.
+
+Without a BFF, the frontend team is forced to either write complex code to stitch together different backend APIs, or over-fetch massive amounts of unused data.
+
+
+### 36. How do you implement country based language support(localization) in app?
+To implement country-based language support (localization) in an app, you must couple language codes with region codes using Locales (e.g., en-US vs. en-GB), separate your text strings from core logic, and dynamically load resources matching the user's regional configuration.
+
+1. Master the Locale Code Format
+Never rely on language alone; distinguish variations using the BCP 47 standard format (language-REGION):
+- en-US: English for the United States (uses $ currency, MM/DD/YYYY dates).
+- en-GB: English for the United Kingdom (uses £ currency, DD/MM/YYYY dates).
+- zh-CN: Simplified Chinese for Mainland China.
+- zh-TW: Traditional Chinese for Taiwan.
+
+2. Isolate Text Resources (Internationalization)
+Extract all user-facing copy into dedicated external localization files instead of hardcoding text. Group them using platform-standard folder paths:
+- iOS (Swift/Xcode): Organize using string catalogs (.xcstrings) structured into regional folders like en-US.lproj/Localizable.strings and en-GB.lproj/Localizable.strings.
+- Android (Kotlin/Java): Utilize resource qualifies in your res directory:
+  - values-en-rUS/strings.xml
+  - values-en-rGB/strings.xml
+- Web/Cross-Platform (React, Flutter): Utilize JSON structural maps paired with libraries like i18next or intl:
+
+```js
+// en-US.json
+{ "color_label": "Color" }
+
+// en-GB.json
+{ "color_label": "Colour" }
+```
+
+3. Detect the User's Targeted Country - 
+You can determine which country's content version to display through three distinct technical methods:
+
+- System Detection: Poll the device directly for its operational system metrics (e.g., Locale.current on iOS or Resources.getSystem().configuration.locales on Android).
+- IP Geolocation: Check the client IP address on your backend using a database tool like MaxMind GeoIP to figure out their geographic country before loading web pages.
+- Manual Override: Provide an intuitive in-app settings dropdown interface allowing users to manually force a preferred language/region switch anytime.
+
+4. Format Regional Mechanics Carefully - 
+Country-specific alignment involves more than simple wording updates. Avoid hardcoding systemic logic for the following elements:
+- Currencies: Use device formatting libraries (like JavaScript's Intl.NumberFormat) to safely display $1,000.00 vs 1.000,00 $.
+- Dates & Times: Account for differences between 12-hour/24-hour systems and regional calendars.
+- Layout Direction (RTL): Ensure your visual constraints mirror horizontally if the localized country uses right-to-left scripts like Arabic (ar) or Hebrew (he).
+
+5. Leverage a Localization Management Platform -
+As your app grows, manual translation files quickly become unmanageable. Sync your project code repository to a Translation Management System (TMS) like Lokalise, Phrase, or POEditor. These services let professional translators update text keys directly in a dashboard and push the translations straight to your production branches without code redeployments.
+
+
+### 37. How do you implmemet SEO friendly app?
+To implement an SEO-friendly web application, you must ensure that search engine crawlers can read your content instantly and navigate your pages easily. Standard Single Page Applications (SPAs) built with React, Vue, or Angular are notoriously bad for SEO because they serve an empty HTML wrapper and rely on client-side JavaScript to render content.
+
+Implementing an SEO-friendly application requires a multi-layered approach across your architecture, code structure, and metadata.
+
+1. Choose the Right Rendering Strategy -
+Avoid standard Client-Side Rendering (CSR) for public, searchable pages. Instead, use modern frameworks like Next.js (React), Nuxt (Vue), or SvelteKit to implement these alternative methods:
+- Server-Side Rendering (SSR): The server pre-renders HTML for every user request, delivering immediate content to web crawlers.
+- Static Site Generation (SSG): Pages are compiled into flat HTML files during build time. This is perfect for high-speed blogs, product showcases, or marketing sites.
+- Incremental Static Regeneration (ISR): This allows you to update static pages in the background without rebuilding your entire app.
+
+2. Manage Dynamic Metadata - 
+Every unique page or view needs its own distinct, descriptive HTML header tags.
+- Head Management Tools: Use the native Metadata API in frameworks like Next.js, or libraries like react-helmet-async for standard React setups.
+- Crucial Tags: Dynamically inject unique <title> tags, <meta name="description"> strings, and <link rel="canonical"> links to block duplicate content penalisation.
+- Social Sharing: Embed Open Graph (OG) and Twitter card tags so links display cleanly with preview images when shared on social networks.
+
+3. Ensure Clean URL Structures & Navigation -
+Search engine bots discover pages by following hyperlinks.
+
+- Ditch Hash Routing: Never use URLs with hashes (e.g., ://domain.com) because crawlers usually ignore everything after the #. Implement clean, slug-based routing (e.g., ://domain.com).
+- Semantic Anchor Tags: Use native HTML <a> tags with valid href attributes for your links. JavaScript click handlers on <div> or <button> elements are invisible to crawlers.
+
+4. Optimize Core Web Vitals (Performance) -
+Google explicitly ranks web platforms higher based on speed, responsiveness, and visual stability.
+- Image Optimization: Implement modern formats like WebP or AVIF, define explicit width/height boundaries to prevent layout shifts, and lazy-load items beneath the fold.
+- Code Splitting: Break your code bundles into smaller chunks so users only download the JavaScript needed for the specific page they are viewing.
+
+5. Inject Structured Data (Schema Markup) -
+- JSON-LD Format: Inject structured Schema scripts into your HTML pages.
+- Rich Snippets: Use specific schemas—like Product, Article, FAQPage, or SoftwareApplication—to help search systems read, understand, and display your data in rich visual snippets.
+
+6. Expose Discovery Files
+- Dynamic Sitemaps: Generate an updated sitemap.xml file containing every valid, indexable URL in your application.
+- Robots Control: Maintain a robots.txt file at your root directory to instruct bots which sections of your app they should skip (like private user dashboards).
+
+### 38. How do you implememt accessbility based app? - 
+To implement an accessibility-based app, you must integrate inclusive design practices and platform-specific accessibility APIs from the very start of your development workflow. Implementing accessibility ensures that users with visual, auditory, motor, or cognitive impairments can navigate, understand, and interact with your application smoothly.
+
+1. Visual & UI Layout Design
+- Color Contrast: Maintain a minimum contrast ratio of 4.5:1 for standard text and 3:1 for large text or graphical components according to WCAG standards.
+- Touch Targets: Ensure interactive elements like buttons are at least 48×48 dp on Android and 44×44 points on iOS to accommodate motor limitations.
+- Layout Scaling: Support system font scaling (Dynamic Type on iOS / Autosizing TextViews on Android) so text enlarges smoothly without breaking the layout.
+- Avoid Color Coding: Never use color as the sole indicator for an action or piece of data; use icons, text labels, or patterns to supplement information.
+
+2. Sementic Coding & Content Labeling
+- Semantic Components: Use native UI elements (like HTML <button>, Android Button, or iOS UIButton) because they have built-in accessibility traits.
+- Accessibility Labels: Provide clear, descriptive text alternatives (contentDescription in Android, accessibilityLabel in iOS, or alt attributes in Web) for imagery and non-text elements.
+- Action Verbs: Keep labels concise, using action verbs like "Submit info" or "Attach file" instead of redundant text like "Submit button".
+- Decorative Elements: Mark purely decorative icons or background shapes as hidden or null so screen readers bypass them seamlessly.
+
+3. Assistive Navigation Flows
+- Logical Reading Order: Structure your layout code linearly so screen readers announce elements in a natural left-to-right, top-to-bottom order.
+- Keyboard & Switch Access: Ensure complete app traversal is possible using only external keyboards, joysticks, or physical switches without hitting focus traps.
+- Simplify Complex Gestures: Offer simple tap or click alternatives for any feature requiring multi-finger gestures, shaking, or complex swiping.
+
+4. Continuous Accessibility Testing
+- Automated Scanners: Run immediate automated diagnostics using tools like Android Accessibility Scanner, Axe Linter, or iOS Accessibility Inspector during development.
+- Manual Screen Reading: Enable native screen readers (TalkBack on Android or VoiceOver on iOS) and navigate the app with your eyes closed to catch sequencing bugs.
+- Real-User Audits: Conduct usability testing sessions with individuals who have diverse disabilities to gather critical qualitative feedback on your app's flow.
+
+### 39. Benefits of server side rendering compare to client side rendering?
+Server-side rendering provides faster initial page loads, better SEO performance, and improved social media sharing compared to client-side rendering.
+
+Performance and User Experience
+- Fast load speed: The server sends a fully ready HTML page right away. Users see content faster without waiting for big JavaScript files to download and run.Good for slow devices: Phones and older computers do not have to work hard to build the page layout.
+
+Search and Sharing
+- Better SEO: Web crawlers easily read the fully formed page content right away, which helps search engine rankings.
+- Easy previews: Social media sites quickly find text and pictures to show nice preview cards when you share a link.
+
 ### 12. Duplicate paymenet request
 ### 12. Database query 20 sec?
 ### 12. Memory usage increases everyday
@@ -1468,3 +1608,11 @@ For high traffic, I scale the frontend with CDN and caching, scale Node.js horiz
 ### 12. What is xss(cross site scripting)?
 ### 12. What is vulnerabilites?
 ---
+
+### How can we perform zero downtime strategy deployment?
+### Benefits of server side rendering compare to client side rendering?
+### Backend For Frontend - backend for frontend
+### How a team lead can review the generated ai based code through the developer?
+### How do you implement country based language app?
+### How do you implmemet SEO friendly app?
+### How do you implememt accessbility based app?
