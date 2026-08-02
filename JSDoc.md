@@ -245,6 +245,38 @@ Hoisted - Yes
 Initialized during Hoisting - No
 Accessing becomes declaration - Throws ReferenceError
 
+### 8. What things allocate memory in JavaScript? How does JavaScript allocate memory? What data types and structures occupy memory in JavaScript?
+In JavaScript, memory allocation happens automatically whenever you declare variables, initialize values, define functions, or mutate data structures. The JavaScript engine handles this behind the scenes so you do not have to allocate memory manually.
+
+The primary actions and declarations that trigger JavaScript to create and allocate memory include:
+1. Declaring Primitive Values
+When you assign a primitive data type to a variable, JavaScript reserves a fixed amount of memory on the Stack.
+- Strings: let name = "John";
+- Numbers: let age = 30;
+- Booleans: let isOnline = true;
+- Null & Undefined: let data = null;
+- Symbols & BigInts: let uniqueId = Symbol("id");
+
+2. Creating Reference Types (Objects)
+Complex data structures do not have a fixed size, so JavaScript dynamically allocates memory for them on the Heap. It then stores a small reference pointer on the Stack pointing to that Heap location.
+- Plain Objects: let user = { name: "Alice" };
+- Arrays: let colors = ["red", "blue"];
+- Built-in Objects: Creating dates (new Date()) or regular expressions (/ab+c/).
+
+3. Defining and Invoking Functions
+Functions are treated as objects in JavaScript and consume memory in two ways:
+- Function Definitions: Defining function greet() {} allocates memory on the Heap to store the function body and logic.
+- Function Execution (Call Stack): Every time you call a function, JavaScript creates a new execution context frame on the call stack. This frame temporarily allocates memory for the function's local variables and arguments.
+
+4. Closures
+When an inner function references variables from an outer function, a closure is created. JavaScript must keep those outer variables alive in memory even after the outer function finishes executing because the inner function might still need them.
+
+5. API and DOM Interactions
+Interacting with the browser environment also instantiates memory allocations:
+- DOM Elements: Creating HTML nodes via JavaScript (e.g., document.createElement('div')) allocates memory for the element object.
+- Event Listeners: Attaching an event listener (e.g., addEventListener) allocates memory to keep track of the callback function.
+- Timers: Initializing setTimeout or setInterval keeps references in memory until they trigger or are cleared.
+
 ### 8. Can const object be changed?
 
 Yes. `const` prevents reassignment, not mutation.
