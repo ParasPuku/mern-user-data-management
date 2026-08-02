@@ -1091,6 +1091,21 @@ Why did this happen?
 - The Promise callback goes to the Microtask Queue.
 - When the Call Stack clears, the Event Loop prioritizes the Microtask Queue over the Callback Queue, running the Promise log before the Timeout log.
 
+### 19. Difference between call stack and event loop?
+The call stack and event loop are core parts of JavaScript's runtime model: 
+- The Call Stack executes synchronous code using a Last-In, First-Out structure. 
+- While the Event Loop monitors the stack and queues to handle asynchronous tasks.
+
+Call Stack
+- How it works: Uses a Last In, First Out (LIFO) rule. The last function you call goes on top, and it leaves the stack as soon as it finishes.
+- Job: Keeps track of what code is running right now. It handles normal, step-by-step synchronous code.
+- Limit: It can only do one thing at a time because JavaScript is single-threaded
+
+Event Loop
+- How it works: Runs a continuous check to see if the call stack is empty.
+- Job: If the stack is clear, it takes waiting callback functions from the task or microtask queues and pushes them onto the call stack.
+- Purpose: Makes asynchronous operations (like timers or data fetches) work without freezing your app.
+
 ### 19. Why do Microtasks(Promises) have higher priority than Macrotasks(setTimeout and setInterval)?
 Microtasks have higher priority than macrotasks to ensure the application state remains consistent and updated immediately before the browser renders the next frame. By clearing the microtask queue first, JavaScript guarantees that asynchronous state changes (like Promise resolutions) are completely processed without giving the user interface a chance to render half-baked or outdated data.
 
