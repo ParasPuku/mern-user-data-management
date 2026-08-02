@@ -41,7 +41,18 @@ The General Concept: JavaScript Engine
 - A JavaScript engine is a general category of software. Its only job is to read JavaScript code (which humans understand) and translate it into machine code (which computer processors understand).Every modern web browser needs a JavaScript engine to work, but they do not all use the same one.
 
 The Specific Example: V8
-- V8 is a specific, real-world product built by Google. It is just one version of a JavaScript engine. Google built it using the C++ programming language to power the Google Chrome browser.Because V8 is incredibly fast, other companies and developers decided to use it for their own projects too.
+- The Chrome V8 engine is Google’s open-source, high-performance JavaScript and WebAssembly engine written in C++. It is the core technology that parses, compiles, and executes JavaScript code directly into native machine code at runtime.
+
+Key Responsibilities
+- Just-In-Time (JIT) Compilation: V8 does not use traditional interpretation. It compiles JavaScript code directly into machine code right before executing it to increase speed.
+- Memory Management: V8 handles memory allocation and features an automatic garbage collector to prevent memory leaks.
+- Platform Independence: The engine runs independently of the browser. It supports Windows, macOS, Linux, and various CPU architectures like x64 and ARM.
+
+Core Architecture Components
+- Parser: Converts human-readable JavaScript source code into an Abstract Syntax Tree (AST).
+- Ignition (Interpreter): Takes the AST and generates fast bytecode to start executing the program quickly.
+- TurboFan (Optimizing Compiler): Analyzes runtime data from Ignition. It recompiles frequently used "hot" code into highly optimized machine code.
+- Deoptimization: If the structure of the data changes unexpectedly, TurboFan discards the optimized code and hands execution back to Ignition.
 
 ### 2. Is compile time the same as runtime?
 Compile-time and Runtime are the two programming terms used in the software development. 
