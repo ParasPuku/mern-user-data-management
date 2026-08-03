@@ -3908,7 +3908,9 @@ Email and notification are optional side effects.
 
 #### Promise.race()
 
-`Promise.race()` returns the first promise that settles.
+`Promise.race()` returns the first promise that resolved or rejects with It cares only about speed, not success. 
+
+So if second promise speed is faster than the first promisde, and if it is success or failed then still it will only return second promise only.
 
 Settled means:
 
@@ -3922,6 +3924,33 @@ Settled means:
 - If the first finished promise fails, Promise.race() rejects with that reason.
 
 Promise.race() is useful for timeout handling because whichever finishes first wins: the API response or the timeout.
+
+Example - 
+
+```js
+const promise1 = new Promise((resolve, reject) => { 
+    setTimeout(() => {
+     resolve("Hey");    
+    }, 5001)
+});
+const promise2 = new Promise((resolve, reject) => { 
+    setTimeout(() => {
+     resolve("Hello");    
+    }, 1003)
+});
+const promise3 = new Promise((resolve, reject) => { 
+    setTimeout(() => {
+     reject("Hi");    
+    }, 3000)
+});
+
+async function getResponses() {
+  const response = await Promise.race([promise1, promise2, promise3]);
+  console.log(response); 
+}
+
+getResponses();
+```
 
 Example:
 
@@ -4025,7 +4054,8 @@ Request timeout
 #### Promise.any()
 
 `Promise.any()` returns the first fulfilled promise.
-It ignores rejected promises until all promises fail.
+
+The Promise.any cares entirely about speed, but only tracks the speed of successful promises. It ignores rejected promises even the time is lesser than the successful promise until all promises fail.
 
 - Promise.any() is used when multiple promises run together, but we only care about the first successful promise.
 - It ignores rejected promises until one promise is fulfilled.
@@ -4033,6 +4063,31 @@ It ignores rejected promises until all promises fail.
 - *** If all promises fail, Promise.any() rejects with an AggregateError: [All promises were rejected]
 
 Example:
+
+```js
+const promise1 = new Promise((resolve, reject) => { 
+    setTimeout(() => {
+     resolve("Hey");    
+    }, 5001)
+});
+const promise2 = new Promise((resolve, reject) => { 
+    setTimeout(() => {
+     resolve("Hello");    
+    }, 1003)
+});
+const promise3 = new Promise((resolve, reject) => { 
+    setTimeout(() => {
+     reject("Hi");    
+    }, 1000)
+});
+
+async function getResponses() {
+  const response = await Promise.any([promise1, promise2, promise3]);
+  console.log(response); 
+}
+
+getResponses();
+```
 
 ```js
 async function firstSuccessfulTask() {
