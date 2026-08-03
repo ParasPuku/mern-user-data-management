@@ -2907,7 +2907,7 @@ In JavaScript, a pure function is a function that always returns the same output
 
 ### 41. What is currying?
 
-Currying transforms/converts a function with multiple arguments into a sequence of functions. 
+Currying is a technique to transforms/converts a function with multiple arguments into a sequence of functions. 
 
 Ex - f(a,b,c) => f(a)(b)(c)
 
@@ -3211,14 +3211,20 @@ The compose function takes in two or more functions and returns a new function t
 Function composition means the output of one function becomes the input of the next.
 
 ```js
-const add5 = (x) => x + 5;
-const multiplyBy3 = (x) => x * 3;
-const subtract10 = (x) => x - 10;
+// The compose function implementation
+const compose = (...fns) => (initialVal) => 
+  fns.reduceRight((acc, fn) => fn(acc), initialVal);
 
-const composedFunction = compose(subtract10, multiplyBy3, add5);
-const result = composedFunction(7);
+// Your original setup
+const add5 = (x) => x + 5; 
+const multiplyBy3 = (x) => x * 3; 
+const subtract10 = (x) => x - 10; 
 
-console.log(result); // Output: 36
+const composedFunction = compose(subtract10, multiplyBy3, add5); 
+const result = composedFunction(7); 
+
+console.log(result); // Output: 26
+
 ```
 
 #### Composition vs inheritance
