@@ -3750,6 +3750,8 @@ Pending does not mean failed. It only means the async task has not finished yet.
 
 `Promise.all()` is used when all promises must succeed or resolve, and it will all resolved Promise object in a array. If any of the Promise gets reject means it will return the rejected Promise value[string, object, array].
 
+- Promise.all() does not care about the speed of the promise resolve or reject. It only matters the step by step execution.
+
 - Promise.all() is used when multiple promises should run together and all of them must succeed.
 - If all promises are fulfilled, Promise.all() returns an array of resolved values in the same order as the promises passed.
 - If any one the promise gets rejects, Promise.all() immediately rejects with that rejected reason/value.
@@ -3827,6 +3829,8 @@ Example: fetch user details, permissions, and settings before showing dashboard.
 #### Promise.allSettled()
 
 `Promise.allSettled()` waits for all promises to finish, whether they are fulfilled or rejected.
+
+- Promise.allSettled() does not care about the speed of the promise resolve or reject. It only matters the step by step execution.
 
 - Promise.allSettled() is used when multiple promises should run together, but we want the result of every promise whether it succeeds or fails and it returns as a array.
 - It always waits for all promises to complete.
