@@ -189,17 +189,6 @@ Note - Objects should never be forced to implement interfaces that have properti
 
 Don't force a class to implement methods it doesn't need — prefer many small, specific interfaces over one large one.
 
-```jsx
-class Worker {
-  work() { /* ... */ }
-  eat() { /* ... */ }
-}
-
-class Robot extends Worker {
-  eat() { throw new Error("Robots don't eat"); } // forced, useless method
-}
-```
-
 Bad: 
 ```jsx
 class Worker {
