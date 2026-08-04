@@ -181,6 +181,12 @@ Now Penguin doesn't pretend to support a behavior it can't fulfill.
 
 ### 4. Interface Segregation Principle (ISP)
 
+The Interface Segregation Principle means you should make many small, specific code rules instead of one giant rule. It states that a class should never be forced to carry out methods or tasks it does not need.
+
+This principle tells us that instead of putting all responsibilities into one big interface, it’s better to make smaller interfaces that are specific to what they do.
+
+Note - Objects should never be forced to implement interfaces that have properties or methods they don’t need.
+
 Don't force a class to implement methods it doesn't need — prefer many small, specific interfaces over one large one.
 
 ```jsx
@@ -221,6 +227,8 @@ class Robot extends Workable(class {}) {}
 This keeps `Avatar` reusable and prevents it from depending on unrelated user fields.
 
 ### 5. Dependency Inversion Principle (DIP)
+
+The Dependency Inversion Principle states that code should rely on abstractions rather than concrete details, meaning high-level business logic and low-level utility tools both connect through a shared interface.
 
 Depend on abstractions, not concrete implementations.
 
