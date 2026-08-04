@@ -490,6 +490,11 @@ Props are external inputs passed to a component, while state is internal data ma
 ### 12. Can props be modified?
 
 No. Props should not be modified by child components.
+No, props cannot be changed by the component that receives them. props are strictly read-only and immutable. all React components must act like pure functions and must never modify their inputs. While a child component cannot alter its own props, the data can be changed using alternative architectural patterns.
+
+Why Props are Immutable
+- Unidirectional Data Flow: Data in React moves downward from parent to child. Allowing a child to change props would break this flow and make debugging incredibly difficult.
+- No UI Updates: Directly modifying a prop object (e.g., props.name = 'New Name') will not trigger React to re-render the component. Your UI will remain unchanged.
 
 Bad:
 
@@ -504,6 +509,27 @@ onChange('New Name');
 ```
 
 Child should notify parent through callback.
+
+How to Handle Changing Data
+- If you need a value to change inside a component, use one of the three standard React patterns below.
+
+1. Pass a State Setter Function from the Parent
+- If the parent component owns the data, it can pass down a state variable along with a function to update that state. The child component calls this function to "ask" the parent to update the data.
+
+```tsx
+// Parent Component
+function Parent() {
+  const [count, setCount] = useState(0);
+
+  return <Child count={count} onIncrement={() => setCount(count + 1)} />;
+}
+
+// Child Component
+function Child({ count, onIncrement }) {
+  // Calls parent function to update the value safely
+  return <button onClick={onIncrement}>Count: {count}</button>;
+}
+```
 
 ### 13. What happens when state changes?
 
@@ -3569,6 +3595,8 @@ useTransition is used when a state update is expensive and can be treated as low
 
 ### 51. What is useDeferredValue and why is React's useDeferredValue hook useful?
 
+In simple terms, useDeferredValue is a built-in React hook that tells React to delay updating a heavy part of your UI so your app stays fast and responsive. This allows you prioritize critical user interactions (like typing in an input box) over heavy tasks (like rendering a massive search results list).
+
 `useDeferredValue` is a React hook that allows you to defer[delay] updating a value until the browser has time to handle less urgent rendering. 
 
 [Overall - searchText updates instantly on every keystroke. deferredSearchText lags behind intentionally so the application does not freeze while filtering a large list.]
@@ -3578,6 +3606,10 @@ Interview answer:
 ```text
 useDeferredValue keeps the previous value visible while React prepares the updated value in the background. It is useful when a fast-changing value causes expensive rendering, such as typing into a search box that filters a large list.
 ```
+
+💡 The Real-World Analogy
+- Imagine typing into a search engine. You want the letters you type to appear instantly on your screen. However, filtering thousands of results takes a split second. Without useDeferredValue, the entire screen freezes while the app calculates the results, making your typing feel laggy.
+- With useDeferredValue, you tell React: "Show the letters instantly. Update the search results in the background when you have a free moment."
 
 Simple meaning:
 
@@ -3589,8 +3621,30 @@ Deferred value updates later with lower priority.
 Syntax:
 
 ```tsx
-const deferredValue = useDeferredValue(value);
+import { useState, useDeferredValue } from 'react';
+
+function SearchPage() {
+  const [query, setQuery] = useState('');
+  
+  // React will delay updating this value if the system is busy
+  const deferredQuery = useDeferredValue(query); 
+
+  return (
+    <>
+      {/* 1. Fast UI: This updates instantly as you type */}
+      <input value={query} onChange={e => setQuery(e.target.value)} />
+      
+      {/* 2. Slow UI: This only updates when React has free time */}
+      <SlowList query={deferredQuery} />
+    </>
+  );
+}
 ```
+
+🧠 Why is it better than Debounce or Throttle?
+# If you have used setTimeout to debounce an input before, useDeferredValue is much smarter:
+- No fixed waiting time: Debouncing forces a static delay (like 300ms). useDeferredValue updates immediately on fast computers and slows down only on older devices when necessary.
+- Interruptible rendering: If React is halfway through rendering your heavy list and the user types another letter, React will abandon the old render and start over with the new letter.
 
 Why it is useful:
 

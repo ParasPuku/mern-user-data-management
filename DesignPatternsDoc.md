@@ -84,6 +84,10 @@ Adding a new discount type means adding a new class, not editing existing code.
 
 ### 3. Liskov Substitution Principle (LSP)
 
+The Liskov Substitution Principle means that objects of a superclass should be able to be replaced with objects of a subclass without affecting the correctness of the program. OR - Object of subclass should be able to access the all the methods and properties of the superclass.
+
+The Liskov Substitution Principle means that if you have a parent class and a child class, you should be able to use the child class anywhere you use the parent class without breaking your program. The child must act like the parent.
+
 The Liskov Substitution Principle (LSP) states that objects of a superclass should be replaceable with objects of its subclasses without breaking the application. 
 
 It ensures that derived classes extend rather than alter the expected behavior and contracts of their base classes.
@@ -109,6 +113,32 @@ class Ostrich extends Bird {
 }
 
 ```
+1. The Broken Contract
+- When you define class Bird { fly() { ... } }, you are making a promise. The base class sets a contract that says: "Any object that identifies as a Bird can safely execute the fly() method."A developer writing code elsewhere in your program will trust this contract. They will confidently write code like this:
+
+```jsx
+function migrateBirds(birds) {
+  birds.forEach(bird => {
+    bird.fly(); // The developer expects this to work for ALL birds
+  });
+}
+```
+
+2. Why Penguin and Ostrich Break the System
+- Both Penguin and Ostrich use inheritance (extends Bird), claiming they are types of Bird. However, because they cannot fly, they both override the fly() method to throw an error:
+
+```jsx
+throw new Error("Ostriches cannot fly!");
+```
+
+3. The Liskov Test Failure
+# The core rule of LSP is: You must be able to replace a parent class with a child class without breaking the application.
+- If you use the parent class Bird \(\rightarrow \) The program works perfectly.
+- If you substitute Bird with the child class Ostrich \(\rightarrow \) The program crashes.
+
+# Because you cannot seamlessly swap Bird for Ostrich, the Liskov Substitution Principle is violated. In object-oriented programming, a child class must never withdraw or break a behavior that the parent class promised to deliver.
+
+This completely breaks the program. If you pass an array of birds into the migrateBirds function and it hits an Ostrich, the entire application will crash with an unexpected runtime error.
 
 Good: 
 ```jsx
