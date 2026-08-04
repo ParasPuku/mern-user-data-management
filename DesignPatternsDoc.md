@@ -131,12 +131,12 @@ function migrateBirds(birds) {
 throw new Error("Ostriches cannot fly!");
 ```
 
-3. The Liskov Test Failure
-# The core rule of LSP is: You must be able to replace a parent class with a child class without breaking the application.
+3. The Liskov Test Failure (`<br>`)
+The core rule of LSP is: You must be able to replace a parent class with a child class without breaking the application.
 - If you use the parent class Bird \(\rightarrow \) The program works perfectly.
 - If you substitute Bird with the child class Ostrich \(\rightarrow \) The program crashes.
 
-# Because you cannot seamlessly swap Bird for Ostrich, the Liskov Substitution Principle is violated. In object-oriented programming, a child class must never withdraw or break a behavior that the parent class promised to deliver.
+(<br>) Because you cannot seamlessly swap Bird for Ostrich, the Liskov Substitution Principle is violated. In object-oriented programming, a child class must never withdraw or break a behavior that the parent class promised to deliver.
 
 This completely breaks the program. If you pass an array of birds into the migrateBirds function and it hits an Ostrich, the entire application will crash with an unexpected runtime error.
 
