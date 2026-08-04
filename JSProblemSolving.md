@@ -426,6 +426,20 @@ expectedSum - actualSum
 
 ---
 
+### 8. Remove zeros from the front and back and array
+```js
+function removeZeroTrail(arr) {
+    var result = [];
+    for(var i=0; i<arr.length; i++) {
+        if(!(arr[i] === 0)) {
+            result.push(arr[i])
+        } 
+    }
+    return result;
+}
+console.log(removeZeroTrail([0,0,0,0,4,5,6,7,-2,3,0,0,0,0]));
+Output ->> [ 4, 5, 6, 7, -2, 3 ]
+```
 ## 8. Move All Zeros To End
 
 ### Question
