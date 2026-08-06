@@ -1794,6 +1794,56 @@ An API Gateway does much more than pass traffic along; it intercepts requests to
 - Abstraction (Endpoint Decoupling): If your internal backend team changes an endpoint from /users to /v2/accounts, they only update the entry in the gateway mapping. The frontend client code never has to change.
 
 
+🛡️ If your internal backend team changes an endpoint from /users to /v2/accounts, they only update the entry in the gateway mapping. The frontend client code never has to change.<br/>
+Path rewriting is the key feature
+
+The gateway doesn't just say "route path X to service Y" — it can say "route path X to service Y, but rewrite it to path Z when forwarding." So the client-facing contract and the internal implementation are two separate things, connected only by the gateway's config.
+
+Express example — client always hits /users, but the target path can be anything:
+
+javascript
+```js
+app.use('/users', createProxyMiddleware({
+  target: 'http://account-service:8090',
+  changeOrigin: true,
+  pathRewrite: {
+    '^/users': '/v2/accounts',   // internal path changed, external stays the same
+  },
+}));
+
+Client calls POST https://api.sales.com/users → gateway forwards internally as POST http://account-service:8090/v2/accounts. Frontend code never touches this.
+```
+
+path rewrite is reverse proxying in api gateway concept? <br/>
+Yes — path rewriting is a feature of reverse proxying, and API Gateway is (among other things) a reverse proxy with extra capabilities layered on top. Let me untangle the relationship.
+
+Reverse proxy = the core mechanism -
+
+A reverse proxy sits between clients and backend servers, and its basic job is:
+
+- Receive a client request
+- Forward it to some backend server (on the proxy's behalf, transparently to the client)
+- Return the backend's response to the client
+
+API Gateway = reverse proxy + more
+
+An API Gateway is built on the same reverse-proxy foundation, but adds capabilities specific to managing APIs at the application layer:
+
+- Auth/authorization — validating JWTs, API keys, OAuth tokens
+- Rate limiting / throttling per client or API key
+- Request/response transformation — not just path rewrite, but body/header shaping, protocol translation (e.g. REST → gRPC)
+- Aggregation — sometimes fanning one client request out to multiple backend calls and combining results
+- Analytics, logging, API versioning, developer portals
+
+So the relationship is basically:
+
+API Gateway ⊃ Reverse Proxy
+
+Every API Gateway does reverse proxying (that's how it physically moves the request from client to backend), but not every reverse proxy is a full API Gateway — plain Nginx forwarding traffic to a single backend isn't doing auth, rate limiting, or service-aware routing; it's just proxying.
+
+In terms of what you saw in the code examples: the createProxyMiddleware in the Express example is literally using a reverse-proxying library (http-proxy-middleware) under the hood — that's the proxy layer doing the actual TCP-level forwarding and rewriting. The routes array wrapped around it is the "gateway" layer, i.e., the routing/decision logic about which backend and what transformation to apply.
+
+
 ### 36. What is circuit breaking and why circuit breaking needed? how it works and how to implement it?
 
 The circuit breaker pattern is a software design tool used in distributed systems and microservices. It acts like an electrical safety switch. When a service fails too many times, the circuit "trips" and stops new requests to that service. This protects system resources and stops small errors from crashing the whole app. <br/>
