@@ -1616,3 +1616,4 @@ Search and Sharing
 ### How do you implement country based language app?
 ### How do you implmemet SEO friendly app?
 ### How do you implememt accessbility based app?
+### What is api gateway?
