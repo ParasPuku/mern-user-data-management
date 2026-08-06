@@ -1456,6 +1456,166 @@ Scale each layer separately.
 For high traffic, I scale the frontend with CDN and caching, scale Node.js horizontally behind a load balancer, use Redis for caching, move heavy work to queues, and optimize the database with indexes and pagination. Each layer must be monitored independently.
 ```
 
+### 35. What is api gateway? How api gateway works? Why is an API Gateway Needed?
+An API Gateway is a centralized server that acts as the single entry point for all client requests into a backend system. It sits directly between the clients (such as mobile apps or web browsers) and a collection of internal backend services or microservices.
+
+Instead of clients talking to dozens of separate services individually, they make a single call to the API Gateway, which handles the rest.
+
+Why is an API Gateway Needed?
+In modern software development, applications are broken down into small, independent microservices (e.g., separate services for user authentication, product catalogs, and payments). Without an API Gateway, managing this setup becomes incredibly chaotic.
+
+An API Gateway solves this chaos by handling several critical tasks: <br/>
+1. Simplified Client Communication (Routing) <br/>
+- Problem: Clients would have to keep track of the unique URL, IP address, and port of every single backend service.
+- Solution: The gateway acts as a reverse proxy. The client sends all requests to one place (e.g., ://mycompany.com), and the gateway routes /users to the User Service and /orders to the Order Service.
+2. Centralized Security <br/>
+- Problem: Every individual microservice would need its own complex code to check if a user is logged in and authorized.
+- Solution: The gateway handles authentication and authorization at the front door. If a request is invalid, it is blocked immediately before it ever touches your core data.
+3. Traffic Management and Resiliency <br/>
+- Problem: Malicious bots or heavy traffic spikes can overload and crash your backend services.
+- Solution: It enforces rate limiting and throttling to restrict how many requests a user can make per minute. It can also handle caching to serve frequent data faster without hitting the database.
+4. Protocol Translation and Data Transformation <br/>
+- Problem: A web app might speak standard web protocols (like HTTP/REST), but your internal microservices might use faster, specialized languages (like gRPC) or different data formats.
+- Solution: The gateway translates public-facing web requests into the specific protocols your internal systems require, and cleans up the responses before passing them back to the user.
+5. Request Aggregation (Orchestration) <br/>
+- Problem: Loading a single profile page might require data from three different services, forcing the user's phone to make three separate, slow internet requests.
+- Solution: The client makes one request to the gateway. The gateway queries all three internal microservices, bundles their data together, and sends a single, combined response back to the client.
+
+How api gateway works? <br/>
+An API Gateway works by acting as a smart traffic controller at the front door of your system. <br/>
+
+When a client makes a request, the gateway processes it through a strict, step-by-step pipeline before passing it to the backend and returning the response. <br/>
+
+The Step-by-Step Request Lifecycle <br/>
+
+```js
+ Client ] ──(1. Request)──> [ API Gateway ] ──(4. Route)──> [ Backend Service ]
+    │                              │                                  │
+    │                              ├── 2. Authenticate & Authorize    │
+    │                              ├── 3. Rate Limit & Validate       │
+    │                              └── 5. Transform Data              │
+[ Client ] <──(7. Response)─── [ API Gateway ] <─(6. Respond)─────── [ Backend Service ]
+```
+
+1. Request Acceptance <br/>
+- The client (mobile app, website) sends a standard HTTP request to a single endpoint.
+- Example: GET https://store.com
+2. Authentication & Authorization <br/>
+- The gateway stops the request at the perimeter to verify identity.
+- It checks the request headers for a JWT token, API key, or OAuth credentials.
+- If the token is missing, expired, or unauthorized, the gateway blocks it immediately.
+3. Traffic Metering (Rate Limiting) <br/>
+- The gateway counts how many requests that specific user or IP address has sent recently.
+- If the user exceeds their allowed limit (e.g., 100 requests per minute), the gateway rejects it.
+- It returns an HTTP 429 Too Many Requests error to protect backend stability.
+4. Dynamic Routing (Service Discovery) <br/>
+- The gateway reads the URL path (/v1/products) to figure out which microservice owns that data.
+- It talks to a Service Registry (like Consul or Eureka) to find the exact, healthy IP address of that backend service.
+- It maps the public URL to the internal private IP address.5. Data Transformation & Protocol Translation
+- The gateway modifies the request so the backend can easily understand it.
+- It can strip out public API keys, inject internal user IDs into the header, or change formats.
+- If the backend speaks a different protocol (like gRPC), the gateway translates the client's HTTP request into gRPC.
+6. Request Forwarding <br/>
+- The gateway forwards the freshly modified request to the backend microservice over a fast, private internal network.
+7. Response Processing & Return <br/>
+- The backend finishes the job and sends the raw data back to the gateway.
+- The gateway can compress the data (gzip), cache it for future users, or clean up internal error codes.
+- Finally, it delivers the clean response back to the client application.
+
+Core Internal Components<br/>
+To execute this lifecycle seamlessly, a gateway relies on three core internal engines: <br/>
+- The Routing Engine: A rules-based engine that maps incoming URL paths and HTTP methods to internal microservice destinations.
+- The Plugin/Filter Chain: A series of modular, sequential blocks of code. Each block performs one specific task (e.g., Plugin 1: Check Auth → Plugin 2: Check Rate Limit → Plugin 3: Log Request).
+- The Load Balancer: If five identical instances of the "Product Service" are running, the gateway distributes the forwarded traffic evenly among them.
+
+### 36. What is circuit breaking and why circuit breaking needed? how it works and how to implement it?
+
+The circuit breaker pattern is a software design tool used in distributed systems and microservices. It acts like an electrical safety switch. When a service fails too many times, the circuit "trips" and stops new requests to that service. This protects system resources and stops small errors from crashing the whole app. <br/>
+
+The Three States <br/>
+A circuit breaker moves between three main states to manage traffic safely:<br/>
+- Closed: Normal operation. Requests flow freely to the target service. The system watches for errors.
+- Open: The error limit is passed. The breaker blocks all requests right away and returns an error or fallback message without trying to call the broken service.
+- Half-Open: After a set wait time, the system lets a few test requests pass through. If they work, the circuit goes back to closed. If they fail, it stays open.
+
+Why Use It<br/>
+- Stops Cascading Failures: Keeps a broken database or API from dragging down unrelated parts of your system.
+- Fails Fast: Saves user time by throwing an immediate error instead of making them wait for a long network timeout.
+- Allows Recovery: Gives a struggling server breathing room and time to fix itself without getting flooded with new traffic.
+
+How it works?
+The circuit breaker pattern works by placing a wrapper around a network call to monitor for failures. It operates like a state machine, tracking every success and failure to decide whether to allow traffic through.
+
+Here is the exact step-by-step logic of how a circuit breaker manages requests:
+1. Tracking in the CLOSED State
+When everything is working normally, the circuit is CLOSED. <br/>
+- Traffic Flows: Every request goes straight to the external service.
+- Sliding Window: The breaker tracks the last N requests (e.g., the last 10 or 100 calls).
+- Failure Count: If a call fails or times out, the breaker increments an internal failure counter.
+- The Trip Wire: If the failure percentage crosses a set limit (e.g., 50% of the last 10 requests failed), the circuit trips.
+
+2. Deflecting in the OPEN State
+Once tripped, the circuit moves to the OPEN state to protect the system. <br/>
+- Instant Rejection: New requests are blocked instantly before they ever touch the network.
+- Fallback Executed: The breaker immediately runs a local fallback method (like returning cached data or a generic error message) so the user doesn't wait.
+- Timer Starts: A cooldown timer (e.g., 10 seconds) starts ticking down. The broken service is left completely alone to recover.
+
+3. Testing in the HALF-OPEN State
+Once the cooldown timer expires, the circuit moves to the HALF-OPEN state. <br/>
+- The Trial Run: The breaker allows a small, limited number of test requests (e.g., 3 requests) to go through to the external service.
+- Evaluation:If all test requests succeed, the breaker assumes the service is healthy and resets to CLOSED.
+- If any test request fails, the breaker assumes the service is still broken, resets the cooldown timer, and goes back to OPEN.
+
+How to implement this? <br/>
+The easiest way to implement a circuit breaker is by using an established library like Opossum (for Node.js). Here is how to implement a basic circuit breaker in Node.js. <br/>
+1. Node.js Implementation (Using @js-toolkit/circuit-breaker) <br/>
+First, install a circuit breaker package or use this native JavaScript pattern: <br/>
+```js
+class CircuitBreaker {
+  constructor(requestFunction, options = {}) {
+    this.request = requestFunction;
+    this.state = 'CLOSED';
+    this.failureThreshold = options.failureThreshold || 3;
+    this.cooldownPeriod = options.cooldownPeriod || 10000; // 10 seconds
+    this.failureCount = 0;
+    this.nextAttemptTime = Date.now();
+  }
+
+  async fire(...args) {
+    if (this.state === 'OPEN') {
+      if (Date.now() > this.nextAttemptTime) {
+        this.state = 'HALF-OPEN';
+      } else {
+        return 'Fallback: Service is currently unavailable.';
+      }
+    }
+
+    try {
+      const response = await this.request(...args);
+      this.success();
+      return response;
+    } catch (error) {
+      return this.fail();
+    }
+  }
+
+  success() {
+    this.failureCount = 0;
+    this.state = 'CLOSED';
+  }
+
+  fail() {
+    this.failureCount++;
+    if (this.failureCount >= this.failureThreshold || this.state === 'HALF-OPEN') {
+      this.state = 'OPEN';
+      this.nextAttemptTime = Date.now() + this.cooldownPeriod;
+    }
+    return 'Fallback: Request failed. Circuit is OPEN.';
+  }
+}
+```
+
+
 ### 36. How can we perform zero downtime strategy deployment?
 Performing zero downtime deployment requires separating code release from user activation using strategies like blue-green deployments, rolling updates, and canary releases. 
 
