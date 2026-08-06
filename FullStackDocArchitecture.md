@@ -1653,6 +1653,67 @@ If you do not want to maintain custom middleware logic from scratch, consider us
 ### 37. How API Gateway understands a common request and routes it to a specific microservice?
 An API Gateway understands a common request and routes it to a specific microservice by acting as a reverse proxy. It intercepts the incoming traffic, reads the HTTP metadata (the path, method, or headers), and matches it against a pre-defined routing table.
 
+The core misconception
+
+The client does not just send https://www.sales.com. Every HTTP request — whether it's a browser, mobile app, or Postman — always includes, at minimum:
+
+```js
+Method: GET, POST, PUT, DELETE, etc.
+Host: www.sales.com
+Path: /users, /cart, /orders, etc.
+Headers: auth token, content-type, etc.
+Body (for POST/PUT): the actual payload, e.g. { "name": "John", "email": "..." }
+```
+
+So when your frontend calls "sales.com" to create a profile, it's actually sending something like:
+
+```js
+POST /users HTTP/1.1
+Host: www.sales.com
+Content-Type: application/json
+
+{ "name": "John Doe", "email": "john@example.com" }
+```
+
+The domain www.sales.com just tells DNS/network layer where to send the packet (to your API Gateway's IP). The path (/users) and method (POST) are part of the same request, sent in the same call — not something sent separately or "detected" out of thin air. The API Gateway reads the path and method the same way any web server does.
+
+How the Gateway routes
+
+The Gateway maintains a routing table (config), roughly like:
+
+```js
+Method	Path pattern	Target service
+POST	/users	user-service
+GET	/users/:id	user-service
+POST	/cart	cart-service
+POST	/orders	order-service
+POST	/payments	payment-service
+```
+
+When a request comes in, the gateway just does a lookup: "method=POST, path=/users → forward to user-service:8080/users (or wherever it's registered internally)." This is conceptually identical to how a Node/Express or Spring app maps routes to controllers — the gateway is just doing it one layer up, before the request reaches any actual service.
+
+Let me draw this out end-to-end for your user-creation example.
+
+There's no magic detection — it's just matching. The gateway isn't "guessing" which service to send it to. It's doing exact string/pattern matching on method + path against a config it already has (route table, or annotations in something like Spring Cloud Gateway, Kong, AWS API Gateway, Nginx, etc.). This is no different conceptually from how Express does app.post('/users', handler) — the gateway is just one hop earlier in the chain.
+
+Why put a gateway in front at all, if each service could just listen on its own port? A few real reasons:
+
+- Single entry point — client only needs to know one domain (api.sales.com), not user.sales.com:8081, cart.sales.com:8082, etc.
+- Cross-cutting concerns handled once — auth/JWT validation, rate limiting, logging, CORS — instead of duplicating that logic in every microservice.
+- Internal topology stays hidden — you can move user-service to a new host/port without the frontend ever knowing.
+- Load balancing — gateway can route to one of several healthy instances of user-service.
+
+Concretely, for your example:
+
+- Frontend calls POST https://api.sales.com/users with a JSON body {name, email, password}.
+- Gateway parses the request line → method=POST, path=/users.
+- Gateway looks up its route table → finds POST /users → user-service (often it also strips/rewrites the path, e.g. forwards internally to http://user-service.internal:8080/users).
+- Gateway may also run middleware here — check JWT (skip for signup), rate-limit by IP, add a request-id header — before forwarding.
+- user-service receives the plain request, validates, writes to its DB, returns 201 Created with the new user object.
+- Gateway relays that response back to the frontend untouched (or transforms it, if configured).
+
+So to directly answer your worry: the client always sends host + path + method + body together in one HTTP call — that's not a contradiction with "gateway auto-routes," it's the mechanism by which auto-routing is even possible. If the client sent only the domain with nothing else, there'd be nothing for the gateway to route on.
+
 Here is exactly how this process works mechanically in a Node.js ecosystem, along with a production-ready example.
 
 🗺️ The Core Mechanism: Reverse Proxying <br/>
