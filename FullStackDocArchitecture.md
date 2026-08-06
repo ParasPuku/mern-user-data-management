@@ -1461,7 +1461,7 @@ An API Gateway is a centralized server that acts as the single entry point for a
 
 Instead of clients talking to dozens of separate services individually, they make a single call to the API Gateway, which handles the rest.
 
-Why is an API Gateway Needed?
+Why is an API Gateway Needed?<br/>
 In modern software development, applications are broken down into small, independent microservices (e.g., separate services for user authentication, product catalogs, and payments). Without an API Gateway, managing this setup becomes incredibly chaotic.
 
 An API Gateway solves this chaos by handling several critical tasks: <br/>
@@ -1511,7 +1511,8 @@ The Step-by-Step Request Lifecycle <br/>
 4. Dynamic Routing (Service Discovery) <br/>
 - The gateway reads the URL path (/v1/products) to figure out which microservice owns that data.
 - It talks to a Service Registry (like Consul or Eureka) to find the exact, healthy IP address of that backend service.
-- It maps the public URL to the internal private IP address.5. Data Transformation & Protocol Translation
+- It maps the public URL to the internal private IP address.
+5. Data Transformation & Protocol Translation
 - The gateway modifies the request so the backend can easily understand it.
 - It can strip out public API keys, inject internal user IDs into the header, or change formats.
 - If the backend speaks a different protocol (like gRPC), the gateway translates the client's HTTP request into gRPC.
@@ -1636,7 +1637,6 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`API Gateway is securely running on port ${PORT}`);
 });
-
 ```
 
 4. How It Operates <br/>
@@ -1649,6 +1649,89 @@ Alternative Ready-Made Frameworks <br/>
 If you do not want to maintain custom middleware logic from scratch, consider using enterprise-grade turnkey Node.js gateway engines: <br/>
 - Express Gateway: An open-source, fully configuration-driven API gateway framework built right on top of Express.
 - Fast-Gateway: A minimalist, high-speed routing option specifically optimized for extreme performance requirements.
+
+### 37. How API Gateway understands a common request and routes it to a specific microservice?
+An API Gateway understands a common request and routes it to a specific microservice by acting as a reverse proxy. It intercepts the incoming traffic, reads the HTTP metadata (the path, method, or headers), and matches it against a pre-defined routing table.
+
+Here is exactly how this process works mechanically in a Node.js ecosystem, along with a production-ready example.
+
+🗺️ The Core Mechanism: Reverse Proxying <br/>
+Clients make requests to a single, public URL (e.g., ://yourcompany.com). The API Gateway parses that request using standard Node.js routing libraries and forwards the network traffic internally to private microservices based on specific rules.
+
+- Path-Based Routing: The gateway checks the URL prefix (e.g., /users goes to Service A running on port 3001; /orders goes to Service B on port 3002).
+- Method-Based Routing: It evaluates the HTTP Verb (e.g., a GET request goes to a read-replica database service, while a POST request goes to a write service).
+- URL Rewriting: It strips out the "gateway" prefix so the internal microservice receives a clean path (e.g., ://yourcompany.com is translated internally to localhost:3001/profile).
+
+💻 Code Example: Building an API Gateway in Node.js<br/>
+To implement this in a Node.js application, developers commonly combine Express with a specialized library like http-proxy-middleware.
+
+```js
+// gateway.js
+const express = require('express');
+const { createProxyMiddleware } = require('http-proxy-middleware');
+
+const app = express();
+const PORT = 8000; // The single entry point for clients
+
+// 1. Define your routing table mapping paths to internal services
+const routes = {
+  '/users': 'http://localhost:3001',   // User Microservice
+  '/products': 'http://localhost:3002',// Catalog Microservice
+  '/orders': 'http://localhost:3003'   // Order Microservice
+};
+
+// 2. Dynamically apply proxy middleware based on the paths
+Object.entries(routes).forEach(([path, target]) => {
+  app.use(
+    path, 
+    createProxyMiddleware({
+      target: target,
+      changeOrigin: true,
+      pathRewrite: {
+        [`^${path}`]: '', // Strips the prefix (e.g., /users/123 becomes /123)
+      },
+    })
+  );
+});
+
+app.listen(PORT, () => {
+  console.log(`API Gateway is running as the front door on port ${PORT}`);
+});
+```
+
+🛠️ Architecture Flowchart<br/>
+The diagram below visualizes how the gateway acts as the "reception desk" of your system, shielding internal architectures from external clients.
+
+                 +-------------------+
+
+                 |    Client App     |
+                 +---------+---------+
+                           |
+            Request to: ://app.com
+                           v
+                 +---------+---------+
+
+                 |    API Gateway    | (Port 8000)
+                 | (Evaluates Path)  |
+                 +----+----+----+----+
+
+                      |    |    |
+   +------------------+    |    +------------------+
+
+   | /users                | /orders               | /products
+   v                       v                       v
++--+--------------+     +--+--------------+     +--+--------------+
+
+| User Service    |     | Order Service   |     | Product Service |
+| (Port 3001)     |     | (Port 3002)     |     | (Port 3003)     |
++-----------------+     +-----------------+     +-----------------+
+
+🛡️ Why Use a Gateway Instead of Direct Access?<br/>
+An API Gateway does much more than pass traffic along; it intercepts requests to handle cross-cutting infrastructure concerns so your microservices don't have to duplicate code:
+- Centralized Authentication: The gateway validates JSON Web Tokens (JWT) or API keys globally before forwarding traffic.
+- Rate Limiting: It tracks client IPs or keys to drop abusive traffic before it overloads downstream systems.
+- Abstraction (Endpoint Decoupling): If your internal backend team changes an endpoint from /users to /v2/accounts, they only update the entry in the gateway mapping. The frontend client code never has to change.
+
 
 ### 36. What is circuit breaking and why circuit breaking needed? how it works and how to implement it?
 
