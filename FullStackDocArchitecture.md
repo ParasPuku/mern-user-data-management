@@ -2092,4 +2092,212 @@ Search and Sharing
 ### How do you implement country based language app?
 ### How do you implmemet SEO friendly app?
 ### How do you implememt accessbility based app?
-### What is api gateway?
+
+=============================================================================================================================================================================
+=================================================================== BACKEND FLOW ============================================================================================
+=============================================================================================================================================================================
+
+1. The Client Request & The Protocol
+
+The Client (The Browser)<br/>
+The Client is any device initiating a request. It could be your Chrome browser, an iPhone app, or a smart TV.
+
+HTTPS (The Secure Envelop) - (Hyper Text Transfer Protocol)<br/>
+When you type https://mycart.com, you are using Hypertext Transfer Protocol Secure.
+- HTTP is the ruleset for how web browsers and servers talk to each other.
+- The "S" (Secure) means all data sent between the client and server is encrypted using SSL/TLS certificates. If a hacker intercepts the data mid-way, it looks like unreadable gibberish.
+
+2. The Internet Phonebook<br/>
+IP Address (The Physical Address)
+
+Every machine on the internet has a unique number sequence, like 192.0.2.1 (IPv4) or a longer alphanumeric string (IPv6). Computers can only talk to each other using these numbers.
+
+DNS - Domain Name System (The Translator)<br/>
+Humans cannot remember number strings for every website. DNS acts as the phonebook.
+
+- You type mycart.com.
+- Your browser asks a DNS Server: "What is the IP address for mycart.com?"
+- The DNS server replies: "It is 192.0.2.1."
+
+3. The Gatekeeper<br/>
+Proxy & Reverse Proxy (The Middlemen)
+
+Before reaching the actual application code, the request hits a Proxy server.
+
+- Forward Proxy: Sits near the user (like a corporate network firewall or VPN) to hide the user's identity.
+- Reverse Proxy: Sits directly in front of the application servers. It protects the backend servers from direct exposure to the wild internet, handles the HTTPS encryption layer, and manages caching.
+
+Load Balancer (The Traffic Cop)
+
+If mycart.com gets a million visitors at once, one server will crash. A Load Balancer sits behind the proxy. It takes incoming requests and distributes them evenly across a group (Cluster) of multiple identical servers.
+
+4. The Destination (The Server & Cloud Architecture)<br/>
+
+What is a Server?<br/>
+A server is a high-powered, display-less computer that runs 24/7 on a high-speed network, waiting to receive requests from users and send back data.
+
+What is a Server Physically?
+
+A server is not a magical cloud; it is a real computer. A server is just a regular computer—very similar to the laptop or desktop you use every day. It has a CPU, RAM, a hard drive, and an operating system.
+
+- The Physical Reality: It is a flat, metal box (called a rack server) containing high-performance processors (CPUs), vast amounts of RAM, and solid-state drives (SSDs).
+- Where it lives: It sits inside a Data Center—a highly secure, air-conditioned warehouse with massive backup power generators and ultra-fast, dedicated fiber-optic internet lines.
+
+AWS to Server (The Cloud Relationship)
+
+You do not buy these physical machines. Companies like Amazon Web Services (AWS) buy millions of them.
+- AWS partitions these giant physical computers into smaller, isolated virtual computers called EC2 Instances (Elastic Compute Cloud).
+- When you launch a server on AWS, you are renting a Virtual Machine (VM). It behaves exactly like a real computer, running an operating system (usually Linux).
+
+Ports (The Doors into the Server)
+
+A single server computer can run multiple applications at the same time (e.g., your website, a database, and an email system). Ports are numbered "doors" on a server that route traffic to the specific software program.
+
+- Port 80: Default door for unsecure web traffic (HTTP).
+- Port 443: Default door for secure web traffic (HTTPS).
+- Port 3000/8080: Common custom doors where developers run their backend application code (Node.js, Python, Java).
+
+5. The Processing Layer (The Core Backend Logic) <br/>
+Once the request goes through Port 443, your backend code catches it. The browser uses specific instructions to tell your code what it wants.
+
+HTTP Methods (The Action Verbs)
+- GET: "Hey server, please read and send me data." (e.g., Viewing a product page).
+- POST: "Hey server, please create something new with this data." (e.g., Creating a new user account or placing an order).
+- PUT/PATCH: "Hey server, please update this existing data." (e.g., Changing your shipping address).
+- DELETE: "Hey server, please delete this item." (e.g., Removing an item from your cart).
+
+HTTP Status Codes (The Server's Reply)
+
+The server processes your logic and sends back a 3-digit status code so the browser knows what happened:
+- 2xx Success: 200 OK (Everything worked!) or 201 Created (Account made successfully).
+- 3xx Redirection: 301 Moved Permanently (The page is at a new URL now).
+- 4xx Client Error: 400 Bad Request (You forgot to fill out a form field), 401 Unauthorized (You aren't logged in), or 404 Not Found (The page doesn't exist).
+- 5xx Server Error: 500 Internal Server Error (Your backend code crashed due to a bug).
+
+6. Memory & Safety (State & Security)<br/>
+State (The Short-Term Memory Problem)
+
+HTTP is completely stateless. The server treats every single request as a total stranger. It does not naturally remember that you logged in 5 seconds ago.
+
+Sessions & Tokens (The VIP Pass)<br/>
+To solve this, developers use JWT (JSON Web Tokens) or Sessions:
+- You send your username and password via a POST request.
+- The server verifies it and hands the browser a digital, encrypted receipt (a Token).
+- For every single action after that (like adding an item to a cart), your browser automatically attaches that Token to the request. The server reads the token and says, "Ah, welcome back, User #451!"
+
+Passwords SecurityA backend developer never stores raw passwords in a database. They are scrambled using a one-way mathematical function called Hashing (using algorithms like bcrypt). Even if someone steals the database, they cannot read the passwords.
+
+7. What You Are Missing: The Complete Data Loop<br/>
+To completely understand the ecosystem before you start making code changes, you need to understand how data is managed after the server processes it:
+
+The Database Layer<br/>
+Your application code does not store data inside its own files; if the server restarts, everything is wiped out. It stores data in a dedicated Database Management System (DBMS).
+- SQL (Relational): Data is organized into strictly structured tables with rows and columns (e.g., PostgreSQL or MySQL). This is critical for e-commerce because financial and order data must be perfectly structured.
+- NoSQL (Non-Relational): Data is stored as flexible, JSON-like documents (e.g., MongoDB). This is great for fast-changing data, user profiles, or product reviews.
+
+Background Workers (Asynchronous Queues)<br/>
+Some backend actions are slow. If a customer buys an item, your server needs to charge the card, send a confirmation text message, email a PDF invoice, and update warehouse stock.
+
+- If you make the browser wait for all of this, the website will feel painfully slow.
+- The Solution: The backend processes the payment immediately, sends a 200 OK success code back to the user, and throws the email/SMS tasks into a Message Queue (like Redis or RabbitMQ). Worker processes pick up those background tasks and complete them silently while the customer happily views their confirmation screen.
+
+
+### How do we decide when traffic is too high and we need to scale?<br/>
+You do not guess when traffic is high; you measure it using monitoring tools (like Prometheus, Grafana, or Datadog).
+
+Here is how you decide which scaling tool to use based on the specific bottleneck you see:
+
+1. When to add more Servers / Clusters (Horizontal Scaling)
+- The Metric: Your server's CPU usage crosses 70% or Memory (RAM) utilization is nearing 80%.
+- The Fix: You spin up another identical server and add it to your Load Balancer cluster to share the weight.
+
+2. When to use Worker Threads / Background Workers
+- The Metric: Users complain that clicking a button (like "Place Order" or "Download Invoice") takes 10+ seconds to load.
+- The Fix: Move heavy, slow tasks (like generating PDFs, sending SMS, or processing images) out of the main request. Use worker threads or background queues (like Celery or BullMQ) to process them silently in the background while the user gets an instant confirmation.
+
+3. When to use Database Sharding
+- The Metric: Your database disk storage is running out, or single database queries take forever because your orders table now has hundreds of millions of rows.
+- The Fix: You break the massive table into smaller pieces (shards). For example, North India users' data goes to Shard A, and South India users' data goes to Shard B.
+
+### What lives inside a Server? (The Software)<br/>
+A server computer is useless until you put software on it. A backend developer installs three main things on a server:
+
+- The Operating System: Usually Linux (instead of Windows or macOS) because it is incredibly stable and doesn't waste energy on a fancy visual interface.
+- Your Backend Code: This is the code you write (in Node.js, Python, Java, etc.). It listens for incoming requests (like "User is trying to add an item to the cart") and executes the logic.
+- The Database: The storage system where user passwords, product prices, and cart items are safely kept.
+
+### If i built a mycart.com app then i need to buy a server which is in data center?<br/>
+No, you do not need to buy a physical server machine or visit a data center
+
+Instead, you rent a slice of a server from a Cloud Provider (like Amazon Web Services, Google Cloud, or Microsoft Azure).
+
+Here is exactly how it works in the modern backend world.
+
+How Server Renting Works<br/>
+Cloud providers have already bought millions of physical servers and stacked them in giant data centers all over the world (including multiple centers in India, like Mumbai and Hyderabad).
+
+Instead of buying a machine for ₹1,00,000+, you go to their website and click a button to rent a Virtual Private Server (VPS)
+
+- What you get: A small, isolated chunk of one of their giant computers (e.g., 2 GB of RAM, 1 CPU core, and 40 GB of storage running Linux).
+- The cost: You pay by the hour or month. A basic server for a new app costs around $5 (₹400) per month.
+- Instant setup: The server is ready for you to use in less than 60 seconds.
+
+Step-by-Step: Getting mycart.com Live<br/>
+If you finished writing your code today, this is the exact loop you would follow to put it online:
+
+- Rent the Server: You log into a cloud provider (like DigitalOcean, AWS, or Render) and launch a basic Linux server.
+- Upload Your Code: You copy your backend code files from your laptop onto that rented cloud server using the internet.
+- Start the App: You run a command on that server to start your application (e.g., node server.js or python app.py). Your code is now running 24/7.
+- Connect the Domain: You buy the name mycart.com from a registrar (like GoDaddy or Namecheap) and point it to your cloud server's IP address.
+
+### How much does a server cost for an app?<br/>
+For a new or growing application, server costs range from free to millions of rupees per month, depending entirely on your user traffic. You do not pay for everything upfront; you pay a monthly utility bill based on what you actually use.
+
+Here is a breakdown of what you will actually pay at different stages of your app:
+
+1. The Learning & Development StageCost: ₹0 (Totally Free)User Capacity: Just you and a few friends testing it.How it works: Cloud providers offer free entry-level tiers to help developers learn.Best Platforms: Render, Railway, or Vercel. They let you upload your code and run it 24/7 without entering a credit card.
+
+2. The Launch / MVP Stage (Minimum Viable Product)Cost: ₹400 to ₹1,200 per month ($5 to $15 USD)User Capacity: Up to 10,000 active users per month.How it works: You rent a basic, single Virtual Private Server (VPS). This gives you enough power (typically 1–2 GB RAM, 1 CPU core) to run your backend and a small database together.Best Platforms: DigitalOcean (Droplets), Hetzner, or AWS Lightsail.
+
+3. The Growing App Stage (Production Ready)
+- Cost: ₹4,000 to ₹25,000 per month ($50 to $300 USD)
+- User Capacity: 50,000 to 5,00,000 users per month.
+- How it works: At this stage, you separate your infrastructure for safety. You pay for one server to run your code, a separate managed database server (so your data doesn't get lost if the app crashes), and a storage system (like AWS S3) for product images.
+- Best Platforms: AWS (Amazon Web Services), Google Cloud, or Microsoft Azure.
+
+4. The Scale Stage (Enterprise Level)
+- Cost: ₹80,000 to Lakhs of rupees per month ($1,000+ USD)
+- User Capacity: Millions of users.
+- How it works: You are now paying for clusters of multiple servers, load balancers, database replicas, and advanced security firewalls.
+
+### Company wise how much aws charges - for example my company name is - myCart.com which is about ecommerce and retail company which create different different types of application with each different domain. So in this case domain wise needs a server or myCart company level?<br/>
+In AWS, you do not buy a massive server for the whole company, nor do you buy an entirely separate server just for a domain name. Instead, you buy and run servers based on individual applications (microservices or modules).
+
+AWS will bill the myCart.com company on a single monthly invoice, but that invoice will be broken down by the exact resources each domain/application consumes.
+
+Here is exactly how a multi-domain company like yours organizes and pays for servers.
+
+The Architecture: How Servers map to Domains<br/>
+Imagine myCart.com grows and expands into three different business domains. You do not run them all on one server (too risky if it crashes), but you also don't buy blind infrastructure. You deploy resources based on the specific application:
+1. mycart.com (Main E-commerce Store)
+- Needs: High power, handles traffic spikes (sales), secure checkout.
+- AWS Setup: A cluster of 2–4 medium servers (AWS EC2 instances) behind a Load Balancer, plus a dedicated Database (AWS RDS).
+- Estimated Cost: ₹15,00,000 to ₹40,00,000+ per month.
+
+2. logistics.mycart.com (Internal Delivery & Tracking App)
+- Needs: Used only by your delivery drivers and staff. Traffic is stable and predictable.
+- AWS Setup: 1 or 2 small, low-cost servers.
+- Estimated Cost: ₹15,000 to ₹40,00,000 per month.
+
+3. analytics.mycart.com (Internal Business Data App)
+- Needs: Heavy data processing, but used only by a few managers.
+- AWS Setup: Serverless computing (AWS Lambda) that only charges you for the exact seconds a manager runs a report.
+- Estimated Cost: ₹5,000 to ₹25,000 per month.
+
+### How AWS Bills a Company (The "Pay-As-You-Go" Model)?<br/>
+AWS does not care about your domain names; it cares about compute time, storage, and data transfer.
+
+Your monthly bill for myCart.com will look like a detailed utility bill:
+- Amazon EC2 (Servers): You ran 10 servers for a total of 720 hours this month = $X
+- Amazon RDS (Databases): You stored 500 GB of user data and product info = $Y
+- Amazon S3 (Storage): You hosted 2 Million product images = $Z
