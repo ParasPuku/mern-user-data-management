@@ -117,10 +117,107 @@ console.log('Runs first');
 
 Node starts file reading and continues executing other code.
 
-### 8. Can you access DOM in Node?
+### 8. Can you access DOM in Node and how can build html file in node js?
 No, you cannot access the DOM in Node.js because Node.js is a server-side environment, while the DOM (Document Object Model) is a client-side concept used in browsers to interact with HTML and XML documents.
 
 Node.js runs on the server and does not have access to a browser's DOM, which is part of the browser's environment. The DOM allows you to manipulate the content and structure of web pages, but it is not available in Node.js, as it operates on the backend, outside the context of a web page or browser.
+
+You create raw HTML on a Node.js server by using template engines, template literals, or core file system modules.
+
+The server combines your data with HTML layouts and sends the final string to the browser.
+
+1. Template Literals (Best for Small, Dynamic Pages)
+
+You can use standard JavaScript template literals (${}) to inject variables directly into an HTML string.
+
+```js
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+    const title = "Welcome Page";
+    const user = "Alex";
+
+    // Build the raw HTML string
+    const htmlOutput = `
+        <!DOCTYPE html>
+        <html>
+        <head><title>${title}</title></head>
+        <body>
+            <h1>Hello, ${user}!</h1>
+            <p>Server Time: ${new Date().toLocaleTimeString()}</p>
+        </body>
+        </html>
+    `;
+
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.end(htmlOutput); // Send raw HTML to the browser
+});
+
+server.listen(3000);
+```
+
+2. Template Engines (Best for Production Apps)For larger apps, template engines let you write HTML files with embedded logic (loops, conditionals) that the server compiles into raw HTML strings.
+
+- EJS (Embedded JavaScript): Looks like standard HTML with <%= variable %> tags.
+- Pug: Uses indentation instead of brackets for a cleaner, shorthand syntax.
+- Handlebars: Uses {{variable}} expressions for logic-less views.
+
+Example using EJS and Express:
+- 1. Create a file named views/index.ejs:
+```js
+<h1><%= title %></h1>
+<ul>
+    <% items.forEach(item => { %>
+        <li><%= item %></li>
+    <% }); %>
+</ul>
+```
+
+- 2. Render it from your Node server:
+
+```js
+const express = require('express');
+const app = express();
+
+app.set('view engine', 'ejs');
+
+app.get('/', (req, res) => {
+    // Express processes the EJS template and sends raw HTML to the user
+    res.render('index', { 
+        title: 'My Shopping List', 
+        items: ['Milk', 'Bread', 'Eggs'] 
+    });
+});
+
+app.listen(3000);
+```
+
+- 3. Reading Static HTML Files
+
+If your HTML does not change based on user data, keep it in a separate .html file and read it using the Node fs (File System) module.
+
+```js
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+
+const server = http.createServer((req, res) => {
+    const filePath = path.join(__dirname, 'index.html');
+    
+    // Read the static file and stream it directly to the response
+    fs.readFile(filePath, (err, content) => {
+        if (err) {
+            res.writeHead(500);
+            res.end('Error loading page');
+        } else {
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(content);
+        }
+    });
+});
+
+server.listen(3000);
+```
 
 ### Explain the event driven architecture?
 Event-Driven Architecture (EDA) is a software design pattern where the flow of your application is determined by events rather than a strict sequence of function calls. Instead of Component A calling Component B directly, Component A simply announces that "something happened" (an event), and any other component can choose to listen and react to it.
