@@ -1762,9 +1762,9 @@ app.listen(PORT, () => {
 
 🛠️ Architecture Flowchart<br/>
 The diagram below visualizes how the gateway acts as the "reception desk" of your system, shielding internal architectures from external clients.
+```js
 
                  +-------------------+
-
                  |    Client App     |
                  +---------+---------+
                            |
@@ -1786,6 +1786,7 @@ The diagram below visualizes how the gateway acts as the "reception desk" of you
 | User Service    |     | Order Service   |     | Product Service |
 | (Port 3001)     |     | (Port 3002)     |     | (Port 3003)     |
 +-----------------+     +-----------------+     +-----------------+
+```
 
 🛡️ Why Use a Gateway Instead of Direct Access?<br/>
 An API Gateway does much more than pass traffic along; it intercepts requests to handle cross-cutting infrastructure concerns so your microservices don't have to duplicate code:
@@ -2093,9 +2094,10 @@ Search and Sharing
 ### How do you implmemet SEO friendly app?
 ### How do you implememt accessbility based app?
 
-=============================================================================================================================================================================
-=================================================================== BACKEND FLOW ============================================================================================
-=============================================================================================================================================================================
+=================================================================================
+=============================== BACKEND FLOW ====================================
+=================================================================================
+
 
 1. The Client Request & The Protocol
 
