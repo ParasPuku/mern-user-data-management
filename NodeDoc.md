@@ -4620,7 +4620,7 @@ When a single machine runs out of capacity, you must scale across multiple physi
 
 Critical Requirements for Scaled Applications
 You cannot simply copy a standard Node.js application onto multiple servers; your application's architecture must adapt to a distributed system.
-
+```js
                   ┌───────────────┐
                   │ Incoming Web  │
                   │    Traffic    │
@@ -4642,7 +4642,7 @@ You cannot simply copy a standard Node.js application onto multiple servers; you
                   ┌─▼─────▼─────▼─┐
                   │ Central Cache │ (e.g., Redis for Sessions)
                   └───────────────┘
-
+```
 
 ### The number of node instances is equal to number of server?<br/>
 No, the number of Node instances does not have to equal the number of physical or virtual servers. You can run multiple Node instances on a single server, or distribute them across many servers.
