@@ -4055,6 +4055,7 @@ writableStream.on('finish', () => {
 ### 11. The 6 Phases of the Event Loop
 Earlier, we looked at the Event Loop as a single queue. In reality, the Libuv Event Loop executes callbacks by cycling through 6 distinct phases in a strict loop. Each phase has its own dedicated FIFO (First In, First Out) queue of callbacks.
 
+```js
    ┌───────────────────────────────────────────────┐
    │ 1. Timers (setTimeout, setInterval)           │
    └───────────────────────┬───────────────────────┘
@@ -4080,6 +4081,7 @@ Earlier, we looked at the Event Loop as a single queue. In reality, the Libuv Ev
    └───────────────────────▲───────────────────────┘
                            │
                            └───────────────────────┘ (Loops back to Phase 1)
+```
 
 The Execution Flow:
 - Timers Phase: Executes callbacks scheduled by setTimeout() and setInterval().
