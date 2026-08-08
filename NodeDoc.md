@@ -4311,6 +4311,8 @@ Because of the security guard, no single teller is ever overwhelmed, and custome
 How it Works (Step-by-Step Example)
 
 Let's look at how a load balancer handles traffic for a real website, like ://mycoolapp.com.
+
+```js
                [ USER TRAFFIC ]
          (Millions of HTTP Requests)
                      │
@@ -4324,6 +4326,7 @@ Let's look at how a load balancer handles traffic for a real website, like ://my
 ┌───────────┐  ┌───────────┐  ┌───────────┐
 │ Server A  │  │ Server B  │  │ Server C  │  <-- Identical Node.js instances
 └───────────┘  └───────────┘  └───────────┘
+```
 
 Step 1: The Request Arrives
 - A user types your website URL into their browser. The Domain Name System (DNS) points your domain directly to the IP address of the Load Balancer, not the actual backend servers.
