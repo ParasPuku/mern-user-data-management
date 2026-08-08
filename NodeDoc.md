@@ -156,7 +156,8 @@ const server = http.createServer((req, res) => {
 server.listen(3000);
 ```
 
-2. Template Engines (Best for Production Apps)For larger apps, template engines let you write HTML files with embedded logic (loops, conditionals) that the server compiles into raw HTML strings.
+2. Template Engines (Best for Production Apps)<br />
+For larger apps, template engines let you write HTML files with embedded logic (loops, conditionals) that the server compiles into raw HTML strings.
 
 - EJS (Embedded JavaScript): Looks like standard HTML with <%= variable %> tags.
 - Pug: Uses indentation instead of brackets for a cleaner, shorthand syntax.
