@@ -4680,8 +4680,8 @@ The Golden Rule of Node.js<br/>
 Node.js is single-threaded. A single Node.js instance (kitchen) can only use exactly one CPU core (chef) at any given microsecond. If you have 4 chefs in your building, but only open 1 kitchen, 3 chefs will sit on the floor doing nothing.
 
 How Everything Distributes (Step-by-Step)Let's look at a production setup where you have 2 Servers, and each server has 4 CPU Cores.
-
- [ INTERNET TRAFFIC ]
+```js
+                                  [ INTERNET TRAFFIC ]
                                            │
                                    ┌───────▼───────┐
                                    │ Load Balancer │
@@ -4711,6 +4711,7 @@ How Everything Distributes (Step-by-Step)Let's look at a production setup where 
      │  │    #3     │  │    #4     │  │                      │  │    #3     │  │    #4     │  │
      │  └───────────┘  └───────────┘  │                      │  └───────────┘  └───────────┘  │
      └────────────────────────────────┘                      └────────────────────────────────┘
+```
 
 Step 1: Distribution Across Servers (Network Layer)<br/>
 An external Network Load Balancer intercepts traffic from the internet. It does not know about your CPU cores or Node instances. It only sees Server 1 and Server 2. It splits the traffic 50/50 between the two servers.
