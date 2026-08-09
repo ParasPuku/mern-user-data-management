@@ -690,6 +690,23 @@ Interview answer:
 == allows type coercion, while === checks both value and type. In real code, prefer ===.
 ```
 
+In JavaScript, == (loose equality) does not automatically convert from left to right, nor does it just convert the first value. Instead, JavaScript follows a strict set of rules called the Abstract Equality Comparison Algorithm to decide which value gets coerced based on their data types.
+
+How Coercion Direction Actually Works
+
+The engine looks at the data types of both sides, not their position (left or right).
+
+Here is how the coercion behaves for common types: <br/>
+String vs. Number: The string is always converted to a number.
+- 5 == '5' → '5' (right) becomes 5. Result: 5 == 5 (true).
+- '5' == 5 → '5' (left) becomes 5. Result: 5 == 5 (true).
+
+Boolean vs. Anything: The boolean is always converted to a number (true becomes 1, false becomes 0).
+- true == '1' → true becomes 1. Then '1' becomes 1. Result: 1 == 1 (true).
+
+Object vs. Primitive (String/Number): The object is converted to a primitive value first (usually via .toString() or .valueOf()).
+- [5] == 5 → The array [5] becomes the string '5', which then becomes the number 5. Result: 5 == 5 (true).
+
 ### 14. What is type coercion?
 
 Type coercion means JavaScript automatically converts one data type to another.
