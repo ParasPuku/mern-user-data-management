@@ -1203,7 +1203,7 @@ The JavaScript Event Loop follows a strict order of operations during each cycle
 - Microtasks: High risk, because infinite microtask loops will completely freeze the browser UI.
 - Macrotasks: Low risk, because they naturally yield control back to the event loop after each task.
 
-### 19. Difference between Microtask vs Macrotask in js?
+### 19. Difference between Microtask vs Macrotask[Callback Queue] in js?
 In JavaScript, the core difference is that microtasks have a higher execution priority than macrotasks within the Event Loop. After the main synchronous script runs, the JavaScript engine will completely empty the entire Microtask Queue before moving on to execute a single task from the Macrotask Queue.
 
 Microtask Queue
@@ -1242,21 +1242,26 @@ Consider how queueMicrotask behaves compared to synchronous code and a macrotask
 console.log("1: Synchronous Start");
 
 setTimeout(() => {
-  console.log("4: Macrotask (setTimeout)");
+  console.log("5: Macrotask (setTimeout)");
 }, 0);
 
 queueMicrotask(() => {
   console.log("3: Microtask (queueMicrotask)");
 });
 
+Promise.resolve().then(() => {
+  console.log("4: Microtask (Promise)");
+});
+
 console.log("2: Synchronous End");
 ```
 
 Console Output:<br/>
-1: Synchronous Start
-2: Synchronous End
-3: Microtask (queueMicrotask)
-4: Macrotask (setTimeout)
+- 1: Synchronous Start
+- 2: Synchronous End
+- 3: Microtask (queueMicrotask) // [Microtask Promise and queueMicrotask] execution order will change based on the alignment
+- 4: Microtask (Promise)
+- 5: Macrotask (setTimeout)
 
 Why Use queueMicrotask()?<br/>
 - Ensures Consistent Ordering: It guarantees that your code executes asynchronously, even if data is already available synchronously.
