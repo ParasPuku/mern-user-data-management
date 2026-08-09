@@ -1090,6 +1090,8 @@ To understand the Event Loop, you must understand the four primary parts of the 
 How It Works Step-by-Step
 The Event Loop runs continuously in the background and executes a strict lifecycle loop:
 
+```js
+
 [ Step 1: Run Synchronous Code in Call Stack ] 
                        |
                        v
@@ -1103,6 +1105,8 @@ The Event Loop runs continuously in the background and executes a strict lifecyc
                        |
                        v
             (Repeat indefinitely...)
+
+```
 
 1. Execute Synchronous Tasks: JavaScript runs code line-by-line, pushing and popping functions onto the Call Stack.
 2. Offload Asynchronous Operations: When an async task appears (e.g., a network request), it is pushed to the Web APIs to run in the background, freeing up the Call Stack immediately.
