@@ -226,9 +226,37 @@ Yes, let and const are hoisted during the compile phase, but unlike var, they ar
 
 How hoisting works for let and const?
 
-1. Compilation phase (Creation): The JavaScript engine reads your code and registers the variable in Memory.
+1. The Parsing phase (Creation): : The engine reads your code, maps out variables and functions (which causes hoisting), and compiles it into machine instructions. No physical memory is allocated for values during this step.
 
-2. Execution Phase (Initialization): Memory is allocated, but the variable in an uninitialized state.
+2. The Execution Phase (Initialization): : The engine actually executes the code line-by-line. This is the exact moment physical hardware memory is assigned to your variables, objects, and functions.
+
+```js
+[ Your JavaScript Code ] 
+       │
+       ▼
+ ┌───────────────┐
+ │  COMPILATION  │ ──► Parsed & Hoisted (No memory yet)
+ └───────────────┘
+       │
+       ▼
+ ┌───────────────┐
+ │    RUNTIME    │ ──► Memory Allocated & Values Assigned
+ └───────────────┘
+```
+
+Memory Allocation: Stack vs. Heap<br/>
+Once runtime kicks in, the JavaScript engine splits memory allocation into two regions:
+
+The Stack (Static Allocation):
+- Allocates fixed sizes for primitive values (like strings, numbers, and booleans) and execution context pointers.
+- Handled automatically as functions enter and exit the call stack.
+
+The Heap (Dynamic Allocation):
+- Allocates variable space for complex data structures like objects, arrays, and functions.
+- The size of these elements is unpredictable, so the engine claims chunks of heap space dynamically on the fly.
+
+Common Misconception: Hoisting<br/>
+Many developers believe hoisting means memory is allocated before runtime. In reality, the compiler simply notes down the variable names during the compilation step so the program knows they exist. The actual creation and memory reservation for those values still wait until runtime hits that specific block of code.
 
 The Temporal Dead Zone (TDZ) -
  Because they are hoisted but not initialized, let and const enter a Temporal Dead Zone (TDZ) from the top of the block until the line where they are actually declared and assigned a value. 
