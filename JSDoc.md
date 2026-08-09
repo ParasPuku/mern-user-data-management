@@ -1175,7 +1175,7 @@ Event Loop
 ### 19. Why do Microtasks(Promises) have higher priority than Macrotasks(setTimeout and setInterval)?
 Microtasks have higher priority than macrotasks to ensure the application state remains consistent and updated immediately before the browser renders the next frame. By clearing the microtask queue first, JavaScript guarantees that asynchronous state changes (like Promise resolutions) are completely processed without giving the user interface a chance to render half-baked or outdated data.
 
-🔄 The Event Loop Execution Order
+🔄 The Event Loop Execution Order<br/>
 The JavaScript Event Loop follows a strict order of operations during each cycle:
 - Execute Synchronous Code: The call stack runs all immediate code until it is empty.
 - Clear the Microtask Queue: JavaScript processes every single microtask in the queue, including any new ones added while processing.
@@ -1184,8 +1184,8 @@ The JavaScript Event Loop follows a strict order of operations during each cycle
 - Repeat: The loop goes back to step 2.
 
 💡 Why This Priority Matters
-1. Preventing Visual FlickeringIf macrotasks ran before microtasks, the browser might render a frame showing an incomplete UI state. Executing microtasks first ensures all underlying data is stable before the browser paints the screen.
-2. Immediate State ConsistencyMicrotasks usually handle critical asynchronous updates like data fetching callbacks or state changes. They need to execute as soon as possible after the synchronous code finishes, without waiting for heavier layout operations, rendering cycles, or user input events.
+1. Preventing Visual Flickering - If macrotasks ran before microtasks, the browser might render a frame showing an incomplete UI state. Executing microtasks first ensures all underlying data is stable before the browser paints the screen.
+2. Immediate State Consistency - Microtasks usually handle critical asynchronous updates like data fetching callbacks or state changes. They need to execute as soon as possible after the synchronous code finishes, without waiting for heavier layout operations, rendering cycles, or user input events.
 
 🔹 Common Examples
 - Microtasks: Promise.then, queueMicrotask, and MutationObserver.
@@ -1224,6 +1224,71 @@ Key Execution Differences
 - New microtasks added during execution run immediately in the same cycle.
 - Only one macrotask runs per Event Loop cycle.
 - The engine checks for new microtasks again after that single macrotask finishes.
+
+### 19. What is queueMictrotask in js?
+The queueMicrotask() method is a built-in JavaScript function that schedules a callback function to run asynchronously in the microtask queue. Microtasks execute immediately after the current synchronous code finishes executing, but before the browser updates the UI rendering or processes any macrotasks (like setTimeout or click events).
+
+The JavaScript Event Loop Priority<br/>
+To understand queueMicrotask(), you must understand how the engine prioritizes tasks:
+- Call Stack: Executes current synchronous code.
+- Microtask Queue: Runs all microtasks until empty (queueMicrotask, Promise.then, await).
+- UI Rendering: The browser re-renders the screen if necessary.
+- Macrotask Queue: Runs one task from the macro queue (setTimeout, setInterval, network I/O).
+
+Code Example & Output Order<br/>
+Consider how queueMicrotask behaves compared to synchronous code and a macrotask like setTimeout:
+
+```js
+console.log("1: Synchronous Start");
+
+setTimeout(() => {
+  console.log("4: Macrotask (setTimeout)");
+}, 0);
+
+queueMicrotask(() => {
+  console.log("3: Microtask (queueMicrotask)");
+});
+
+console.log("2: Synchronous End");
+```
+
+Console Output:<br/>
+1: Synchronous Start
+2: Synchronous End
+3: Microtask (queueMicrotask)
+4: Macrotask (setTimeout)
+
+Why Use queueMicrotask()?<br/>
+- Ensures Consistent Ordering: It guarantees that your code executes asynchronously, even if data is already available synchronously.
+- Cleaner than Promises: Instead of using the old trick Promise.resolve().then(callback), queueMicrotask() is more lightweight, uses less memory, and bypasses promise error-handling boilerplate.
+- Runs Before Paint: It allows you to update state or perform cleanups right before the browser draws pixels to the screen, preventing visible layout flicker.
+
+A Practical Use Case: Safe Caching<br/>
+Libraries and frameworks use it to handle cached asynchronous methods predictably. If a method usually fetches data over the network (asynchronous), but occasionally returns data instantly from a cache, queueMicrotask() ensures the response is always asynchronous.
+
+```js
+const cache = {};
+
+function getData(url) {
+  if (cache[url]) {
+    // Keeps execution asynchronous so code order doesn't break
+    queueMicrotask(() => {
+      displayData(cache[url]);
+    });
+  } else {
+    // Normal asynchronous network call
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        cache[url] = data;
+        displayData(data);
+      });
+  }
+}
+```
+
+⚠️ Critical Warning: Infinite Loops<br/>
+The JavaScript engine will not move on to rendering or macrotasks until the microtask queue is completely empty. If a microtask recursively schedules another microtask using queueMicrotask(), it will create an infinite loop that freezes the browser or runtime.
 
 ### 19. How call stack work when async await is used in js?
 When an async function encounters an await keyword, the function's execution frame is popped entirely off the JavaScript call stack. This behavior prevents the engine from blocking the main thread while waiting for an asynchronous operation to finish. Instead of waiting, the JavaScript engine yields control back to the event loop, allows the caller function to continue running, and resumes the paused function later.
