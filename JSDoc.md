@@ -1300,30 +1300,30 @@ When an async function encounters an await keyword, the function's execution fra
 
 Here is a step-by-step breakdown of how the call stack, memory heap, and queues interact during this process.
 
-1. Synchronous Execution Up to the await
+1. Synchronous Execution Up to the await<br/>
 When an async function is called, it initially executes synchronously.
 - The engine creates an execution context frame for the async function.
 - It pushes this frame onto the top of the Call Stack.
 - It executes all the code inside the function line-by-line until it encounters the first await keyword.
 
-2. Hitting the await Keyword
+2. Hitting the await Keyword<br/>
 As soon as the engine evaluates the await expression:
 - The expression is evaluated: The operation following await (e.g., a fetch() call or a Promise) is executed.
 - State Preservation: The local variables, execution state, and exact point of code progression of the async function are saved into the Memory Heap.
 - Popped from Stack: The async function's context frame is removed (popped) from the Call Stack.
 - Implicit Promise Return: The function returns an implicit Promise to its initial caller.
 
-3. Yielding Control back to the Event Loop
+3. Yielding Control back to the Event Loop<br/>
 Because the call stack is now clear of that specific async function frame:
 - The engine continues running any synchronous code left in the program (such as the code belonging to the caller function).
 - The main execution thread remains completely responsive to user events, rendering tasks, or other scripts.
 
-4. Promise Resolution and the Microtask Queue
+4. Promise Resolution and the Microtask Queue<br/>
 Behind the scenes, the asynchronous operation continues to progress outside the main thread (via Web APIs in browsers or C++ threads in Node.js).
 - Once the awaited Promise settles (resolves or rejects), the engine schedules a PromiseReactionJob.
 - A callback representing the remaining portion of the async function is placed into the Microtask Queue.
 
-5. Resuming Execution on the Call Stack
+5. Resuming Execution on the Call Stack<br/>
 The final resumption relies entirely on the Event Loop.
 - The Event Loop constantly monitors the Call Stack to see if it is empty.
 - Once the Call Stack is completely clear of all synchronous execution frames, the Event Loop pulls the continuation callback from the Microtask Queue.
@@ -1358,33 +1358,11 @@ What happens to the Call Stack during this script?
 - console.log("4. Resumed: Data Loaded") executes and pops off.
 - fetchData() finishes and pops off the stack permanently.
 
-### 19. What is lexical scope?
 
-"Lexical Scope means variable access is defined by the physical location of the code structure. Inner functions have permanent access to the variables declared in their outer parent scopes, but parent scopes cannot access the inner contents of their children."
-
-Lexical scope means a function can access variables from the place where it was defined.
-
-Example:
-
-```js
-function outer() {
-  const name = 'Paras';
-
-  function inner() {
-    const age = 10;
-    console.log("Person Name", name);
-  }
-
-  inner();
-  // console.log("Person Age", age) // ❌ ERROR: Parent cannot see age. It would throw a ReferenceError!
-}
-
-outer(); // Paras
-```
 
 ### 20. What is closure?
 
-A closure is when a function remembers variables from its outer scope even after the outer function has finished executing.
+A closure is a special funciton, so when a inner function remembers variables from its outer scope even after the outer function has finished executing.
 
 Example:
 
@@ -1699,10 +1677,34 @@ Cons of Using Closures
 - Complexity: They can make code harder to understand and debug, especially for less experienced developers.
 - Potential for Memory Leaks: Improper use of closures can cause unintended retention of large data structures.
 
+### 19. What is lexical scope?
+
+"Lexical Scope means variable access is defined by the physical location of the code structure. Inner functions have permanent access to the variables declared in their outer parent scopes, but parent scopes cannot access the inner contents of their children."
+
+Lexical scope means a function can access variables from the place where it was defined.
+
+Example:
+
+```js
+function outer() {
+  const name = 'Paras';
+
+  function inner() {
+    const age = 10;
+    console.log("Person Name", name);
+  }
+
+  inner();
+  console.log("Person Age", age) // ❌ ERROR: Parent cannot see age. It would throw a ReferenceError!
+}
+
+outer(); // Paras
+```
+
 ### 25. Garbage collection in Javascript?
 JavaScript automatically allocates memory when objects are created and frees it when they are not used anymore (garbage collection). This automaticity is a potential source of confusion: it can give developers the false impression that they don't need to worry about memory management.
 
-Memory Life Cycle - 
+Memory Life Cycle - <br/>
 Regardless of the programming language, the memory life cycle is pretty much always the same:
 - Allocate the memory you need
 - Use the allocated memory (read, write)
@@ -1710,7 +1712,7 @@ Regardless of the programming language, the memory life cycle is pretty much alw
 
 The second part is explicit in all languages. The first and last parts are explicit in low-level languages but are mostly implicit in high-level languages like JavaScript.
 
-Allocation in JavaScript - 
+Allocation in JavaScript - <br/>
 Value initialization
 - In order to not bother the programmer with allocations, JavaScript will automatically allocate memory when values are initially declared.
 
