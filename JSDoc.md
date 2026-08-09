@@ -660,6 +660,23 @@ The TDZ was introduced in ECMAScript 6 (ES6) as a safety mechanism to build more
 
 `===` compares without type conversion.
 
+In JavaScript, the == operator (loose equality) compares only the values after converting both variables to a common type, while the === operator (strict equality) compares both the value and the type without converting them.
+
+How == (Loose Equality) Works<br/>
+If you compare two different data types with ==, JavaScript forces one type to convert into the other before making the comparison. This is known as implicit type coercion.
+- 5 == 5 -> true (same type, same value)
+- '5' == 5 -> true (the string '5' is converted to the number 5 before checking)
+- true == 1 -> true (the boolean true is converted to the number 1)
+- null == undefined -> true (handled as a special equal case in JavaScript) 
+
+How === (Strict Equality) Works<br/>
+The === operator performs no type conversion. If the data types of the two variables are different, it immediately returns false.
+
+- 5 === 5 -> true (both are numbers, same value)
+- '5' === 5 -> false (one is a string, one is a number)
+- true === 1 -> false (one is a boolean, one is a number)
+- null === undefined -> false (different underlying types)
+
 Example:
 
 ```js
