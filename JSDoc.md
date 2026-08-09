@@ -782,13 +782,13 @@ The phase "everything in JavaScript is an object" is technically a myth, though 
 
 The reason this misconception persists is due to two fundamental architectural designs in JavaScript: Prototypal Inheritance and a mechanism known as Autoboxing (Object Wrapping).
 
-1. Complex Types are Literally Objects
+1. Complex Types are Literally Objects<br/>
 In many programming languages, complex structures like arrays, functions, and dates are unique, distinct data types. In JavaScript, these are all built on top of the base Object prototype.
 - Arrays: Under the hood, an array is just a specialized object with numeric keys, a tracked length property, and extra array-specific methods.
 - Functions: Functions are "first-class citizens" and are actually callable objects. You can freely assign properties or pass methods to a function just like a normal object.
 - Regular Expressions, Maps, and Sets: These are also specialized object instances built from their respective constructors.
 
-2. The Illusion of Objects: Autoboxing
+2. The Illusion of Objects: Autoboxing<br/>
 The biggest reason people think everything is an object is that you can run methods on primitive values like strings, numbers, and booleans (e.g., "hello".toUpperCase() or (4.567).toFixed(2)).
 
 Primitives do not have methods or properties, and they are immutable. When you try to call a method on a primitive, JavaScript performs a temporary transformation behind the scenes:
@@ -804,7 +804,7 @@ Behind the scenes, JavaScript executes the equivalent of these steps:
 
 This architectural trick keeps primitives lightweight and fast, while giving developers the convenience of object-like functionality.
 
-3. The Grandparent: The Prototype Chain
+3. The Grandparent: The Prototype Chain <br/>
 Every structural data type in JavaScript eventually traces back to Object.prototype. If you follow the internal prototype chain of an array, a custom class, or a function up to its logical end, it points back to the universal root object.
 
 ```js
@@ -814,13 +814,13 @@ Array.prototype.__proto__ === Object.prototype; // true
 Object.prototype.__proto__ === null;             // true (The end of the line)
 ```
 
-Summary: What is Not an Object?
+Summary: What is Not an Object?<br/>
 To understand JavaScript fully, you must know what is explicitly excluded from the object family. JavaScript contains 7 primitive data types that are not objects and do not have prototypes:
 
 ### 17. What are first class citizens or first class functions in javascript?
 In JavaScript, functions are first-class citizens (also known as First-class Functions). This means that functions are treated like any other value—such as strings, numbers, or objects—allowing them to be manipulated and passed around freely throughout your code.
 
-Core Capabilities of First-Class Functions
+Core Capabilities of First-Class Functions<br/>
 An entity achieves "first-class" status if it supports all standard operational properties. In JavaScript, functions fulfill this criteria through three major abilities:
 - Assigned to variables: You can store a function inside a variable, an array, or an object property.
 - Passed as arguments: You can feed a function directly into another function as a parameter (commonly known as a callback).
@@ -829,7 +829,7 @@ An entity achieves "first-class" status if it supports all standard operational 
 Code Examples
 The following code snippets demonstrate how JavaScript treats functions as first-class citizens:
 
-1. Assigning a Function to a Variable
+1. Assigning a Function to a Variable<br/>
 Instead of declaring a function standardly, you can treat it like data and bind it to a variable name.
 
 ```js
@@ -839,7 +839,7 @@ const greet = function() {
 console.log(greet()); // Outputs: "Hello World!"
 ```
 
-2. Passing a Function as an Argument
+2. Passing a Function as an Argument<br/>
 Because functions are values, you can pass them into other functions to customize their runtime behaviors.
 
 ```js
@@ -851,7 +851,7 @@ const sayHi = (user) => `Hi, ${user}!`;
 console.log(executeAction(sayHi, "Alex")); // Outputs: "Hi, Alex!"
 ```
 
-3. Returning a Function from Another Function
+3. Returning a Function from Another Function<br/>
 Functions can dynamically spawn and return other functional logic to create configurable utilities.
 ```js
 function createMultiplier(factor) {
@@ -863,7 +863,7 @@ const double = createMultiplier(2);
 console.log(double(5)); // Outputs: 10
 ```
 
-Why First-Class Status Matters
+Why First-Class Status Matters<br/>
 This flexibility forms the baseline architectural pattern for modern JavaScript applications. It directly unlocks:
 
 - Higher-Order Functions: Built-in array tools like .map(), .filter(), and .reduce() rely entirely on taking functions as parameters.
@@ -895,7 +895,7 @@ function test() {
 console.log(name); // ReferenceError
 ```
 
-## Global Scope
+Global Scope<br/>
 A variable has global scope when it is declared outside of any function or block. It can be accessed from anywhere in your entire JavaScript program. However, let/const and var treat the global object (like window in browsers or global in Node.js) very differently.
 
 - Visibility: Everywhere in your entire code.
@@ -926,7 +926,7 @@ Redeclaration Protection
 - var: Allows you to redeclare the same global variable multiple times without warning.
 - let / const: Throws a SyntaxError if you try to redeclare the same variable in the global scope.
 
-## Block Scope (let / const)
+Block Scope (let / const)<br/>
 Variables declared with let or const are bound to the nearest pair of curly braces {}. They do not exist outside of that specific block.
 
 - Visibility: Only inside those exact curly braces.
@@ -942,7 +942,7 @@ console.log(blockScoped);
 // ❌ Throws ReferenceError: blockScoped is not defined
 ```
 
-## Function Scope (var)
+Function Scope (var)<br/>
 Variables declared with var ignore blocks like if statements or for loops. They are only confined by the boundaries of an entire function.
 
 - Visibility: Only inside that specific function.
@@ -963,13 +963,13 @@ console.log(functionScoped);
 // ❌ Throws ReferenceError: functionScoped is not defined
 ```
 
-## Module Scope - 
+Module Scope<br/>
 Variables declared inside a JavaScript Module (import/export files) live here.
 - Visibility: Only within that specific file.
 - Lifespan: As long as the module is loaded.
 Example: Other files cannot see these variables unless you explicitly export them.
 
-## Why This Matters: The for Loop Trap
+Why This Matters: The for Loop Trap<br/>
 Using var in loops can lead to unexpected bugs because the variable leaks out into the surrounding scope.
 
 The var Issue
@@ -991,18 +991,18 @@ console.log(j); // ❌ Throws ReferenceError: j is not defined (Safely contained
 ### 19. What is Execution Context?
 An execution context is the abstract environment where code is evaluated and executed in JavaScript. It acts as a container holding all the necessary information for the code to run—including local variables, function arguments, the this keyword, and a reference to outer scopes.
 
-The Two Phases
+The Two Phases<br/>
 Every execution context is created and managed in two main steps:
 - Creation Phase: The JavaScript engine sets up the environment. It allocates memory for variables (assigning undefined as a placeholder) and functions, sets up the scope chain, and binds the this keyword.
 - Execution Phase: The engine runs the code line by line, assigning actual values to the variables and executing the logic.
 
-Types of Execution Contexts
+Types of Execution Contexts<br/>
 There are three main types:
 - Global Execution Context (GEC): The default environment. Created as soon as the JavaScript file loads, it represents the global scope. There is only one GEC for the entire program.
 - Function Execution Context (FEC): Created every time a function is invoked. It handles all the code and variables specific to that function.
 - Eval Execution Context: Created when executing code inside the eval() function (which is rarely used).
 
-How the Engine Manages Them: The Call Stack
+How the Engine Manages Them: The Call Stack<br/>
 Because JavaScript is single-threaded, it handles multiple execution contexts using a Call Stack (which follows a Last-In, First-Out principle).
 
 When a script starts, the Global Execution Context is pushed to the bottom of the stack. Whenever you call a function, the engine creates a new FEC, pushes it to the top of the stack, and executes it. Once the function finishes, its context is popped off the stack, and the engine resumes executing the context below it.
@@ -1017,7 +1017,7 @@ Key Characteristics
 
 In JavaScript, the call stack is neither a script nor a standard JavaScript array; it is an internal data structure managed directly by the JavaScript runtime engine (like Google's V8) to track function execution. While it is not a literal JS array, it behaves conceptually like one because it operates on a Last-In, First-Out (LIFO) principle, similar to using an array with only .push() and .pop() methods.
 
-How It Works (Step-by-Step) or How the Call Stack Tracks Execution
+How It Works (Step-by-Step) or How the Call Stack Tracks Execution<br/>
 When your JavaScript file loads, the engine processes code sequentially through these phases:
 
 - Global Execution Context: Before any custom functions run, the engine creates a Global Execution Context and pushes it to the bottom of the stack.
