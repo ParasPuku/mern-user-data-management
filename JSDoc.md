@@ -2513,8 +2513,8 @@ Web Workers are a browser API that allows you to run JavaScript code in a backgr
 
 Web Workers enable JavaScript code to run in the background, separate from the main execution thread of a web application. They handle intensive computations without freezing the user interface. Here's a concise example:
 
-Core Architecture
-## Web Workers utilize thread-like message passing to achieve concurrency. Because they run in an isolated environment, they operate with critical restrictions:
+Core Architecture<br/>
+Web Workers utilize thread-like message passing to achieve concurrency. Because they run in an isolated environment, they operate with critical restrictions:
 - No DOM Access: Workers cannot directly manipulate the window, document, or page elements.
 - Isolated Scope: They use self as their global context instead of the standard browser window object.
 - Data Copied, Not Shared: Data transferred between the main thread and workers is copied via the structured clone algorithm, meaning variables are not directly shared.
@@ -2564,13 +2564,13 @@ Lifecycle Management
 - Terminating from Main: You can kill a running worker instantly from your main script by calling worker.terminate().
 - Closing from Inside: A worker can shut itself down immediately by executing self.close().
 
-Types of Workers Available
+Types of Workers Available<br/>
 According to the MDN Web Workers API documentation, the platform supports three main variations:
 - Dedicated Workers: Accessible exclusively by the single script instance that spawned them.
 - Shared Workers: Shared across multiple active scripts running on the same domain, such as different tabs or iFrames.
 - Service Workers: Act as proxy servers between the application and the network. They power Progressive Web Apps (PWAs) by managing offline caching, fetch interception, and push notifications.
 
-When to Use Web Workers
+When to Use Web Workers<br/>
 You should evaluate offloading tasks to a background thread for:
 - Real-time encoding/decoding of audio and video.
 - Parsing massive raw JSON or CSV datasets.
@@ -4733,7 +4733,103 @@ DOM means Document Object Model.
 
 It is a tree representation of HTML that JavaScript can read and modify.
 
-### 78. Event bubbling vs capturing?
+### 78. What is Event bubbling vs Event capturing?
+
+Event bubbling and event capturing are the two ways events travel through your HTML elements when an action (like a click) occurs. If you have a button inside a box, and you click the button, you are technically clicking both the button and the box. The order in which those elements find out about the click depends on whether the browser is using bubbling or capturing.
+
+🫧 Event Bubbling (Bottom-Up)<br/>
+Event bubbling is the default behavior in almost all modern browsers. When an event happens on an element, it triggers that element's handler first, then "bubbles up" to its parent, grandparent, and all the way to the top of the document.
+
+- The Flow: Inner Element → Parent Element → Outermost Element.
+- Real-world Analogy: Imagine throwing a stone at the bottom of a pool. The air bubbles rise from the exact spot you hit up to the surface.
+
+- Code Example:
+
+```js
+// Default behavior without extra arguments
+element.addEventListener('click', () => console.log('Clicked!')); 
+```
+
+🪂 Event Capturing (Top-Down) <br/>
+Event capturing (also called event trickling) is the exact opposite of bubbling. The browser starts checking for event handlers from the very top of the document structure and moves down layer by layer until it reaches the element you actually clicked.
+
+- The Flow: Outermost Element → Parent Element → Inner Element.
+- Real-world Analogy: Imagine a skydiver dropping from an airplane (the top level) down to a specific target on the ground.
+- Code Example: To use capturing, you must pass true or { capture: true } as the third option.
+
+```js
+element.addEventListener('click', () => console.log('Captured!'), true); 
+```
+
+🛑 How to Stop the Flow <br/>
+If you do not want an event to keep bubbling up or capturing down, you can halt it midway by using event.stopPropagation().
+
+```js
+button.addEventListener('click', (event) => {
+  event.stopPropagation(); // The event stops here and won't trigger parent elements
+  console.log('Only the button handles this click!');
+});
+```
+
+🛑 How to Stop default action for execution <br/>
+It tells the browser not to execute its default action for that specific element. It freezes the browser's built-in behavior while still letting your JavaScript code run.
+
+3 Common Real-World Examples<br/>
+1. Stop a Form from Reloading the Page<br/>
+By default, submitting a form reloads the browser tab. preventDefault() stops this so you can validate data or send it using an API.
+
+```js
+form.addEventListener('submit', (event) => {
+  event.preventDefault(); // Prevents the page reload
+  console.log('Form data captured via JavaScript!');
+});
+```
+
+2. Stop a Link from Opening a URL<br/>
+By default, clicking an <a> tag takes you to a new website. preventDefault() keeps the user on the same page.
+
+```js
+link.addEventListener('click', (event) => {
+  event.preventDefault(); // Prevents navigating to the URL
+  console.log('Link clicked, but we stayed on this page.');
+});
+```
+
+3. Stop Typing in an Input Box<br/>
+You can prevent specific characters (like numbers) from appearing in a text field when a user types.
+
+```js
+input.addEventListener('keydown', (event) => {
+  if (event.key === '5') {
+    event.preventDefault(); // Prevents the number 5 from being typed
+  }
+});
+```
+
+🧠 The Difference: preventDefault() vs stopPropagation() <br/>
+Because they sound similar, developers often mix them up:
+- event.preventDefault(): Stops the browser's default behavior (e.g., reloading, navigating).
+- event.stopPropagation(): Stops the event from bubbling up to parent elements (what we discussed earlier).
+
+
+The full lifecycle consists of the Capturing Phase (the event travels down from the root window to the target element), the Target Phase (the event reaches the clicked element), and the Bubbling Phase (the event travels back up from the target to the root window).
+
+The Three Phases of Event Propagation<br/>
+Whenever an event occurs on a DOM element, it takes a round-trip journey:
+
+```js
+       WINDOW (Root)
+       │           ▲
+1. CAPTURING   3. BUBBLING
+       │           │
+       ▼           │
+     PARENT ELEMENT
+       │           ▲
+1. CAPTURING   3. BUBBLING
+       │           │
+       ▼           │
+     [2. TARGET ELEMENT]
+```
 
 Capturing:
 
