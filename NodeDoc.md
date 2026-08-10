@@ -133,6 +133,8 @@ queueMicrotask(() => { console.log("Hello Queue MicroTask"); });
 console.log("HIIIIIIII");
 ```
 
+Noteeeeeeeee - [Execution order of Promise and queueMicrotask matters - who ever is first in first out policy even we change the order for both] Because they sit in the same line, the execution order is strictly determined by which line of code runs first (First-In, First-Out).
+
 Output - 
 ```js
 HELLLLOO
