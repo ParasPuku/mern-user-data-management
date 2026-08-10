@@ -687,12 +687,12 @@ Important queues:
 
 ## Explanation of Each Phase
 Each phase possesses a first-in, first-out (FIFO) queue of callbacks to execute.
-- Timers: Executes callbacks scheduled by setTimeout() and setInterval() once their threshold expires.
-- Pending Callbacks: Executes I/O callbacks deferred from the previous loop iteration (e.g., specific TCP errors).
+- Timers: Callbacks scheduled by setTimeout() and setInterval(). Executes callbacks scheduled by setTimeout() and setInterval() once their threshold expires.
+- Pending Callbacks: System errors like a TCP connection refusal (ECONNREFUSED). Executes I/O callbacks deferred from the previous loop iteration (e.g., specific TCP errors).
 - Idle, Prepare: Used exclusively by Node.js for internal housekeeping and preparation.
-- Poll: Retrieves new I/O events, reads files, manages network connections, and executes their callbacks. Node.js may block or pause here if appropriate.
+- Poll: Reading a file (fs.readFile), database queries, or receiving HTTP web traffic. Retrieves new I/O events, reads files, manages network connections, and executes their callbacks. Node.js may block or pause here if appropriate.
 - Check: Executes callbacks scheduled specifically by setImmediate() right after the poll phase finishes.
-- Close Callbacks: Handles cleanup and resource teardown, such as socket.on('close', ...)
+- Close Callbacks: Closing database connections or web sockets (socket.on('close', ...)) or Handles cleanup.
 
 The Microtask Intermission
 - Though they are not official phases of the main loop, Microtasks (such as process.nextTick() and resolved Promises) are highly prioritized. Node.js fully drains the microtask queue immediately after any phase finishes, right before it advances to the next phase. process.nextTick() takes precedence and executes before Promise callbacks.
@@ -717,9 +717,12 @@ The Node.js event loop executes in specific phases. setImmediate() interacts wit
 ## Code Execution Comparison
 To understand setImmediate(), it must be compared to process.nextTick() and setTimeout(fn, 0).
 
+=====================
+  Asynchronous Task
+=====================
+
 ```js
 const fs = require('fs');
-
 
 fs.readFile(__filename, () => {
     setTimeout(() => console.log('1. setTimeout (Timer Phase)'), 0);
@@ -728,9 +731,38 @@ fs.readFile(__filename, () => {
 });
 
 // GUARANTEED OUTPUT:
-// setImmediate
-// setTimeout
+- 3. process.nextTick (Microtask)
+- 2. setImmediate (Check Phase)
+- 1. setTimeout (Timer Phase)
 ```
+======================== 
+Synchronous Scope - 
+=========================
+When run in the main synchronous scope (outside of an I/O callback), the output order is non-deterministic (unpredictable) for the timers, but nextTick will always run first.You will get one of two possible outcomes:
+
+Outcome A (Most Common)
+- 3. process.nextTick (Microtask)
+- 1. setTimeout (Timer Phase)
+- 2. setImmediate (Check Phase)
+
+Outcome B
+- 3. process.nextTick (Microtask)
+- 2. setImmediate (Check Phase)
+- 1. setTimeout (Timer Phase)
+
+```js
+setTimeout(() => console.log('1. setTimeout (Timer Phase)'), 0);
+setImmediate(() => console.log('2. setImmediate (Check Phase)'), 0);
+process.nextTick(() => console.log('3. process.nextTick (Microtask)'));
+
+// GUARANTEED OUTPUT:
+- 3. process.nextTick (Microtask)
+- 1. setTimeout (Timer Phase)
+- 2. setImmediate (Check Phase)
+
+```
+
+
 
 // NOTE ---- setImmediate execution gets matter with synchronous and asynchronous case - Priority of setImmediate is more in file i/o execution than synchronous execution.
 
