@@ -117,6 +117,78 @@ console.log('Runs first');
 
 Node starts file reading and continues executing other code.
 
+```js
+console.log("HELLLLOO");
+
+new Promise((resolve) => {
+    resolve("Hello"); 
+}).then((data) => { console.log("Promise Then:", data); }); // Added .then()
+
+setTimeout(() => { console.log("Hello Timer"); }, 1000);
+
+queueMicrotask(() => { console.log("Hello Queue MicroTask"); });
+
+console.log("HIIIIIIII");
+```
+
+Output - 
+```js
+HELLLLOO
+HIIIIIIII
+Promise Then: Hello
+Hello MicroTask
+Hello Timer
+```
+
+Step-by-Step Execution Lifecycle<br/>
+Phase 1: Synchronous Execution (The Call Stack) <br/>
+
+Step 1: console.log("HELLLLOO") enters the Call Stack, executes, and leaves.<br/>
+- Console prints: HELLLLOO
+
+Step 2: new Promise() constructor enters the Call Stack.<br/>
+- The inner executor function (resolve) => { resolve("Hello"); } runs synchronously.
+- The promise state changes to fulfilled with the value "Hello".
+- The constructor leaves the Call Stack.
+
+Step 3: The .then(...) block is evaluated on the Call Stack. <br/>
+- Because the promise is already fulfilled, JavaScript instantly pushes the .then() callback (data) => { ... } into the Microtask 
+Queue.
+
+Step 4: setTimeout(..., 1000) enters the Call Stack.<br/>
+- The browser's Web API starts a background countdown timer for 1000ms.
+- Note: The callback is NOT in the callback queue yet; it is waiting in the background thread.
+
+Step 5: queueMicrotask(...) enters the Call Stack.<br/>
+- The callback () => { console.log("Hello MicroTask"); } is pushed instantly into the Microtask Queue (right behind the promise callback).
+
+Step 6: console.log("HIIIIIIII") enters the Call Stack, executes, and leaves. <br/>
+- Console prints: HIIIIIIII
+
+State of the System (Main Script Finished) <br/>
+The synchronous code is done. The system looks like this:
+- Call Stack: Empty
+- Microtask Queue (2 items):
+  1. (data) => { console.log("Promise Then:", data); }
+  2. () => { console.log("Hello MicroTask"); }
+- Callback Queue: Empty (Timer is still ticking in the background)
+
+Phase 2: Draining the Microtask Queue (Event Loop)<br/>
+The Event Loop sees an empty Call Stack and freezes all other operations to clear the Microtask Queue completely.
+
+- Step 7: The Event Loop pulls the first microtask (.then) onto the Call Stack.
+  Console prints: Promise Then: Hello
+- Step 8: The Event Loop pulls the second microtask (queueMicrotask) onto the Call Stack.
+  Console prints: Hello MicroTask
+
+
+Phase 3: Processing the Callback Queue<br/>
+- Step 9: The Event Loop checks the Callback Queue. It is still empty. The application sits idle.\
+- Step 10 (1000ms later): The background web timer hits 0. The browser pushes () => { console.log("Hello Timer"); } into the Callback Queue.
+- Step 11: The Event Loop detects the callback, confirms the Call Stack is empty, and pushes it to the stack.
+Console prints: Hello Timer
+
+
 ### 8. Can you access DOM in Node and how can build html file in node js?
 No, you cannot access the DOM in Node.js because Node.js is a server-side environment, while the DOM (Document Object Model) is a client-side concept used in browsers to interact with HTML and XML documents.
 

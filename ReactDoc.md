@@ -1261,6 +1261,10 @@ When state changes:
 2. React compares it with previous virtual DOM.
 3. React updates only necessary real DOM parts.
 
+Note - If you set state to the exact same value it already has, React triggers an optimization called a bailout. In most cases, React will not re-render the component or create a new Virtual DOM tree.
+
+React uses the Object.is() comparison algorithm to determine if the state has actually changed.
+
 ### 22. What is reconciliation?
 
 Reconciliation is React's process of comparing old and new element trees to decide what needs to update.
@@ -1760,6 +1764,9 @@ setCount(count + 1);
 setCount(prevCount => prevCount + 1);
 setCount(prevCount => prevCount + 1);
 ```
+
+Note - closure concept gets applied in setCount right if we pass callback<br/>
+Yes, closures play a massive role here, but the closure actually applies to the overall component render, not to the callback function itself.When you use the updater function syntax (prevCount => prevCount + 1), you are actually escaping a common closure bug rather than creating one.
 
 2. Use useEffect to Run Code After the State Changes
 If you want to trigger a side effect (like a network call or a calculation) only after the state has safely updated and re-rendered, place that logic inside a useEffect block with the state variable in its dependency array.
