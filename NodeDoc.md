@@ -1654,10 +1654,27 @@ The Cluster module is a built-in Node.js feature that allows you to run multiple
 
 Because Node.js runs on a single thread by default, it only uses one CPU core. If your server has 8 cores, 7 of them sit idle. The cluster module solves this limitation.
 
-How the Cluster Module Works
-- Master Process: The main application process that starts first. It does not handle network requests itself. Instead, it spawns worker processes and manages them.
-- Worker Processes: Duplicate instances of your application running on separate threads/cores. They share the same server port (e.g., port 3000).
-- Load Balancing: The master process automatically distributes incoming network requests among the worker processes using a Round-Robin algorithm.
+How cluster work?<br/>
+A load balancer takes user requests and sends them to a master process. The master process acts like a boss. It manages and controls several worker processes. The worker processes do the actual work of handling the requests and sending back answers.
+
+How They Work Together
+
+Load Balancer (The Front Door):
+- Receives traffic from users on the internet.
+- Decides which server or master process gets each new request.
+- Spreads the work evenly so no single part gets too busy.
+
+Master Process (The Manager):
+- Listens to the load balancer or network.
+- Starts, stops, and watches the worker processes.
+- Replaces any worker process that breaks or crashes.
+- Does not handle user requests directly.
+
+Worker Processes (The Workers):
+- Take the real tasks from the master process.
+- Read data, run code, and talk to databases.
+- Send the final web page or data back to the user.
+- Run in groups so many tasks happen at the exact same time.
 
 Key Benefits
 - True Parallelism: Your app can handle multiple heavy CPU tasks at the exact same time.
