@@ -117,6 +117,8 @@ console.log('Runs first');
 
 Node starts file reading and continues executing other code.
 
+Below is the example how nodejs is non-blocking I/O - 
+
 ```js
 console.log("HELLLLOO");
 
