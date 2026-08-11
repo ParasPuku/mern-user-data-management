@@ -266,7 +266,7 @@ React 19 does not replace React 18 concepts. It builds on React 18. So understan
 
 ### 5. What is JSX?
 
-JSX[JavaScript XML] is a syntax extension that lets us write HTML-like code inside JavaScript/TypeScript.
+JSX[JavaScript XML] is a syntax extension that allow us to write HTML-like code inside JavaScript/TypeScript.
 
 Example:
 
