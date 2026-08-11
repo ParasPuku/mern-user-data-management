@@ -1662,7 +1662,7 @@ How They Work Together
 Load Balancer (The Front Door):
 - Receives traffic from users on the internet.
 - Decides which server or master process gets each new request.
-- Spreads the work evenly so no single part gets too busy.
+- Spreads the work evenly using round robin technique so no single part gets too busy.
 
 Master Process (The Manager):
 - Listens to the load balancer or network.
