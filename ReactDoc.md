@@ -1127,7 +1127,7 @@ I build responsive applications using a mobile-first approach, flexbox/grid layo
 
 ### 15. What is rendering in React?
 
-Rendering means React calls the component function to calculate UI.
+Rendering means React calls the component function to calculate UI and what the UI should look likes.
 
 Rendering does not always mean DOM changed.
 
