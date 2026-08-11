@@ -2826,6 +2826,33 @@ Use cases:
 - running setup code immediately
 - older module-like patterns before ES modules
 
+### 47. What is prototype?
+
+Every JavaScript object has an internal link to another object called prototype.
+
+Objects can inherit properties and methods from their prototype.
+
+Example:
+
+```js
+const arr = [];
+console.log(arr.__proto__ === Array.prototype); // true
+```
+
+### 48. What is prototype chain?
+
+When JavaScript cannot find a property on an object, it looks up the prototype chain.
+
+Example:
+
+```js
+const user = { name: 'Paras' };
+
+console.log(user.toString);
+```
+
+`toString` is found through prototype chain.
+
 ### 39. What is prototypal inheritance in JS?
 
 Prototypal inheritance means one object can access properties and methods from another object through the prototype chain.
@@ -3223,33 +3250,6 @@ Use bracket notation for dynamic keys:
 const key = 'name';
 console.log(user[key]);
 ```
-
-### 47. What is prototype?
-
-Every JavaScript object has an internal link to another object called prototype.
-
-Objects can inherit properties and methods from their prototype.
-
-Example:
-
-```js
-const arr = [];
-console.log(arr.__proto__ === Array.prototype); // true
-```
-
-### 48. What is prototype chain?
-
-When JavaScript cannot find a property on an object, it looks up the prototype chain.
-
-Example:
-
-```js
-const user = { name: 'Paras' };
-
-console.log(user.toString);
-```
-
-`toString` is found through prototype chain.
 
 ### 49. What is class in JavaScript?
 
