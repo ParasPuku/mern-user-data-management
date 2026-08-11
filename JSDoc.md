@@ -1573,25 +1573,25 @@ Closures can store cached values.
 Example:
 
 ```js
-function memoizeAdd() {
-  const cache = {};
-
-  return function (a, b) {
-    const key = a + ',' + b;
-
-    if (cache[key]) {
-      return cache[key];
+function memoize(fn) {
+    let cache = new Map();
+    return function (...args) {
+        const key = JSON.stringify(args);
+        if(cache.has(key)) {
+            return cache.get(key);
+        }
+        const result = fn.apply(this, args);
+        cache.set(key, result);
+        return result;
     }
-
-    cache[key] = a + b;
-    return cache[key];
-  };
 }
 
-const add = memoizeAdd();
+const add = memoize(function(x) {
+    return x + x;
+})
 
-console.log(add(2, 3)); // 5
-console.log(add(2, 3)); // returns cached 5
+console.log(add(5));
+console.log(add(10));
 ```
 
 Interview answer:
