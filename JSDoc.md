@@ -1009,6 +1009,27 @@ Because JavaScript is single-threaded, it handles multiple execution contexts us
 
 When a script starts, the Global Execution Context is pushed to the bottom of the stack. Whenever you call a function, the engine creates a new FEC, pushes it to the top of the stack, and executes it. Once the function finishes, its context is popped off the stack, and the engine resumes executing the context below it.
 
+### Where execution context gets created?
+An execution context is created directly inside the call stack. It does not exist outside the call stack before being moved there.
+
+Think of the JavaScript Call Stack as a physical container, and the execution context as a physical block. When the JavaScript engine runs your code, it manufactures and drops that block directly into the container.
+
+🔄 The Creation and Lifecycle Process<br/>
+Every time a script runs or a function is invoked, the JavaScript engine performs this unified process:
+
+- Trigger: You run a script or call a function.
+- Creation: The engine immediately allocates space and creates the execution context directly on top of the call stack.
+- Phases: Once created inside the stack, the context goes through two quick phases:
+- Memory Creation Phase: It scans the code to set up variables (initialized as undefined) and functions.
+- Code Execution Phase: It executes the code line-by-line.
+- Destruction: When the function finishes, its execution context is popped off and completely deleted from the call stack.
+
+📦 Distinguishing the Components<br/>
+While they are tightly linked, they serve distinct structural purposes:
+
+- The Call Stack: The management tool (a LIFO data structure) that keeps track of where the program currently is in its execution.
+- The Execution Context: The environment data box itself, which contains the local scope, variable values, and the this binding required for that specific code to run.
+
 ### 19. What is call stack?
 The JavaScript Call Stack is a mechanism used by the JavaScript engine to keep track of function execution in a script. It acts like a digital "to-do list" that records which function is currently running and which functions are called from within that function.
 
