@@ -934,11 +934,13 @@ Variables declared with let or const are bound to the nearest pair of curly brac
 
 ```js
 if (true) {
-    let blockScoped = "I am trapped inside this block!";
-    console.log(blockScoped); //  Logs: "I am trapped inside this block!"
+  var age = 28;
+  let blockScoped = "I am trapped inside this block!";
+  console.log(blockScoped); //  Logs: "I am trapped inside this block!"
 }
 // Trying to access it outside the block:
 console.log(blockScoped); 
+console.log(age); // 28
 // ❌ Throws ReferenceError: blockScoped is not defined
 ```
 
