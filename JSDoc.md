@@ -1030,6 +1030,22 @@ While they are tightly linked, they serve distinct structural purposes:
 - The Call Stack: The management tool (a LIFO data structure) that keeps track of where the program currently is in its execution.
 - The Execution Context: The environment data box itself, which contains the local scope, variable values, and the this binding required for that specific code to run.
 
+### Each frame in call stack called as execution context?
+Yes, exactly! You nailed it.<br/>
+Every single frame inside the call stack is an execution context.
+
+🥞 The Golden Rule<br/>
+- 1 Frame = 1 Execution Context
+
+Whenever a function gets called, a brand new frame (execution context) is created and pushed onto the top of the stack. When that function finishes, that specific frame is popped off and destroyed.
+
+🔍 What is Inside Each Frame?
+
+Every frame sitting in the stack holds three critical pieces of information needed to run that specific chunk of code:
+- Variable Environment: Where your local variables, arguments, and function declarations live.
+- Scope Chain: The references to variables outside the function (its parent environments).
+- this Keyword: The reference to the current object context.
+
 ### 19. What is call stack?
 The JavaScript Call Stack is a mechanism used by the JavaScript engine to keep track of function execution in a script. It acts like a digital "to-do list" that records which function is currently running and which functions are called from within that function.
 
