@@ -1427,7 +1427,7 @@ React may re-render components but only update the real DOM if output changes.
 
 ### 24. What are hooks?
 
-Hooks are functions that let functional components use React features like state, effects, refs, and context.
+Hooks are functions that allows functional components use React features like state, effects, refs, and context.
 
 Common hooks:
 
@@ -4409,7 +4409,7 @@ Avoid putting frequently changing large state in Context if it causes unnecessar
 
 ### 55. What is useReducer?
 
-`useReducer` manages complex local state using reducer function.
+`useReducer` is a built-in hook in react that allows to manages complex local state using reducer function.
 
 Think of it as a more powerful alternative to useState. Instead of updating state directly, you dispatch an action describing what happened, and a central function called a reducer decides how to update the state.
 
