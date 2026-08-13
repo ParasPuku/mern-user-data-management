@@ -870,7 +870,7 @@ For your code:
 
 ```js
 setImmediate(() => console.log('setImmediate'));
-setTimeout(() => console.log('setTimeout'), 0);
+setTimeout(() => console.log('setTimeout'), 1000);
 ```
 
 Possible outputs are:
@@ -895,6 +895,22 @@ A useful rule to remember:
 - Inside an I/O callback: setImmediate() usually executes first because the event loop moves to the check phase after the I/O phase, before the next timers phase.
 
 Also mention that setTimeout(..., 0) does not mean “execute immediately”; it means execute after the minimum timer delay has elapsed.
+
+```js
+const fs = require('fs');
+
+fs.readFile(__filename, () => {
+    setTimeout(() => console.log('setTimeout'), 0);
+    setImmediate(() => console.log('setImmediate'), 1000);
+});
+```
+
+Output: At any cost setImmediate will get execute first in inside the i/o callback function.
+
+```js
+setImmediate
+setTimeout
+```
 
 ### 12. setInterval vs setTimeout vs setImmediate?
 
@@ -1680,6 +1696,87 @@ How It Handles Thousands of Requests
 - Non-Blocking I/O: When a request asks for a database query or a file read, Node.js hands that task over to the operating system or its internal C++ thread pool (libuv).
 - The Event Loop: Instead of waiting for the database to respond, the single thread immediately moves on to accept the next incoming request.
 - Callback Execution: When the database task finishes, it triggers a callback. The Event Loop picks up this callback and sends the response back to the user.
+
+### What are three entirely different layers of technology (Hardware, Operating System, and the Node.js runtime) but are often discussed all at once.
+Layer 1: The Hardware (Physical Infrastructure)<br/>
+Think of this as the physical office building where work gets done.
+- Server: The entire physical computer (or a virtual machine in the cloud). It is the whole building.
+- CPU: The engine inside the computer. Think of it as the main "Operations Department" of the building.
+- CPU Cores: Independent processing units inside a single CPU. If the CPU is the department, cores are the individual desks inside that department. A 4-core CPU has 4 desks, meaning it can do 4 completely separate tasks at the exact same millisecond.
+
+Layer 2: The Node.js Internal Engine<br/>
+This is how Node.js behaves by default when it sits at a single desk (one CPU core).
+- The Main Thread (Event Loop): Node.js assigns exactly one manager to sit at that desk. This manager handles all incoming requests, routes data, and executes your JavaScript code.
+- Libuv: This is the manager's secret assistant pool. When the manager gets a heavy request (like reading a massive file from disk or encrypting a password), they don't do it themselves. They hand it to Libuv. Libuv has 4 default background threads that do the heavy lifting in the background, freeing up the manager to handle new incoming requests immediately.
+
+Layer 3: Scaling Up (Your Code Options)<br/>
+This is what you do when your single desk (one core) gets completely overwhelmed by traffic and you need to use the rest of the office building.
+- Cluster Module: This clones the entire setup. It hires multiple identical managers, each sitting at their own separate desk (CPU core). They do not talk to each other. They just share the incoming traffic load. If one manager crashes, the others keep working. This is for scaling web traffic.
+- Worker Threads: This keeps you at one desk, but lets the manager hire a temporary helper right next to them to do a massive math calculation. The helper shares memory with the manager. This is for scaling heavy computation (like video processing or AI math) inside a single application.
+
+### Some important questions -
+
+1. The Core Interview Question: "Is Node.js Single-Threaded?"
+- The Trap: Saying "Yes" without qualifying it.
+- The Pro Answer: "Your JavaScript code runs on a single thread (the Event Loop), but the Node.js runtime itself is multi-threaded because its underlying C++ layer, Libuv, uses a thread pool to handle system operations."
+
+2. Cluster Module vs. Worker Threads (The Ultimate Comparison)<br/>
+Interviewers frequently ask you to choose between these two. Use this cheat sheet:
+
+The Cluster Module (Horizontal Scaling)
+- Concept: Spawns multiple identical instances of your app. Each instance has its own memory and its own Event Loop.
+- Best For: Scaling high-traffic web servers (HTTP requests).
+- Code Example:javascriptimport cluster from 'node:cluster';
+
+```js
+import http from 'node:http';
+import { availableParallelism } from 'node:os';
+
+if (cluster.isPrimary) {
+  const numCPUs = availableParallelism(); // Automatically detects cores
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork(); // Spawns a worker process per core
+  }
+} else {
+  // Workers share the TCP connection, load-balancing requests
+  http.createServer((req, res) => {
+    res.writeHead(200);
+    res.end('Handled by a cluster worker!');
+  }).listen(8000);
+}
+```
+
+Worker Threads (Vertical Scaling)<br/>
+Concept: Spawns a lightweight thread inside the same process. It shares memory with the main thread via ArrayBuffer.
+
+- Best For: Heavy CPU-bound computation (e.g., resizing images, bcrypt password hashing, data processing).
+- Code Example:javascriptimport { Worker, isMainThread, parentPort } from 'node:worker_threads';
+
+```js
+if (isMainThread) {
+  // Main thread stays free to handle web traffic
+  const worker = new Worker(new URL(import.meta.url));
+  worker.on('message', (result) => console.log(`Heavy math done: ${result}`));
+} else {
+  // This runs on a separate CPU thread
+  let count = 0;
+  for (let i = 0; i < 1e9; i++) count++; // Heavy loop
+  parentPort.postMessage(count);
+}
+```
+
+3. Libuv: The Event Loop's Back Engine<br/>
+If an interviewer asks: "What happens when you read a file using fs.readFile() if JavaScript is single-threaded?
+
+- "The Hand-off: The Event Loop registers the file request and immediately hands it over to Libuv.
+- The Background Work: Libuv allocates the task to one of its 4 default background C++ threads. The main JavaScript thread is now completely free to handle other users.
+- The Callback: Once the hard drive finishes reading the file, Libuv drops the file data back into the Event Loop's callback queue to be executed.
+
+4. High-Yield Interview Vocabulary<br/>
+Drop these exact phrases during your interview to stand out:
+
+- "Shared-nothing architecture": Use this when describing the Cluster Module. Because processes don't share memory, they can't corrupt each other's data.
+- "CPU-bound vs. I/O-bound": Node.js is naturally king at I/O-bound tasks (network requests, database queries) because of Libuv. It historically struggled with CPU-bound tasks (heavy math) until Worker Threads were introduced.
 
 ### 12. What is cluster module in nodejs?
 
