@@ -861,6 +861,41 @@ According to the official Node.js Documentation on nextTick, there are two prima
 - Ensuring 100% Asynchronous Behavior: If an API is asynchronous in some conditions but synchronous in others, it can cause unpredictable bugs (often called "releasing Zalgo"). Wrapping a synchronous return in process.nextTick() guarantees it always runs asynchronously.
 - Allowing Event Handlers to Bind First: It allows an object to emit an event after it has been fully constructed, giving the surrounding script time to attach event listeners first.
 
+### Which will get execute[setTimeout and setImmediate] first out side the i/o callback ? what will be my answer?
+Outside an I/O callback, the correct interview answer is:
+
+The execution order of setTimeout(..., 0) and setImmediate() is not guaranteed. Either one may execute first.
+
+For your code:
+
+```js
+setImmediate(() => console.log('setImmediate'));
+setTimeout(() => console.log('setTimeout'), 0);
+```
+
+Possible outputs are:
+
+```js
+setImmediate
+setTimeout
+```
+
+or 
+
+```js
+setTimeout
+setImmediate
+```
+
+The order depends on when the event loop begins processing relative to the timer threshold.
+
+A useful rule to remember:
+
+- Main module/outside I/O callback: order is nondeterministic.
+- Inside an I/O callback: setImmediate() usually executes first because the event loop moves to the check phase after the I/O phase, before the next timers phase.
+
+Also mention that setTimeout(..., 0) does not mean “execute immediately”; it means execute after the minimum timer delay has elapsed.
+
 ### 12. setInterval vs setTimeout vs setImmediate?
 
 `setInterval` - Executes a function repeatedly, waiting for the specified millisecond duration between each execution cycle.
