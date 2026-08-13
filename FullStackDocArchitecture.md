@@ -1127,6 +1127,141 @@ I use structured logs and request ids. If the frontend sees an error, it can sho
 
 ---
 
+## 26. How do you handle when there is only one item in inventory and many user trying to add them into the cart and proceeding for the transaction?<br/>
+To handle a single inventory item with many buyers, use a database lock or redis reservation system during the cart or checkout step. Only let one user finish the purchase. Show clear messages to the other users that the item is sold out.
+
+Here are the code examples for the Redis Lua Script approach (the industry standard) and the Database Optimistic Locking strategy.
+
+1. Redis Lua Script (High Performance)<br/>
+Using a standard Redis DECR can cause issues if you need to set a timer (TTL) at the exact same time. A Lua script runs atomically inside Redis, meaning no other request can interrupt it.
+
+The Lua Script<br/>
+
+```js
+-- KEYS[1]: 'item:123:stock'
+-- KEYS[2]: 'item:123:reservation:user_789'
+-- ARGV[1]: Lock timeout in seconds (e.g., 300 for 5 minutes)
+
+local stock = tonumber(redis.call('get', KEYS[1]))
+
+if stock and stock > 0 then
+    -- Decrease stock immediately
+    redis.call('decr', KEYS[1])
+    -- Create a reservation lock for this specific user
+    redis.call('set', KEYS[2], 'reserved', 'EX', ARGV[1])
+    return 1 -- Success
+else
+    return 0 -- Sold out
+end
+```
+
+Node.js Implementation Example
+```js
+import Redis from 'ioredis';
+const redis = new Redis();
+
+// Define the Lua script in your application
+redis.defineCommand('reserveStock', {
+  numberOfKeys: 2,
+  lua: `... (insert Lua script from above) ...`
+});
+
+async function tryCheckout(itemId, userId) {
+  const stockKey = `item:${itemId}:stock`;
+  const reserveKey = `item:${itemId}:reservation:${userId}`;
+  const ttl = 300; // 5 minutes
+
+  // Executes atomically in Redis
+  const result = await redis.reserveStock(stockKey, reserveKey, ttl);
+
+  if (result === 1) {
+    return { success: true, message: "Item reserved for 5 minutes!" };
+  } else {
+    return { success: false, message: "Item is sold out or unavailable." };
+  }
+}
+```
+
+2. Database Strategies (Data Integrity)<br/>
+If you do not want to use Redis, you can handle this directly in SQL. Do not use SELECT and then UPDATE in two separate app steps. That creates a race condition. Instead, use one of these two database strategies.
+
+Strategy A: Optimistic Locking (Recommended for low-to-medium contention)
+
+This assumes multiple updates won't hit at the exact same millisecond. It uses a version column to ensure the data hasn't changed since you looked at it.
+
+-- Step 1: Fetch the item details first
+SELECT id, stock, version FROM inventory WHERE id = 123;
+-- Let's say stock is 1, and version is 4.
+
+-- Step 2: Try to update only if the version is still 4
+UPDATE inventory 
+SET stock = stock - 1, version = version + 1 
+WHERE id = 123 AND version = 4 AND stock > 0;
+
+How it handles concurrency: If two users attempt Step 2 at the same time, the first user's query succeeds and changes the version to 5. The second user's query will update 0 rows because version = 4 is no longer true. Your code checks the affected row count—if it is 0, throw a "Sold Out" error.
+
+Strategy B: Pessimistic Locking (Strict control, slower)
+
+This locks the database row immediately when a user looks at it, forcing all other users to wait in line.
+
+-- Start a transaction
+BEGIN;
+
+-- Select and lock the row. Other transactions must wait here.
+SELECT stock FROM inventory WHERE id = 123 FOR UPDATE;
+
+-- Check stock in your application logic. If stock >= 1:
+UPDATE inventory SET stock = stock - 1 WHERE id = 123;
+
+-- Commit the transaction, releasing the lock for the next user
+COMMIT;
+
+
+Warning: If 1,000 users click "Buy" at the same time, this creates database bottlenecks. User #1000 has to wait for 999 transactions to finish processing before their query even resolves.
+
+## 26. How to prevent multiple users from booking the same seat?
+To prevent multiple users from booking the same seat, modern reservation systems use temporary seat locks with timeouts (usually lasting 10 to 15 minutes) or strict database row-level locking. When User A selects a seat, the system flags that seat as locked/reserved in the centralized inventory, blocking User B from choosing it while payment or details are completed. If the timer expires without payment, the lock releases and the seat becomes available again.
+
+Technical Locking Strategies
+- Pessimistic Locking: The database locks the specific seat row immediately upon selection, preventing any other read/write access until the first transaction finishes.
+- Optimistic Concurrency Control: The system allows multiple users to select the seat visually, but checks the version/status at the final checkout step; the first user to commit succeeds, and subsequent attempts fail with a "seat taken" notice.
+- Distributed Caching (Redis): Fast in-memory stores handle temporary locks across high-traffic cloud environments before writing the final state to the main database.
+
+User Experience Handling
+- Timed Countdown: Displays a visual timer on the screen warning the user how long the seat is held.
+- Graceful Failure: If a concurrent user submits payment a split-second faster, the system prompts the delayed user to select a new seat without crashing.
+
+The best overall solution for modern production systems is a hybrid model that uses Redis for fast distributed locks during the seat-selection phase, backed by Pessimistic Database Locking during the final payment confirmation. This balances sub-millisecond user responses with absolute data consistency.
+
+The Best Architectural Blueprint
+
+```js
+[User A] --(Selects Seat)--> [API Gateway] --> [Redis Distributed Lock (Success: 10 Min TTL)]
+[User B] --(Selects Seat)--> [API Gateway] --> [Redis Distributed Lock (Fails: Seat Blocked)]
+                                                       │
+                                            (User A Pays & Confirms)
+                                                       │
+                                                       ▼
+                                         [SQL Database: SELECT ... FOR UPDATE]
+```
+
+Phase 1: Selection Phase (Distributed Cache Lock)<br/>
+When a user clicks a seat, you do not want to hit a heavy SQL database immediately. Instead, use a distributed cache like Redis to handle the massive volume of concurrent clicks.
+- The Command: Use an atomic command like SET seat:flight123:12A user_456 NX EX 600.
+- NX Flag: Ensures the key is only created if it does not already exist (first person wins).
+- EX 600 (TTL): Automatically expires and deletes the lock after 10 minutes (600 seconds) if the user abandons their cart.
+- Result: User A gets the lock instantly. User B gets a "Seat temporarily held" message without lagging your core servers.
+
+Phase 2: Checkout Phase (Database Row Locking)<br/>
+When the user submits payment, the transaction must be 100% reliable. This requires strict ACID compliance at the database level.
+- The Mechanism: Open a database transaction and use a pessimistic lock like SELECT * FROM seat_inventory WHERE seat_id = '12A' FOR UPDATE;.
+- Result: This blocks any other process from modifying or reading that specific row until the payment processor responds and the transaction is committed or rolled back.
+
+Why Other Alternatives Lose
+- Pure Pessimistic Locking Only: If thousands of users click seats at once, locking database rows immediately creates massive queues, slow page loads, and deadlocks.
+- Pure Optimistic Locking Only: If two users reach the final payment button simultaneously, one user's card gets charged only for the system to tell them at the last millisecond: "Sorry, someone else bought it." This ruins user trust.
+
+
 ## 27. How do you handle deployment architecture for React and Node.js?
 
 ### Short Answer
