@@ -1697,7 +1697,7 @@ How It Handles Thousands of Requests
 - The Event Loop: Instead of waiting for the database to respond, the single thread immediately moves on to accept the next incoming request.
 - Callback Execution: When the database task finishes, it triggers a callback. The Event Loop picks up this callback and sends the response back to the user.
 
-### What are three entirely different layers of technology (Hardware, Operating System, and the Node.js runtime) but are often discussed all at once.
+### 13. What are three entirely different layers of technology (Hardware, Operating System, and the Node.js runtime) but are often discussed all at once.
 Layer 1: The Hardware (Physical Infrastructure)<br/>
 Think of this as the physical office building where work gets done.
 - Server: The entire physical computer (or a virtual machine in the cloud). It is the whole building.
@@ -1714,7 +1714,7 @@ This is what you do when your single desk (one core) gets completely overwhelmed
 - Cluster Module: This clones the entire setup. It hires multiple identical managers, each sitting at their own separate desk (CPU core). They do not talk to each other. They just share the incoming traffic load. If one manager crashes, the others keep working. This is for scaling web traffic.
 - Worker Threads: This keeps you at one desk, but lets the manager hire a temporary helper right next to them to do a massive math calculation. The helper shares memory with the manager. This is for scaling heavy computation (like video processing or AI math) inside a single application.
 
-### Some important questions -
+### 14. Some important questions -
 
 1. The Core Interview Question: "Is Node.js Single-Threaded?"
 - The Trap: Saying "Yes" without qualifying it.
