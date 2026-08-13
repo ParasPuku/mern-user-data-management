@@ -1928,7 +1928,7 @@ if (cluster.isPrimary) {
 }
 ```
 
-### What is node.js process?
+### 12. What is node.js process?
 A Node.js process is an active runtime instance of your application executing inside your computer’s operating system (OS).
 
 When you type node app.js in your terminal, the OS allocates a dedicated chunk of memory and system resources to run that specific file. That running container is the process.
@@ -5104,31 +5104,60 @@ npm install express-rate-limit
 
 Implementation Code:
 ```js
-const express = require('express');
-const rateLimit = require('express-rate-limit');
+const express = require("express");
+const rateLimit = require("express-rate-limit");
 
 const app = express();
 
-// Define the rate limit rule
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes window
-  max: 100, // Limit each IP to 100 requests per window
-  message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+app.use(express.json());
+
+// General application limiter
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: "Too many requests from this IP, please try again later",
+    standardHeaders: true,
+    legacyHeaders: false,
 });
 
-// Apply the rate limiting middleware to all requests
-app.use(limiter);
-
-// Or apply specifically to a sensitive route
-// app.post('/api/login', limiter, (req, res) => { ... });
-
-app.get('/', (req, res) => {
-  res.send('Success! You are within your rate limit.');
+// Login-specific limiter
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => {
+        res.status(429).json({success: false, message: "Too many login attempts. Please try again later."})
+    }
 });
 
-app.listen(3000, () => console.log('Server running on port 3000'));
+app.use(generalLimiter);
+
+app.get("/", (req, res) => {
+    res.send("Server is running");
+});
+
+app.post("/login", loginLimiter, (req, res) => {
+    const { username, password } = req.body;
+
+    // Replace this with your database authentication logic
+    const isValidLogin =
+        username === "admin" && password === "password123";
+
+    if (!isValidLogin) {
+        return res.status(401).json({
+            message: "Invalid username or password",
+        });
+    }
+
+    res.json({
+        message: "Login successful",
+    });
+});
+
+app.listen(3000, () => {
+    console.log("The app is running on port 3000");
+});
 ```
 
 2. Distributed Production Setup (Using Redis) <br/>
