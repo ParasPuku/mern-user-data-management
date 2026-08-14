@@ -4487,6 +4487,61 @@ Promise.race       -> first finished wins, success or failure
 Promise.any        -> first success wins
 ```
 
+### 72. What is parallel and sequential asynchoronus execution in js?
+In JavaScript, sequential asynchronous execution means tasks are performed one after another, waiting for each to finish before starting the next. Parallel asynchronous execution means multiple tasks are initiated simultaneously, running concurrently without waiting for each other.
+
+Sequential Asynchronous Execution<br/>
+Use this pattern when your asynchronous steps depend strictly on the results of the previous step. You implement this by applying the await keyword directly to each individual promise creation line.
+
+```js
+async function runSequentially() {
+  console.time("Sequential Total");
+
+  // Step 2 does not start until Step 1 completes
+  const user = await fetchUserData(1); 
+  const orders = await fetchUserOrders(user.id); 
+
+  console.timeEnd("Sequential Total");
+}
+```
+
+- How it behaves: The execution pauses at each await keyword.
+- Performance footprint: If fetchUserData takes 2 seconds and fetchUserOrders takes 3 seconds, the total process takes exactly 5 seconds.
+
+Parallel Asynchronous Execution<br/>
+Use this pattern when you need to fetch or process multiple resources that do not rely on each other. You implement this by triggering the asynchronous functions without an immediate await keyword, then resolving them collectively using Promise.all().
+
+```js
+async function runInParallel() {
+  console.time("Parallel Total");
+
+  // Both operations are kicked off instantly at the exact same time
+  const promiseA = fetchProductCatalog(); 
+  const promiseB = fetchUserPreferences(); 
+
+  // Wait for both concurrent operations to resolve
+  const [catalog, preferences] = await Promise.all([promiseA, promiseB]);
+
+  console.timeEnd("Parallel Total");
+}
+```
+
+- How it behaves: JavaScript registers both operations immediately with the runtime environment (Web APIs/Node.js). They progress concurrently in the background.
+- Performance footprint: If fetchProductCatalog takes 2 seconds and fetchUserPreferences takes 3 seconds, the total execution time is only 3 seconds.
+
+Technical Nuance: The Single Thread<br/>
+While we call this "parallel," JavaScript runs on a single main thread. True CPU-level parallelism does not happen here. Instead, JavaScript hands off the waiting process (like network I/O or timers) to the underlying system. The execution is highly concurrent, while the callback handling remains single-threaded.
+
+➡️ Core Differences
+- Start Time (Sequential): One after another.
+- Start Time (Parallel): All at the same time.
+- Total Time (Sequential): Sum of all task durations.
+- Total Time (Parallel): Duration of the single slowest task.
+- Dependencies (Sequential): Required when a task needs data from a previous task.
+- Dependencies (Parallel): None; tasks must be independent of each other.
+- Resource Risk (Sequential): Low strain on systems and APIs.
+- Resource Risk (Parallel): High risk of overloading external network servers.
+
 ### 72. What is anonymous function with an example?
 
 An anonymous function is a function without a name.

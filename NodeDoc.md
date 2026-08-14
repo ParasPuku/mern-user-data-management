@@ -6697,3 +6697,1240 @@ Your monthly bill for myCart.com will look like a detailed utility bill:
 - Amazon EC2 (Servers): You ran 10 servers for a total of 720 hours this month = $X
 - Amazon RDS (Databases): You stored 500 GB of user data and product info = $Y
 - Amazon S3 (Storage): You hosted 2 Million product images = $Z
+
+---
+
+**********************************************************************
+****************** SECTIONS TO MOVE MANUALLY *************************
+**********************************************************************
+
+Move these sections wherever they fit best in the document. They cover gaps identified during the doc review.
+
+---
+
+## Async JavaScript in Node.js
+
+### 171. What is a callback in Node.js?
+
+A callback is a function passed as an argument to another function and executed later, usually after an async operation completes.
+
+Example:
+
+```js
+import fs from 'node:fs';
+
+fs.readFile('users.json', 'utf8', (error, data) => {
+  if (error) {
+    console.error(error);
+    return;
+  }
+  console.log(JSON.parse(data));
+});
+```
+
+Interview answer:
+
+```text
+A callback is a function invoked after async work finishes. Node.js APIs historically used callbacks heavily. Callbacks are still useful, but most new code prefers Promises or async/await for readability.
+```
+
+### 172. What is the error-first callback pattern?
+
+Node.js convention: the first argument of a callback is always an error (or `null` if no error).
+
+Pattern:
+
+```js
+function getUser(id, callback) {
+  User.findById(id, (error, user) => {
+    if (error) return callback(error);
+    if (!user) return callback(new Error('User not found'));
+    callback(null, user);
+  });
+}
+```
+
+Interview answer:
+
+```text
+Error-first callbacks pass (err, result). Always check err first before using result. This pattern keeps async error handling consistent across Node.js core APIs.
+```
+
+### 173. What is callback hell?
+
+Callback hell (pyramid of doom) happens when nested callbacks make code hard to read and maintain.
+
+Bad example:
+
+```js
+getUser(userId, (err, user) => {
+  if (err) return handle(err);
+  getOrders(user.id, (err, orders) => {
+    if (err) return handle(err);
+    getPayments(orders[0].id, (err, payments) => {
+      if (err) return handle(err);
+      sendEmail(user.email, payments);
+    });
+  });
+});
+```
+
+Better approach:
+
+```js
+const user = await User.findById(userId);
+const orders = await Order.find({ userId: user.id });
+const payments = await Payment.find({ orderId: orders[0].id });
+await sendEmail(user.email, payments);
+```
+
+Interview answer:
+
+```text
+Callback hell is deeply nested async code. Fix it with Promises, async/await, or modular functions. In our MERN app, controllers use async/await with asyncHandler instead of nested callbacks.
+```
+
+### 174. What is a Promise?
+
+A Promise represents a value that will be available in the future — either resolved (success) or rejected (error).
+
+States:
+
+- **pending** — operation in progress
+- **fulfilled** — operation succeeded
+- **rejected** — operation failed
+
+Example:
+
+```js
+const promise = new Promise((resolve, reject) => {
+  setTimeout(() => resolve('done'), 1000);
+});
+
+promise
+  .then((value) => console.log(value))
+  .catch((error) => console.error(error))
+  .finally(() => console.log('cleanup'));
+```
+
+Interview answer:
+
+```text
+A Promise wraps async work and exposes then/catch/finally. It avoids callback nesting and makes error handling cleaner than manual callback chains.
+```
+
+### 175. What is async/await?
+
+`async/await` is syntactic sugar over Promises. An `async` function always returns a Promise. `await` pauses inside that function until a Promise settles.
+
+Example:
+
+```js
+export const getProfile = async (req, res) => {
+  const profile = await UserProfile.findOne({ owner: req.account.id });
+  if (!profile) {
+    return res.status(404).json({ message: 'Profile not found' });
+  }
+  res.json(profile);
+};
+```
+
+With error handling:
+
+```js
+try {
+  const user = await User.findById(req.params.id);
+  res.json(user);
+} catch (error) {
+  next(error);
+}
+```
+
+In this app, `asyncHandler` wraps async route handlers and forwards rejected Promises to Express error middleware:
+
+```js
+export const asyncHandler = (handler) => (req, res, next) =>
+  Promise.resolve(handler(req, res, next)).catch(next);
+```
+
+Interview answer:
+
+```text
+async/await makes async code look synchronous and is easier to debug. Always handle errors with try/catch or a wrapper like asyncHandler that passes failures to next().
+```
+
+### 176. Promise.all vs Promise.race vs Promise.allSettled vs Promise.any?
+
+| Method | Resolves when | Rejects when | Use case |
+|---|---|---|---|
+| `Promise.all` | All promises succeed | Any one fails | Run parallel tasks, need all results |
+| `Promise.race` | First promise settles | First rejection | Timeout pattern |
+| `Promise.allSettled` | All promises settle (success or fail) | Never rejects | Batch jobs where partial failure is OK |
+| `Promise.any` | First promise succeeds | All fail | Fastest successful response wins |
+
+`Promise.all` example:
+
+```js
+const [user, teams, skills] = await Promise.all([
+  User.findById(userId),
+  Team.find({ owner: userId }),
+  Skill.find()
+]);
+```
+
+`Promise.race` timeout example:
+
+```js
+const result = await Promise.race([
+  fetchExternalData(),
+  new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('Timeout')), 5000)
+  )
+]);
+```
+
+`Promise.allSettled` example:
+
+```js
+const results = await Promise.allSettled([
+  sendEmail(user.email),
+  sendSms(user.mobile),
+  logAuditEvent(user.id)
+]);
+
+const failed = results.filter((r) => r.status === 'rejected');
+```
+
+Interview answer:
+
+```text
+Use Promise.all when every result is required. Use Promise.race for timeouts or first-wins logic. Use Promise.allSettled when you want every outcome even if some fail. Use Promise.any when you want the first successful result.
+```
+
+### 177. Sequential vs parallel async execution?
+
+Sequential — one after another (slower, but order matters):
+
+```js
+const user = await User.findById(id);
+const profile = await UserProfile.findOne({ user: user.id });
+```
+
+Parallel — run at the same time (faster when tasks are independent):
+
+```js
+const [user, profile] = await Promise.all([
+  User.findById(id),
+  UserProfile.findOne({ user: id })
+]);
+```
+
+Rule of thumb:
+
+- Use **parallel** when tasks do not depend on each other.
+- Use **sequential** when step B needs output from step A.
+
+Interview answer:
+
+```text
+Do not await inside a loop unless order is required. For independent work, use Promise.all. Sequential awaits in a loop can multiply latency unnecessarily.
+```
+
+### 178. How do you handle errors in async/await code?
+
+Three common patterns:
+
+1. **try/catch in the handler**
+
+```js
+export const updateUser = async (req, res, next) => {
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(user);
+  } catch (error) {
+    next(error);
+  }
+};
+```
+
+2. **asyncHandler wrapper** (used in this app)
+
+```js
+export const updateUser = asyncHandler(async (req, res) => {
+  const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  res.json(user);
+});
+```
+
+3. **Global error middleware**
+
+```js
+export const errorHandler = (error, _req, res, _next) => {
+  const statusCode = error.statusCode || 500;
+  res.status(statusCode).json({ message: error.message || 'Internal server error' });
+};
+```
+
+Interview answer:
+
+```text
+Never leave async route handlers without error handling. Either use try/catch with next(error), or a wrapper like asyncHandler, plus centralized error middleware for consistent API responses.
+```
+
+---
+
+## Graceful Shutdown and Process Signals
+
+### 179. What is graceful shutdown in Node.js?
+
+Graceful shutdown means stopping the server safely: stop accepting new requests, finish in-flight work, close connections, then exit.
+
+Why it matters:
+
+- Prevents dropped requests during deploys
+- Lets K8s/PM2 replace instances cleanly
+- Closes DB and Redis connections properly
+
+Example from this app's `server.js`:
+
+```js
+const shutdown = async (signal) => {
+  console.log(`${signal} received. Closing server...`);
+
+  server.close(async () => {
+    await disconnectRedis();
+    await disconnectDB();
+    process.exit(0);
+  });
+};
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+```
+
+What each part does:
+
+- `server.close()` — stops accepting new HTTP connections; waits for existing ones to finish
+- `disconnectRedis()` / `disconnectDB()` — release external resources
+- `process.exit(0)` — exit cleanly after cleanup
+
+Interview answer:
+
+```text
+Graceful shutdown listens for SIGTERM/SIGINT, stops the HTTP server with server.close(), closes DB/cache connections, then exits. This avoids cutting active requests during rolling deploys.
+```
+
+### 180. What is the difference between SIGTERM and SIGINT?
+
+| Signal | Typical source | Meaning |
+|---|---|---|
+| `SIGTERM` | Kubernetes, Docker, PM2, systemd | "Please shut down cleanly" |
+| `SIGINT` | Ctrl+C in terminal | Developer manually stopping the process |
+
+Both should trigger the same shutdown handler in production code.
+
+Interview answer:
+
+```text
+SIGTERM is the standard production stop signal from orchestrators. SIGINT is usually manual local development. Handle both with the same graceful shutdown logic.
+```
+
+### 181. uncaughtException vs unhandledRejection — what is the difference?
+
+| | `uncaughtException` | `unhandledRejection` |
+|---|---|---|
+| Trigger | Synchronous throw with no catch | Promise rejected with no `.catch()` / no `await` in try/catch |
+| Example | `throw new Error('boom')` at top level | `Promise.reject('fail')` with no handler |
+| Process state | Often corrupted — unknown side effects | Promise chain failed; rest of app may still be OK |
+| Recommended action | Log, graceful shutdown, exit | Log, treat as bug, shutdown in production |
+
+Example:
+
+```js
+// uncaughtException — sync error escapes
+JSON.parse('invalid json'); // if not in try/catch
+
+// unhandledRejection — async error not caught
+async function broken() {
+  throw new Error('DB failed');
+}
+broken(); // no .catch(), no await in try/catch
+```
+
+Safer production pattern:
+
+```js
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+  shutdownGracefully();
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection:', reason);
+  shutdownGracefully();
+});
+```
+
+Interview answer:
+
+```text
+uncaughtException means a sync error was not caught — the process may be in a bad state. unhandledRejection means a Promise failed without a handler. Do not use either for normal business flow. Log both and shut down gracefully in production, then let the process manager restart a clean instance.
+```
+
+### 182. Why should you add a shutdown timeout?
+
+If in-flight requests never finish, `server.close()` can hang forever.
+
+Production-safe pattern:
+
+```js
+const SHUTDOWN_TIMEOUT_MS = 10000;
+
+const shutdown = (signal) => {
+  console.log(`${signal} received. Closing server...`);
+
+  const forceExitTimer = setTimeout(() => {
+    console.error('Forced shutdown after timeout');
+    process.exit(1);
+  }, SHUTDOWN_TIMEOUT_MS);
+
+  server.close(async () => {
+    clearTimeout(forceExitTimer);
+    await disconnectRedis();
+    await disconnectDB();
+    process.exit(0);
+  });
+};
+```
+
+Interview answer:
+
+```text
+Always add a forced exit timeout during graceful shutdown. If connections hang, the process should still exit so the orchestrator can replace it.
+```
+
+---
+
+## Debugging Node.js in Production
+
+### 183. How do you debug a Node.js app in production?
+
+Production debugging should be **non-invasive first**, then deeper only when needed.
+
+Step-by-step approach:
+
+1. **Check logs** — errors, stack traces, request IDs, timestamps
+2. **Check metrics** — CPU, memory, response time, error rate
+3. **Reproduce in staging** — same Node version, same env vars
+4. **Use inspect tools** — only on a staging/canary instance, not all prod nodes at once
+5. **Capture profiles** — CPU profile or heap snapshot during the issue
+
+Tools:
+
+```bash
+# Attach debugger (staging/canary only)
+node --inspect=9229 server.js
+
+# CPU profile
+node --prof server.js
+node --prof-process isolate-*.log > profile.txt
+
+# Trace warnings
+NODE_OPTIONS='--trace-warnings' node server.js
+
+# Memory usage watch
+node -e "setInterval(() => console.log(process.memoryUsage()), 5000)"
+```
+
+Interview answer:
+
+```text
+Start with logs and metrics, reproduce in staging, then use --inspect, CPU profiling, or heap snapshots on a single instance. Never enable heavy debug tooling on every production node at once.
+```
+
+### 184. What is the difference between --inspect and console.log debugging?
+
+| | `console.log` | `node --inspect` |
+|---|---|---|
+| Setup | Quick, anywhere | Requires debugger client (Chrome DevTools) |
+| Production risk | Low if structured | Higher — pauses execution if breakpoints hit |
+| Best for | Tracing flow, request IDs | Stepping through code, inspecting closures, async stacks |
+
+Interview answer:
+
+```text
+Use structured logging in production. Use --inspect in staging or on one canary instance when you need breakpoints, async stack traces, or heap analysis.
+```
+
+### 185. How do you debug memory leaks in production safely?
+
+1. Monitor `heapUsed` over time — steady climb after traffic drops = leak
+2. Take heap snapshots at different times
+3. Compare retained objects in Chrome DevTools
+4. Fix common causes: global caches, timers, EventEmitter listeners
+
+```js
+setInterval(() => {
+  const mem = process.memoryUsage();
+  console.log({
+    heapUsedMB: Math.round(mem.heapUsed / 1024 / 1024),
+    rssMB: Math.round(mem.rss / 1024 / 1024)
+  });
+}, 30000);
+```
+
+Interview answer:
+
+```text
+Watch heapUsed trends, take and compare heap snapshots, and look for growing globals, uncleared timers, or dangling listeners. Fix the root cause; restarting is only a temporary bandage.
+```
+
+---
+
+## Node.js vs Browser JavaScript
+
+### 186. What is the difference between Node.js and browser JavaScript?
+
+Both use JavaScript and the V8 engine, but the runtime environment differs.
+
+| Feature | Browser | Node.js |
+|---|---|---|
+| DOM / `window` | Yes | No |
+| `document`, `localStorage` | Yes | No |
+| `fs`, `path`, `process` | No | Yes |
+| File system access | No (direct) | Yes |
+| Module system | ES modules + bundlers | CommonJS + ESM natively |
+| Global object | `window` | `global` / `globalThis` |
+
+Node-only example:
+
+```js
+import fs from 'node:fs';
+import process from 'node:process';
+
+console.log(process.cwd());
+console.log(fs.readFileSync('./package.json', 'utf8'));
+```
+
+Shared APIs (both environments):
+
+- `fetch` (modern Node versions)
+- `console`
+- `setTimeout`, `Promise`
+- `JSON`, `Map`, `Set`
+
+Interview answer:
+
+```text
+JavaScript is the language. The browser and Node.js are different runtimes with different APIs. Node.js adds server-side modules like fs and process; the browser adds DOM APIs. Same language, different capabilities.
+```
+
+### 187. Can you use the same JavaScript code in Node.js and the browser?
+
+Sometimes, but not always.
+
+Works in both:
+
+- Utility functions (sorting, formatting, validation)
+- Business logic with no environment-specific APIs
+- Shared code in a monorepo (e.g. validation schemas)
+
+Does not work directly:
+
+- `document.getElementById()` in Node.js
+- `fs.readFile()` in the browser (without bundler shims)
+
+Interview answer:
+
+```text
+Pure logic can be shared. Environment-specific APIs cannot. Many teams extract shared validation and utilities into a common package used by both frontend and backend.
+```
+
+---
+
+## Testing in Node.js
+
+### 188. Why test Node.js backend code?
+
+Testing catches regressions before production, documents expected behavior, and makes refactoring safer.
+
+What to test in a MERN API:
+
+- Route responses (status code, JSON shape)
+- Auth middleware (logged in vs logged out)
+- Validation errors
+- Service logic (OTP, token generation)
+- Error handler behavior
+
+Interview answer:
+
+```text
+Backend tests protect API contracts and auth rules. Focus on routes, middleware, services, and error paths — not just happy paths.
+```
+
+### 189. What testing tools are commonly used with Node.js?
+
+| Tool | Purpose |
+|---|---|
+| `node:test` | Built-in test runner (Node 18+) |
+| Jest | Popular all-in-one test framework |
+| Vitest | Fast Vite-native test runner |
+| Supertest | HTTP assertion library for Express APIs |
+| MongoDB Memory Server | In-memory MongoDB for integration tests |
+
+Basic `node:test` example:
+
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+
+test('adds numbers', () => {
+  assert.equal(2 + 2, 4);
+});
+```
+
+Supertest example:
+
+```js
+import request from 'supertest';
+import { app } from '../src/app.js';
+
+test('GET /api/health returns ok', async () => {
+  const res = await request(app).get('/api/health');
+  assert.equal(res.status, 200);
+  assert.equal(res.body.status, 'ok');
+});
+```
+
+Interview answer:
+
+```text
+Use node:test or Jest for unit tests, Supertest for HTTP endpoints, and an in-memory or test database for integration tests. Mock external services like Redis or email in unit tests.
+```
+
+### 190. How do you test async code in Node.js?
+
+Async tests must `await` results or return a Promise.
+
+```js
+test('finds user by email', async () => {
+  const user = await User.findOne({ email: 'test@example.com' });
+  assert.ok(user);
+});
+```
+
+Testing rejected Promises:
+
+```js
+test('throws for invalid id', async () => {
+  await assert.rejects(
+    () => User.findById('invalid-id-format'),
+    { name: 'CastError' }
+  );
+});
+```
+
+Interview answer:
+
+```text
+Use async test functions and await the code under test. For failures, use assert.rejects or expect(...).rejects. Always test both success and error paths for async handlers.
+```
+
+### 191. What should you mock in Node.js API tests?
+
+Mock external dependencies, not your own business logic.
+
+Mock:
+
+- Database (or use test DB / in-memory MongoDB)
+- Redis
+- Email/SMS providers
+- Third-party HTTP APIs
+- File system (when testing upload edge cases)
+
+Do not mock:
+
+- The function you are actually testing
+- Express itself (use Supertest against the real app instance)
+
+Interview answer:
+
+```text
+Mock slow or external systems like Redis, email, and payment gateways. Keep the app wiring real and test through HTTP with Supertest for route-level confidence.
+```
+
+---
+
+## Additional Built-in Modules
+
+### 192. What is the os module used for?
+
+The `os` module provides operating system and hardware information.
+
+Common uses:
+
+```js
+import os from 'node:os';
+
+console.log(os.platform());           // 'linux', 'darwin', 'win32'
+console.log(os.cpus().length);          // number of CPU cores
+console.log(os.totalmem());             // total system memory
+console.log(os.freemem());              // free system memory
+console.log(os.hostname());
+console.log(os.availableParallelism()); // recommended worker count
+```
+
+Used in cluster setups to fork one worker per CPU core.
+
+Interview answer:
+
+```text
+The os module exposes CPU count, memory, platform, and hostname. It is commonly used with the cluster module to scale across all available cores.
+```
+
+### 193. What is the net module used for?
+
+The `net` module creates TCP servers and clients — lower level than HTTP.
+
+Example TCP server:
+
+```js
+import net from 'node:net';
+
+const server = net.createServer((socket) => {
+  socket.write('Hello from TCP server\n');
+  socket.end();
+});
+
+server.listen(4000);
+```
+
+When to use:
+
+- Custom TCP protocols
+- Internal service communication
+- Building non-HTTP servers
+
+Interview answer:
+
+```text
+net handles raw TCP connections. HTTP builds on top of TCP. Use net when you need custom socket-level communication, not for standard REST APIs.
+```
+
+### 194. What is util.promisify used for?
+
+`util.promisify` converts callback-style functions into Promise-based functions.
+
+Example:
+
+```js
+import { promisify } from 'node:util';
+import fs from 'node:fs';
+
+const readFile = promisify(fs.readFile);
+
+const data = await readFile('config.json', 'utf8');
+```
+
+Note: Many modern Node APIs already have Promise versions (`fs/promises`).
+
+Interview answer:
+
+```text
+promisify wraps error-first callback APIs into Promises. Prefer native Promise APIs like fs/promises when available.
+```
+
+### 195. What is the https module used for?
+
+The `https` module creates an HTTPS server with TLS/SSL encryption.
+
+Example:
+
+```js
+import https from 'node:https';
+import fs from 'node:fs';
+import express from 'express';
+
+const app = express();
+
+const options = {
+  key: fs.readFileSync('./certs/private-key.pem'),
+  cert: fs.readFileSync('./certs/certificate.pem')
+};
+
+https.createServer(options, app).listen(443, () => {
+  console.log('HTTPS server running on port 443');
+});
+```
+
+In production, TLS is often terminated at a reverse proxy (NGINX, AWS ALB, Cloudflare) instead of inside Node.js.
+
+Interview answer:
+
+```text
+https creates encrypted HTTP servers. In production, TLS is often handled by a load balancer or reverse proxy, while Node listens on HTTP internally.
+```
+
+### 196. What is the dns module used for?
+
+The `dns` module resolves domain names to IP addresses.
+
+```js
+import dns from 'node:dns';
+
+dns.lookup('example.com', (err, address) => {
+  console.log(address); // e.g. '93.184.216.34'
+});
+
+// Promise version
+import dns from 'node:dns/promises';
+const address = await dns.lookup('example.com');
+```
+
+Note: `dns.lookup` uses the libuv thread pool (blocking getaddrinfo). For high-throughput DNS, consider caching or a dedicated DNS resolver.
+
+Interview answer:
+
+```text
+dns resolves hostnames to IPs. dns.lookup uses the libuv thread pool, so heavy DNS lookups can block the pool — cache results when possible.
+```
+
+### 197. What is the zlib module used for?
+
+The `zlib` module compresses and decompresses data (gzip, deflate).
+
+Common use — compress HTTP responses:
+
+```js
+import zlib from 'node:zlib';
+import { pipeline } from 'node:stream/promises';
+import fs from 'node:fs';
+
+await pipeline(
+  fs.createReadStream('large-log.txt'),
+  zlib.createGzip(),
+  fs.createWriteStream('large-log.txt.gz')
+);
+```
+
+Interview answer:
+
+```text
+zlib handles compression. Use it for gzip responses or compressing large files via streams. Compression is CPU-heavy and may use the libuv thread pool.
+```
+
+### 198. What is the url module used for?
+
+The `url` module parses and builds URLs.
+
+```js
+import { URL } from 'node:url';
+
+const parsed = new URL('https://api.example.com/users?page=2&limit=10');
+
+console.log(parsed.hostname);  // 'api.example.com'
+console.log(parsed.pathname);  // '/users'
+console.log(parsed.searchParams.get('page')); // '2'
+```
+
+In Express, `req.originalUrl` and `req.query` handle most of this, but `URL` is useful for parsing external URLs and webhook callbacks.
+
+Interview answer:
+
+```text
+The URL class parses and constructs URLs safely. Use it when validating redirect URLs, parsing webhook endpoints, or building query strings.
+```
+
+---
+
+## Node.js Versions and Tooling
+
+### 199. What is Node.js LTS vs Current?
+
+| Release type | Support | Best for |
+|---|---|---|
+| **LTS (Long Term Support)** | ~30 months | Production apps |
+| **Current** | Short-lived, latest features | Experimentation, trying new APIs |
+
+Rule: use **LTS in production**, Current for local experimentation.
+
+Check version:
+
+```bash
+node -v
+```
+
+Interview answer:
+
+```text
+Always use LTS in production for stability and long support. Current releases get new features faster but have shorter support windows.
+```
+
+### 200. What is nvm and why use it?
+
+nvm (Node Version Manager) lets you install and switch between multiple Node.js versions per project.
+
+```bash
+nvm install 22
+nvm use 22
+nvm alias default 22
+```
+
+Why it matters:
+
+- Team members use the same Node version
+- CI matches local development
+- Easy upgrade/testing of new LTS
+
+Alternatives: `fnm`, `volta`, `asdf`.
+
+Interview answer:
+
+```text
+nvm pins Node versions per project. Add .nvmrc with the version number so the whole team and CI use the same runtime.
+```
+
+---
+
+## Logging and Observability
+
+### 201. Why is structured logging important in Node.js?
+
+Plain `console.log` is fine for development, but production needs searchable, parseable logs.
+
+Structured log example:
+
+```js
+console.log(JSON.stringify({
+  level: 'info',
+  message: 'User login success',
+  userId: user.id,
+  requestId: req.id,
+  timestamp: new Date().toISOString()
+}));
+```
+
+Popular libraries:
+
+| Library | Notes |
+|---|---|
+| **pino** | Very fast, JSON-first, low overhead |
+| **winston** | Flexible transports (file, cloud, console) |
+| **morgan** | HTTP request logging middleware for Express |
+
+Morgan example (used in API gateway sections of this doc):
+
+```js
+import morgan from 'morgan';
+app.use(morgan('combined'));
+```
+
+Interview answer:
+
+```text
+Production logs should be structured JSON with timestamps, request IDs, and context fields. Use pino or winston instead of unstructured console.log so log aggregators can search and alert on them.
+```
+
+### 202. What is a request correlation ID?
+
+A correlation ID (request ID) tracks one request across services and log lines.
+
+Pattern:
+
+```js
+import { randomUUID } from 'node:crypto';
+
+app.use((req, res, next) => {
+  req.id = req.headers['x-request-id'] || randomUUID();
+  res.setHeader('x-request-id', req.id);
+  next();
+});
+```
+
+Interview answer:
+
+```text
+Attach a unique request ID to every incoming request and include it in all log lines. This makes it possible to trace one user's request through middleware, DB calls, and errors.
+```
+
+### 203. What is OpenTelemetry in Node.js?
+
+OpenTelemetry (OTel) is a standard for traces, metrics, and logs across services.
+
+It answers:
+
+- Which route is slow?
+- Which DB query caused the latency?
+- How do requests flow across microservices?
+
+Interview answer:
+
+```text
+OpenTelemetry adds distributed tracing and metrics to Node.js apps. It helps find bottlenecks in production that logs alone cannot explain.
+```
+
+---
+
+## GraphQL, Serverless, and Alternative Runtimes
+
+### 204. How is GraphQL used in Node.js?
+
+GraphQL is a query language for APIs. Instead of fixed REST endpoints, clients request exactly the fields they need.
+
+Popular Node.js libraries:
+
+- **Apollo Server** — full-featured GraphQL server
+- **Mercurius** — Fastify-native GraphQL plugin
+
+Simple schema example:
+
+```js
+const typeDefs = `
+  type User {
+    id: ID!
+    name: String!
+    email: String!
+  }
+  type Query {
+    user(id: ID!): User
+  }
+`;
+```
+
+When to choose GraphQL over REST:
+
+- Mobile apps need flexible, nested data
+- Many clients need different field sets
+- You want a single endpoint instead of many REST routes
+
+Interview answer:
+
+```text
+GraphQL lets clients specify the exact data shape they need. It reduces over-fetching but adds complexity around caching, auth, and N+1 query problems. REST is simpler for most CRUD APIs like our MERN app.
+```
+
+### 205. What is a cold start in serverless Node.js?
+
+A cold start happens when a serverless function (AWS Lambda, Cloudflare Workers) has no warm instance ready and must boot Node.js from scratch.
+
+Cold start causes:
+
+- Loading Node.js runtime
+- Loading dependencies (`node_modules`)
+- Connecting to DB on first invocation
+
+How to reduce cold starts:
+
+- Keep functions small — fewer dependencies
+- Reuse connections outside the handler (carefully)
+- Use provisioned concurrency (AWS)
+- Use startup snapshots (Node.js experimental feature)
+
+Interview answer:
+
+```text
+Cold starts add latency when a serverless function boots fresh. Reduce bundle size, reuse connections wisely, and use provisioned concurrency for latency-sensitive routes.
+```
+
+### 206. Node.js vs Bun vs Deno — quick comparison?
+
+| | Node.js | Bun | Deno |
+|---|---|---|---|
+| Maturity | Most mature, largest ecosystem | Newer, very fast | Newer, security-first |
+| npm packages | Full npm support | Mostly compatible | npm via flags / import maps |
+| TypeScript | Via tooling (tsx, ts-node) | Native | Native |
+| Best for | Production APIs, MERN stack | Fast dev tooling, scripts | Secure scripts, edge |
+
+Interview answer:
+
+```text
+Node.js remains the default for production MERN backends because of ecosystem maturity and hiring familiarity. Bun and Deno are alternatives worth knowing, but Node.js is still the industry standard for most backend teams.
+```
+
+---
+
+## TypeScript with Node.js
+
+### 207. How do you use TypeScript with Node.js?
+
+TypeScript adds static types to JavaScript. Node.js runs JavaScript, so TypeScript must be compiled or transpiled.
+
+Common approaches:
+
+1. **Compile with `tsc`**, run compiled JS
+2. **Use `tsx` or `ts-node`** for development
+3. **Use `"type": "module"`** with `.ts` via build step
+
+Example `tsconfig.json` essentials:
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "dist",
+    "strict": true
+  }
+}
+```
+
+Interview answer:
+
+```text
+TypeScript catches type errors before runtime. Compile to JavaScript for production. Use strict mode and match module settings to your package.json type field.
+```
+
+---
+
+## AbortController and Request Cancellation
+
+### 208. What is AbortController in Node.js?
+
+`AbortController` cancels async operations like `fetch`, streams, or long-running tasks.
+
+Example:
+
+```js
+const controller = new AbortController();
+const timeout = setTimeout(() => controller.abort(), 5000);
+
+try {
+  const response = await fetch('https://api.example.com/data', {
+    signal: controller.signal
+  });
+  const data = await response.json();
+} catch (error) {
+  if (error.name === 'AbortError') {
+    console.log('Request cancelled or timed out');
+  }
+} finally {
+  clearTimeout(timeout);
+}
+```
+
+Use cases:
+
+- Request timeouts
+- Cancelling work when client disconnects
+- Stopping background tasks on shutdown
+
+Interview answer:
+
+```text
+AbortController provides a standard way to cancel async work. Pass signal to fetch or custom async functions to avoid wasted work when users disconnect or timeouts fire.
+```
+
+---
+
+## npm Workspaces and Monorepos
+
+### 209. What are npm workspaces?
+
+npm workspaces manage multiple packages in one repository (monorepo).
+
+Example root `package.json`:
+
+```json
+{
+  "name": "my-app",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "shared"
+  ]
+}
+```
+
+Benefits:
+
+- One `npm install` for all packages
+- Shared dependencies deduplicated
+- Easy to share code between frontend and backend
+
+Interview answer:
+
+```text
+npm workspaces let you manage frontend, backend, and shared packages in one repo. Shared validation or types live in a shared workspace and are imported by both sides.
+```
+
+---
+
+## 12-Factor App Principles for Node.js
+
+### 210. What is the 12-factor app methodology?
+
+12-factor app is a set of best practices for building production-ready, cloud-native applications.
+
+Most relevant factors for Node.js:
+
+| Factor | Node.js practice |
+|---|---|
+| **Codebase** | One repo per app (or monorepo with clear boundaries) |
+| **Dependencies** | Explicit in `package.json`, lock file committed |
+| **Config** | Environment variables via `process.env`, not hardcoded |
+| **Backing services** | MongoDB, Redis as attached resources |
+| **Build, release, run** | Separate build (CI) from runtime |
+| **Processes** | Stateless app servers; state in DB/Redis |
+| **Port binding** | App exports HTTP via `app.listen(process.env.PORT)` |
+| **Concurrency** | Scale via cluster/K8s replicas, not one fat process |
+| **Disposability** | Fast startup, graceful shutdown on SIGTERM |
+| **Logs** | Treat logs as event streams (stdout/stderr) |
+| **Admin processes** | One-off tasks via scripts, not mixed into server |
+
+This app follows several 12-factor practices:
+
+```text
+Config via env.js and .env
+Stateless API (JWT cookies, Redis for OTP)
+Port from process.env
+Graceful shutdown in server.js
+Separate build/run in production deploy
+```
+
+Interview answer:
+
+```text
+12-factor apps are stateless, config-driven, and designed for cloud deployment. Node.js backends should use env vars, stdout logging, graceful shutdown, and external databases instead of in-process state.
+```
+
+---
+
+## Node.js REPL
+
+### 211. What is the Node.js REPL?
+
+REPL stands for Read-Eval-Print-Loop — an interactive shell for running JavaScript line by line.
+
+Start it:
+
+```bash
+node
+```
+
+Example session:
+
+```js
+> 2 + 2
+4
+> const os = require('node:os')
+> os.cpus().length
+8
+> .exit
+```
+
+Useful REPL commands:
+
+| Command | Action |
+|---|---|
+| `.help` | Show commands |
+| `.break` | Exit multi-line expression |
+| `.clear` | Clear context |
+| `.exit` | Quit REPL |
+
+Interview answer:
+
+```text
+The REPL is Node.js's interactive shell. Use it to quickly test APIs, inspect objects, and prototype code without creating a file.
+```
