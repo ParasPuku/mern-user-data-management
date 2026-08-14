@@ -746,6 +746,63 @@ When to Use setImmediate()
 - Chunking CPU-heavy jobs: Use it to yield control back to the event loop so network requests or file reads can be handled between your CPU execution blocks.
 - Queueing after I/O: Use it when you want to guarantee your function executes right after the current I/O polling ends.
 
+### 12. Create a simple route to fetch the users who are greater than the 18 years from the db and apply middleware to check the user is logged in or not and also apply another check is, users should be from the US region.
+
+Here is a complete, runnable example using Node.js and Express. It uses two middleware functions to secure the route and filter the users by age before sending the response.
+
+```js
+import express from 'express';
+
+const app = express();
+app.use(express.json());
+
+// Mock Database of users
+const mockDatabase = [
+  { id: 1, name: "Alice", age: 25, country: "US" },
+  { id: 2, name: "Bob", age: 16, country: "US" },
+  { id: 3, name: "Charlie", age: 30, country: "UK" },
+  { id: 4, name: "David", age: 21, country: "US" }
+];
+
+// 1. Middleware: Check if user is logged in
+const checkLogin = (req, res, next) => {
+  // Simple check for an authorization header (simulate login token)
+  const token = req.headers.authorization;
+  
+  if (!token) {
+    return res.status(401).json({ error: "Unauthorized. Please log in first." });
+  }
+  
+  // Simulate decoding user profile from the token
+  req.currentUser = { id: 99, country: "US" }; 
+  next();
+};
+
+// 2. Middleware: Check if the logged-in user is from the US region
+const checkUSRegion = (req, res, next) => {
+  if (req.currentUser.country !== "US") {
+    return res.status(403).json({ error: "Forbidden. Access limited to the US region only." });
+  }
+  next();
+};
+
+// 3. Protected Route: Fetch and filter users
+app.get('/api/users', checkLogin, checkUSRegion, (req, res) => {
+  try {
+    // Filter database users who are strictly older than 18
+    const adultsOnly = mockDatabase.filter(user => user.age > 18);
+    
+    // Return filtered list with a 200 OK status
+    return res.status(200).json(adultsOnly);
+  } catch (error) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Start the server
+app.listen(3000, () => console.log('Server running on port 3000'));
+```
+
 ### 12. What is process.nextTick()?
 In Node.js, process.nextTick() is a built-in method used to schedule a callback function to execute immediately after the current operation finishes, but before the Node.js Event Loop moves on to any other phase or handles any I/O or timers.
 
