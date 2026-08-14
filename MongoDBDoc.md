@@ -1532,7 +1532,7 @@ Durability  -> committed data is saved
 
 ### 61. What is sharding?
 
-Sharding means splitting large datasets[collections] across multiple servers.
+Sharding is a horizontal scaling technique in MongoDB that splits large datasets (collections) into chunks and distributes them across multiple servers.
 
 Sharding in MongoDB is a method for horizontal scaling that splits large datasets across multiple machines. The key components of a sharded cluster are shards, config servers, and query routers (mongos).
 

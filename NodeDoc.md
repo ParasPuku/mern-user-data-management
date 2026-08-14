@@ -2365,13 +2365,13 @@ Worker threads (worker_threads module) allow you to run CPU-intensive tasks on b
 │ [ SERVER SIDE ENVIRONMENT ]                            │
 │                                                        │
 │  ┌──────────────────────────────────────────────────┐  │
-│  │ 🌟 PROCESS MANAGER (e.g., PM2, Systemd)           │  │
+│  │ 🌟 PROCESS MANAGER (e.g., PM2, Systemd)           │ │
 │  │  └─ Monitors and keeps the Master alive          │  │
 │  └──────────────────┬───────────────────────────────┘  │
 │                     │ (Starts / Restarts)              │
 │                     ▼                                  │
 │  ┌──────────────────────────────────────────────────┐  │
-│  │ 👑 MASTER PROCESS (The Main App Entry Point)      │  │
+│  │ 👑 MASTER PROCESS (The Main App Entry Point)      │  |
 │  │  │                                               │  │
 │  │  ├─► Spawns & Coordinates Workers                │  │
 │  │  └─► Routes incoming client requests             │  │
@@ -2379,7 +2379,7 @@ Worker threads (worker_threads module) allow you to run CPU-intensive tasks on b
 │     │ (Spawns isolated)     │ (Spawns isolated)        │
 │     ▼                       ▼                          │
 │  ┌──────────────────┐    ┌──────────────────┐          │
-│  │ 🛠️ WORKER PROCESS │    │ 🛠️ CHILD PROCESS  │          │
+│  │ 🛠️ WORKER PROCESS │    │ 🛠️ CHILD PROCESS  │         │
 │  │ (Handles Client  │    │ (Runs External   │          │
 │  │  Request A)      │    │  Script/Python)  │          │
 │  └──────────────────┘    └──────────────────┘          │
