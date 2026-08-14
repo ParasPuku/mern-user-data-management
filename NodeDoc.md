@@ -1825,7 +1825,7 @@ Drop these exact phrases during your interview to stand out:
 - What happens: If you have 4 CPU cores, you will ideally spin up 4 Worker Processes.
 - Action: A worker process accepts the request passed down from the master/OS. It executes your actual Node.js code, queries the database, processes data, and sends the final HTTP response directly back to the client via the open connection.
 
-### 12. The production-grade architectural workflow of a modern Node.js application, incorporating every single layer from the network level down to the CPU execution core.
+### 12. Node.js application architecture flow, incorporating every single layer from the network level down to the CPU execution core.
 
 ```js
 🗺️ System Architecture Diagram
