@@ -687,9 +687,7 @@ The Node.js event loop executes in specific phases. setImmediate() interacts wit
 ## Code Execution Comparison
 To understand setImmediate(), it must be compared to process.nextTick() and setTimeout(fn, 0).
 
-=====================
-  Asynchronous Task
-=====================
+Asynchronous Task <br/>
 
 ```js
 const fs = require('fs');
@@ -705,9 +703,9 @@ fs.readFile(__filename, () => {
 - 2. setImmediate (Check Phase)
 - 1. setTimeout (Timer Phase)
 ```
-======================== 
-Synchronous Scope - 
-=========================
+
+Synchronous Scope - <br/>
+
 When run in the main synchronous scope (outside of an I/O callback), the output order is non-deterministic (unpredictable) for the timers, but nextTick will always run first.You will get one of two possible outcomes:
 
 Outcome A (Most Common)
@@ -731,8 +729,6 @@ process.nextTick(() => console.log('3. process.nextTick (Microtask)'));
 - 2. setImmediate (Check Phase)
 
 ```
-
-
 
 // NOTE ---- setImmediate execution gets matter with synchronous and asynchronous case - Priority of setImmediate is more in file i/o execution than synchronous execution.
 
