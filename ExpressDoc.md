@@ -872,20 +872,42 @@ PUT /api/users/:id/profile
 PATCH /api/users/:id
 ```
 
-### 40. Difference between 401 and 403?
+### 40. What are the HTTP Status codes?
+HTTP status codes are 3-digit numbers sent by a server to a client to show the outcome of a request. In Node.js (using Express or native HTTP), you send these using res.status(code). They are split into five groups: 1xx (Info), 2xx (Success), 3xx (Redirect), 4xx (Client Error), and 5xx (Server Error).
 
-`401` means user is not authenticated.
+1xx: Informational<br/>
+The server got the request and is working on it.
+- 100 Continue: Keep going, the server likes the first part of the request.
+- 101 Switching Protocols: The server is changing protocols (like upgrading to WebSockets).
 
-`403` means user is authenticated but not authorized.
+2xx: Success <br/>
+The request worked fine.
+- 200 OK: Standard success. The data is coming back.
+- 201 Created: A new item was successfully made (e.g., after a database .save() or POST request).
+- 202 Accepted: Request accepted, but work is still happening in the background.204 No Content: Success, but there is no data to send back (e.g., after a DELETE request).
 
-Example:
+3xx: Redirection <br/>
+Extra steps are needed to finish the request.
+- 301 Moved Permanently: This page has a new permanent address.
+- 302 Found / Moved Temporarily: The page is temporarily at a different URL.
+- 304 Not Modified: The client's cached version is still fresh; no need to resend data.
 
-```text
-No valid JWT cookie -> 401
-Logged in member deleting user -> 403
-```
+4xx: Client Errors<br/>
+The request had bad data or came from an unapproved source.
+- 400 Bad Request: The server cannot understand the syntax or data sent.
+- 401 Unauthorized: Missing or bad login credentials.
+- 403 Forbidden: The server knows who you are, but you don't have permission.
+- 404 Not Found: The requested route or file does not exist on the server.
+- 409 Conflict: Request conflicts with current server state (like creating a user with an email that already exists).
+- 422 Unprocessable Entity: The syntax was fine, but the data logic failed validation.
+- 429 Too Many Requests: Rate-limiting kicked in; slow down.
 
-## Controllers
+5xx: Server Errors<br/>
+The request was fine, but the server broke down or crashed while trying to handle it.
+- 500 Internal Server Error: A general catch-all for an unhandled bug or code crash on the backend.
+- 502 Bad Gateway: The Node.js server got an invalid response from an upstream server.
+- 503 Service Unavailable: The server is overloaded or down for maintenance.
+- 504 Gateway Timeout: The server took too long to reply to a downstream proxy.
 
 ### 41. What is controller in Express?
 

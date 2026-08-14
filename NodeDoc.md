@@ -192,111 +192,7 @@ Phase 3: Processing the Callback Queue<br/>
 - Step 11: The Event Loop detects the callback, confirms the Call Stack is empty, and pushes it to the stack.
 Console prints: Hello Timer
 
-
-### 8. Can you access DOM in Node and how can build html file in node js?
-No, you cannot access the DOM in Node.js because Node.js is a server-side environment, while the DOM (Document Object Model) is a client-side concept used in browsers to interact with HTML and XML documents.
-
-Node.js runs on the server and does not have access to a browser's DOM, which is part of the browser's environment. The DOM allows you to manipulate the content and structure of web pages, but it is not available in Node.js, as it operates on the backend, outside the context of a web page or browser.
-
-You create raw HTML on a Node.js server by using template engines, template literals, or core file system modules.
-
-The server combines your data with HTML layouts and sends the final string to the browser.
-
-1. Template Literals (Best for Small, Dynamic Pages)
-
-You can use standard JavaScript template literals (${}) to inject variables directly into an HTML string.
-
-```js
-const http = require('http');
-
-const server = http.createServer((req, res) => {
-    const title = "Welcome Page";
-    const user = "Alex";
-
-    // Build the raw HTML string
-    const htmlOutput = `
-        <!DOCTYPE html>
-        <html>
-        <head><title>${title}</title></head>
-        <body>
-            <h1>Hello, ${user}!</h1>
-            <p>Server Time: ${new Date().toLocaleTimeString()}</p>
-        </body>
-        </html>
-    `;
-
-    res.writeHead(200, { 'Content-Type': 'text/html' });
-    res.end(htmlOutput); // Send raw HTML to the browser
-});
-
-server.listen(3000);
-```
-
-2. Template Engines (Best for Production Apps)<br />
-For larger apps, template engines let you write HTML files with embedded logic (loops, conditionals) that the server compiles into raw HTML strings.
-
-- EJS (Embedded JavaScript): Looks like standard HTML with <%= variable %> tags.
-- Pug: Uses indentation instead of brackets for a cleaner, shorthand syntax.
-- Handlebars: Uses {{variable}} expressions for logic-less views.
-
-Example using EJS and Express:
-- 1. Create a file named views/index.ejs:
-```js
-<h1><%= title %></h1>
-<ul>
-    <% items.forEach(item => { %>
-        <li><%= item %></li>
-    <% }); %>
-</ul>
-```
-
-- 2. Render it from your Node server:
-
-```js
-const express = require('express');
-const app = express();
-
-app.set('view engine', 'ejs');
-
-app.get('/', (req, res) => {
-    // Express processes the EJS template and sends raw HTML to the user
-    res.render('index', { 
-        title: 'My Shopping List', 
-        items: ['Milk', 'Bread', 'Eggs'] 
-    });
-});
-
-app.listen(3000);
-```
-
-- 3. Reading Static HTML Files
-
-If your HTML does not change based on user data, keep it in a separate .html file and read it using the Node fs (File System) module.
-
-```js
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
-
-const server = http.createServer((req, res) => {
-    const filePath = path.join(__dirname, 'index.html');
-    
-    // Read the static file and stream it directly to the response
-    fs.readFile(filePath, (err, content) => {
-        if (err) {
-            res.writeHead(500);
-            res.end('Error loading page');
-        } else {
-            res.writeHead(200, { 'Content-Type': 'text/html' });
-            res.end(content);
-        }
-    });
-});
-
-server.listen(3000);
-```
-
-### Explain the event driven architecture?
+### 8. Explain the event driven architecture?
 Event-Driven Architecture (EDA) is a software design pattern where the flow of your application is determined by events rather than a strict sequence of function calls. Instead of Component A calling Component B directly, Component A simply announces that "something happened" (an event), and any other component can choose to listen and react to it.
 
 Node.js is built from the ground up around this pattern using a single-threaded, non-blocking Event Loop.
@@ -351,6 +247,43 @@ Benefits - How it works
 - Loose Coupling - The registration code doesn't need to know how to send emails. It just screams "Registration happened!" and walks away.
 - Easy Scalability - If you want to add a third feature later (like sending an SMS notification), you just write a new listener. You don't have to touch your original registration code.
 - High Performance - It maps perfectly to Node's asynchronous environment, keeping the main thread free to handle other requests while waiting for I/O tasks.
+
+### 9. What are the HTTP Status codes?
+HTTP status codes are 3-digit numbers sent by a server to a client to show the outcome of a request. In Node.js (using Express or native HTTP), you send these using res.status(code). They are split into five groups: 1xx (Info), 2xx (Success), 3xx (Redirect), 4xx (Client Error), and 5xx (Server Error).
+
+1xx: Informational<br/>
+The server got the request and is working on it.
+- 100 Continue: Keep going, the server likes the first part of the request.
+- 101 Switching Protocols: The server is changing protocols (like upgrading to WebSockets).
+
+2xx: Success <br/>
+The request worked fine.
+- 200 OK: Standard success. The data is coming back.
+- 201 Created: A new item was successfully made (e.g., after a database .save() or POST request).
+- 202 Accepted: Request accepted, but work is still happening in the background.204 No Content: Success, but there is no data to send back (e.g., after a DELETE request).
+
+3xx: Redirection <br/>
+Extra steps are needed to finish the request.
+- 301 Moved Permanently: This page has a new permanent address.
+- 302 Found / Moved Temporarily: The page is temporarily at a different URL.
+- 304 Not Modified: The client's cached version is still fresh; no need to resend data.
+
+4xx: Client Errors<br/>
+The request had bad data or came from an unapproved source.
+- 400 Bad Request: The server cannot understand the syntax or data sent.
+- 401 Unauthorized: Missing or bad login credentials.
+- 403 Forbidden: The server knows who you are, but you don't have permission.
+- 404 Not Found: The requested route or file does not exist on the server.
+- 409 Conflict: Request conflicts with current server state (like creating a user with an email that already exists).
+- 422 Unprocessable Entity: The syntax was fine, but the data logic failed validation.
+- 429 Too Many Requests: Rate-limiting kicked in; slow down.
+
+5xx: Server Errors<br/>
+The request was fine, but the server broke down or crashed while trying to handle it.
+- 500 Internal Server Error: A general catch-all for an unhandled bug or code crash on the backend.
+- 502 Bad Gateway: The Node.js server got an invalid response from an upstream server.
+- 503 Service Unavailable: The server is overloaded or down for maintenance.
+- 504 Gateway Timeout: The server took too long to reply to a downstream proxy.
 
 ### 8. What is blocking I/O?
 
@@ -667,35 +600,72 @@ Quick difference:
 | Event loop | Mechanism that picks callbacks from queues |
 | Event-driven architecture | System design where components communicate through events |
 
-### 11. Event loop phases?
+### 11. The 6 Phases of the Event Loop
+Earlier, we looked at the Event Loop as a single queue. In reality, the Libuv Event Loop executes callbacks by cycling through 6 distinct phases in a strict loop. Each phase has its own dedicated FIFO (First In, First Out) queue of callbacks.
 
-Main phases:
+```js
+   ┌───────────────────────────────────────────────┐
+   │ 1. Timers (setTimeout, setInterval)           │
+   └───────────────────────┬───────────────────────┘
+                           ▼
+   ┌───────────────────────────────────────────────┐
+   │ 2. Pending Callbacks (System errors, TCP)     │
+   └───────────────────────┬───────────────────────┘
+                           ▼
+   ┌───────────────────────────────────────────────┐
+   │ 3. Idle, Prepare (Internal Node tasks)        │
+   └───────────────────────┬───────────────────────┘
+                           ▼
+   ┌───────────────────────────────────────────────┐
+   │ 4. Poll (Incoming I/O data, HTTP requests)    │
+   └───────────────────────┬───────────────────────┘
+                           ▼
+   ┌───────────────────────────────────────────────┐
+   │ 5. Check (setImmediate)                       │
+   └───────────────────────┬───────────────────────┘
+                           ▼
+   ┌───────────────────────────────────────────────┐
+   │ 6. Close Callbacks (socket.on('close'))       │
+   └───────────────────────▲───────────────────────┘
+                           │
+                           └───────────────────────┘ (Loops back to Phase 1)
+```
 
-- timers
-- pending callbacks
-- idle/prepare
-- poll
-- check
-- close callback
+The Execution Flow:
+- Timers Phase: Executes callbacks scheduled by setTimeout() and setInterval().
+- Pending Callbacks Phase: Executes system-level callbacks (e.g., if a TCP socket connection throws an error).
+- Idle, Prepare Phase: Used internally by Node.js for engine optimization. You cannot write code that executes here.
+- Poll Phase: This is where Node.js spends 90% of its time. It waits for incoming I/O data (database responses, file reads, incoming network requests) and executes their callbacks.
+- Check Phase: Executes callbacks scheduled by setImmediate(). If you want a callback to execute immediately after the Poll phase completes, put it here.
+- Close Callbacks Phase: Executes clean-up callbacks like socket.on('close').
 
-https://medium.com/@kunaltandon.kt/process-nexttick-vs-setimmediate-vs-settimeout-explained-wrt-different-event-loop-phases-c0506b12921d
+Topic 3: Microtask Queues (process.nextTick and Promises)
+- The 6 phases above handle Macrotasks. However, Node.js has a parallel, high-priority system called the Microtask Queue that bypasses the 6 phases completely.
+- The Microtask Queue consists of two lines, ranked by priority:process.nextTick() queue (Highest VIP priority in all of Node.js).Promise callback queue (e.g., .then(), .catch(), or async/await returns).
 
-Important queues:
+The VIP Rule:
+- Whenever the Event Loop is moving between any of the 6 phases, or even between individual callbacks within a phase, it will completely pause what it is doing, look at the Microtask Queue, and empty it out fully before continuing to the next phase.
 
-- microtask queue
-- nextTick queue
+Code Deep Dive: 
+- Predicting the output of this code separates junior developers from masters:
 
-## Explanation of Each Phase
-Each phase possesses a first-in, first-out (FIFO) queue of callbacks to execute.
-- Timers: Callbacks scheduled by setTimeout() and setInterval(). Executes callbacks scheduled by setTimeout() and setInterval() once their threshold expires.
-- Pending Callbacks: System errors like a TCP connection refusal (ECONNREFUSED). Executes I/O callbacks deferred from the previous loop iteration (e.g., specific TCP errors).
-- Idle, Prepare: Used exclusively by Node.js for internal housekeeping and preparation.
-- Poll: Reading a file (fs.readFile), database queries, or receiving HTTP web traffic. Retrieves new I/O events, reads files, manages network connections, and executes their callbacks. Node.js may block or pause here if appropriate.
-- Check: Executes callbacks scheduled specifically by setImmediate() right after the poll phase finishes.
-- Close Callbacks: Closing database connections or web sockets (socket.on('close', ...)) or Handles cleanup.
+```js
+setTimeout(() => console.log("1. Timeout (Phase 1 Macrotask)"), 0);
+setImmediate(() => console.log("2. Immediate (Phase 5 Macrotask)"));
 
-The Microtask Intermission
-- Though they are not official phases of the main loop, Microtasks (such as process.nextTick() and resolved Promises) are highly prioritized. Node.js fully drains the microtask queue immediately after any phase finishes, right before it advances to the next phase. process.nextTick() takes precedence and executes before Promise callbacks.
+Promise.resolve().then(() => console.log("3. Promise (Microtask)"));
+process.nextTick(() => console.log("4. NextTick (VIP Microtask)"));
+
+console.log("5. Synchronous Main Thread");
+```
+
+The Output:
+- 5. Synchronous Main Thread   // Runs instantly on the main stack
+- 4. NextTick (VIP Microtask)   // VIP queue empties before loop even starts phase 1
+- 3. Promise (Microtask)        // Remaining microtask queue empties
+- 1. Timeout (Phase 1 Macrotask)// Loop starts, hits Phase 1 (Timers)
+- 2. Immediate (Phase 5 Macrotask)// Loop continues through phases to Phase 5 (Check)
+
 
 ### 12. What is setImmediate()?
 setImmediate() is a built-in timer function used to schedule a callback function to execute asynchronously in the "Check" phase of the Node.js Event Loop. It is specifically designed to run code immediately after the current I/O polling operations finish, helping break up long-running tasks without blocking incoming requests.
@@ -3405,101 +3375,6 @@ A Startup Snapshot is a performance optimization tool that serializes the state 
 - How it helps: It cuts down boot times from seconds to milliseconds by executing initialization code once during a build step rather than at runtime.
 - How to use it: You can use the built-in v8.startupSnapshot API and build your application using the --snapshot-blob flag in the Node.js CLI.
 
-### 12. What if cpu usage becomes 100 percent how to fix this?
-When CPU usage hits 100%, the Node.js single thread is completely starved. The event loop cannot process incoming requests, the application stops responding, and health checks will begin to fail.
-
-Step 1: Diagnose the Cause (Find the Culprit)
-You cannot fix the issue until you know exactly what is locking up the CPU.
-
-- Generate a Flame Graph / Profile: Start Node.js with the built-in profiler:
-```js
-node --prof app.js
-```
-Run traffic against it, then process the generated log file to see exactly which functions are consuming the most CPU cycles.
-
-- Take a Heap Snapshot: High CPU usage is often caused by the Garbage Collector working in overdrive trying to free up memory during a memory leak. Check if memory usage is spiking alongside the CPU.
-
-- Use APM Tools: In production, tools like New Relic, Datadog, or PM2 Plus can pinpoint the exact route or function causing the spike.
-
-Step 2: Immediate Production Quick Fixes
-If your production server is down right now, use these infrastructure fixes to restore service immediately.
-
-Restart with PM2: Force a clean slate to clear stuck infinite loops:
-
-pm2 reload all
-Scale Horizontally (Cluster Mode): If you are running on a single core, scale to all available cores instantly:
-
-```js
-pm2 restart app.js -i max
-```
-
-Add a Reverse Proxy Rate Limiter: If the spike is caused by a DDoS attack or scraping bots, block them at the Nginx or Cloudflare level before they hit Node.js.
-
-Step 3: Permanent Code Fixes
-Once the server is stable, rewrite the problematic code using these strategies.
-
-1. Offload Heavy CPU Calculations
-Never perform heavy math, image processing, or massive loops on the main thread. Move them to Worker Threads
-
-```js
-const { Worker } = require('worker_threads');
-
-// Instead of doing heavy work here, offload it
-const worker = new Worker('./cpu-intensive-task.js');
-worker.on('message', (result) => console.log(result));
-```
-
-2. Avoid Synchronous APIsReplace blocking synchronous methods with their asynchronous equivalents.
-- Bad: fs.readFileSync() or crypto.pbkdf2Sync()
-- Good: fs.promises.readFile() or crypto.pbkdf2()
-
-3. Break Up Massive Loops
-- If you must process a massive array (e.g., 1 million items), split the execution using setImmediate() to let the event loop breathe between chunks:
-
-```js
-function processLargeArray(items) {
-  if (items.length === 0) return;
-  
-  // Process a small chunk of 1000 items
-  const chunk = items.splice(0, 1000);
-  doMath(chunk);
-  
-  // Yield control back to the event loop before doing the next chunk
-  setImmediate(() => processLargeArray(items));
-}
-```
-
-4. Stream Large Files
--Do not load massive files or database dumps entirely into memory using fs.readFile(), as parsing them spikes the CPU. Use Streams to process the data chunk-by-chunk:
-
-```js
-const fs = require('fs');
-// Uses minimal memory and CPU
-fs.createReadStream('huge-file.log').pipe(res); 
-```
-
-### 12. CPU profiling?
-CPU Profiling is the process of measuring how much CPU time your code functions consume while executing. It helps you pinpoint exactly which lines of code, loops, or third-party libraries are causing your Node.js application to slow down or hit 100% CPU usage.
-
-Method 1: The Built-In Node.js Profiler (Quickest)
-Node.js has a built-in profiler that samples your application's stack at regular intervals.
-
-1. Start your application with the profile flag:
-
-```js
-node --prof app.js
-```
-
-2. Simulate traffic:
-- Run your application and hit the slow routes using a tool like autocannon or ab, or just browse the app to trigger the high CPU usage.
-
-3. Process the log file:
-- When you stop the server, Node.js generates a file named something like isolate-0xXXXXXXXXXXXX-v8.log. This file is unreadable by humans. Process it using the built-in tick processor:
-
-```js
-node --prof-process isolate-0xXXXXXXXXXXXX-v8.log > processed_profile.txt
-```
-
 ### 12. What is streams?
 A Stream is a built-in Node.js feature designed to handle reading or writing data chunk-by-chunk, rather than loading an entire file or dataset into memory all at once.
 
@@ -3545,6 +3420,95 @@ http.createServer((req, res) => {
   // Combines the readable stream to the writable response stream
   stream.pipe(res); 
 }).listen(3000);
+```
+
+### 141. Difference between Readable, Writable, Duplex, and Transform streams?
+
+Simple definition:
+
+| Type | Direction | Example |
+|---|---|---|
+| Readable | Read only | `fs.createReadStream` |
+| Writable | Write only | `fs.createWriteStream` |
+| Duplex | Read and write (independent) | TCP socket |
+| Transform | Read, modify, write | gzip compression |
+
+Examples:
+
+```js
+const { Readable, Writable, Duplex, Transform } = require('stream');
+
+// Readable
+const readable = Readable.from(['hello', 'world']);
+
+// Writable
+const writable = new Writable({
+  write(chunk, encoding, callback) {
+    console.log(chunk.toString());
+    callback();
+  },
+});
+
+// Duplex (simplified)
+const duplex = new Duplex({
+  read() {
+    this.push('data');
+    this.push(null);
+  },
+  write(chunk, encoding, callback) {
+    callback();
+  },
+});
+
+// Transform
+const upper = new Transform({
+  transform(chunk, encoding, callback) {
+    this.push(chunk.toString().toUpperCase());
+    callback();
+  },
+});
+
+readable.pipe(upper).pipe(writable);
+```
+
+Interview answer:
+
+```text
+Readable produces data, Writable consumes it, Duplex does both independently like a socket, and Transform is a Duplex that modifies data in the middle, like compression or encryption.
+```
+
+### 143. What is the relationship between Buffer and ArrayBuffer in V8?
+
+Simple definition:
+
+- **ArrayBuffer** — raw binary memory (JavaScript standard).
+- **Buffer** — Node.js wrapper around ArrayBuffer with helper methods.
+- **TypedArray** (Uint8Array, etc.) — view into ArrayBuffer memory.
+
+Example:
+
+```js
+const buf = Buffer.from('hello');      // Node.js Buffer
+const arrayBuffer = buf.buffer;        // underlying ArrayBuffer
+const view = new Uint8Array(arrayBuffer, buf.byteOffset, buf.byteLength);
+
+console.log(buf.toString());           // hello
+console.log(view[0]);                  // 104 (ASCII of 'h')
+console.log(buf instanceof Uint8Array); // true in modern Node
+```
+
+Convert between them:
+
+```js
+const buf = Buffer.from([1, 2, 3]);
+const uint8 = new Uint8Array(buf.buffer, buf.byteOffset, buf.length);
+const backToBuffer = Buffer.from(uint8);
+```
+
+Interview answer:
+
+```text
+Buffer is Node's high-level binary API built on top of ArrayBuffer. A Buffer shares the same underlying memory as TypedArray views, which is why Buffer methods are fast for network and file I/O.
 ```
 
 ### 12. How to scale node.js application?
@@ -3666,7 +3630,100 @@ Potential pitfalls of using closures in JavaScript include:
 - Performance Issues: Overuse can impact performance due to increased memory usage.
 - Debugging Complexity: Understanding and debugging code with closures can be challenging due to the complexity of the scope chain.
 
-### 
+### 12. What if cpu usage becomes 100 percent how to fix this?
+When CPU usage hits 100%, the Node.js single thread is completely starved. The event loop cannot process incoming requests, the application stops responding, and health checks will begin to fail.
+
+Step 1: Diagnose the Cause (Find the Culprit)
+You cannot fix the issue until you know exactly what is locking up the CPU.
+
+- Generate a Flame Graph / Profile: Start Node.js with the built-in profiler:
+```js
+node --prof app.js
+```
+Run traffic against it, then process the generated log file to see exactly which functions are consuming the most CPU cycles.
+
+- Take a Heap Snapshot: High CPU usage is often caused by the Garbage Collector working in overdrive trying to free up memory during a memory leak. Check if memory usage is spiking alongside the CPU.
+
+- Use APM Tools: In production, tools like New Relic, Datadog, or PM2 Plus can pinpoint the exact route or function causing the spike.
+
+Step 2: Immediate Production Quick Fixes
+If your production server is down right now, use these infrastructure fixes to restore service immediately.
+
+Restart with PM2: Force a clean slate to clear stuck infinite loops:
+
+pm2 reload all
+Scale Horizontally (Cluster Mode): If you are running on a single core, scale to all available cores instantly:
+
+```js
+pm2 restart app.js -i max
+```
+
+Add a Reverse Proxy Rate Limiter: If the spike is caused by a DDoS attack or scraping bots, block them at the Nginx or Cloudflare level before they hit Node.js.
+
+Step 3: Permanent Code Fixes
+Once the server is stable, rewrite the problematic code using these strategies.
+
+1. Offload Heavy CPU Calculations
+Never perform heavy math, image processing, or massive loops on the main thread. Move them to Worker Threads
+
+```js
+const { Worker } = require('worker_threads');
+
+// Instead of doing heavy work here, offload it
+const worker = new Worker('./cpu-intensive-task.js');
+worker.on('message', (result) => console.log(result));
+```
+
+2. Avoid Synchronous APIsReplace blocking synchronous methods with their asynchronous equivalents.
+- Bad: fs.readFileSync() or crypto.pbkdf2Sync()
+- Good: fs.promises.readFile() or crypto.pbkdf2()
+
+3. Break Up Massive Loops
+- If you must process a massive array (e.g., 1 million items), split the execution using setImmediate() to let the event loop breathe between chunks:
+
+```js
+function processLargeArray(items) {
+  if (items.length === 0) return;
+  
+  // Process a small chunk of 1000 items
+  const chunk = items.splice(0, 1000);
+  doMath(chunk);
+  
+  // Yield control back to the event loop before doing the next chunk
+  setImmediate(() => processLargeArray(items));
+}
+```
+
+4. Stream Large Files
+-Do not load massive files or database dumps entirely into memory using fs.readFile(), as parsing them spikes the CPU. Use Streams to process the data chunk-by-chunk:
+
+```js
+const fs = require('fs');
+// Uses minimal memory and CPU
+fs.createReadStream('huge-file.log').pipe(res); 
+```
+
+### 12. CPU profiling?
+CPU Profiling is the process of measuring how much CPU time your code functions consume while executing. It helps you pinpoint exactly which lines of code, loops, or third-party libraries are causing your Node.js application to slow down or hit 100% CPU usage.
+
+Method 1: The Built-In Node.js Profiler (Quickest)
+Node.js has a built-in profiler that samples your application's stack at regular intervals.
+
+1. Start your application with the profile flag:
+
+```js
+node --prof app.js
+```
+
+2. Simulate traffic:
+- Run your application and hit the slow routes using a tool like autocannon or ab, or just browse the app to trigger the high CPU usage.
+
+3. Process the log file:
+- When you stop the server, Node.js generates a file named something like isolate-0xXXXXXXXXXXXX-v8.log. This file is unreadable by humans. Process it using the built-in tick processor:
+
+```js
+node --prof-process isolate-0xXXXXXXXXXXXX-v8.log > processed_profile.txt
+```
 
 ### 133. How does Node.js handle asynchronous I/O at the OS level via libuv?
 
@@ -3993,61 +4050,6 @@ Streams use backpressure to prevent unbounded buffering. writable.write() return
 
 ## Advanced Streams and Buffers
 
-### 141. Difference between Readable, Writable, Duplex, and Transform streams?
-
-Simple definition:
-
-| Type | Direction | Example |
-|---|---|---|
-| Readable | Read only | `fs.createReadStream` |
-| Writable | Write only | `fs.createWriteStream` |
-| Duplex | Read and write (independent) | TCP socket |
-| Transform | Read, modify, write | gzip compression |
-
-Examples:
-
-```js
-const { Readable, Writable, Duplex, Transform } = require('stream');
-
-// Readable
-const readable = Readable.from(['hello', 'world']);
-
-// Writable
-const writable = new Writable({
-  write(chunk, encoding, callback) {
-    console.log(chunk.toString());
-    callback();
-  },
-});
-
-// Duplex (simplified)
-const duplex = new Duplex({
-  read() {
-    this.push('data');
-    this.push(null);
-  },
-  write(chunk, encoding, callback) {
-    callback();
-  },
-});
-
-// Transform
-const upper = new Transform({
-  transform(chunk, encoding, callback) {
-    this.push(chunk.toString().toUpperCase());
-    callback();
-  },
-});
-
-readable.pipe(upper).pipe(writable);
-```
-
-Interview answer:
-
-```text
-Readable produces data, Writable consumes it, Duplex does both independently like a socket, and Transform is a Duplex that modifies data in the middle, like compression or encryption.
-```
-
 ### 142. How do you implement a custom Transform stream for data masking?
 
 Simple definition:
@@ -4095,40 +4097,6 @@ Interview answer:
 
 ```text
 Implement a Transform stream with a transform() function that modifies each chunk and calls callback() when done. Use it in a pipe chain to process large files line-by-line without loading everything into memory.
-```
-
-### 143. What is the relationship between Buffer and ArrayBuffer in V8?
-
-Simple definition:
-
-- **ArrayBuffer** — raw binary memory (JavaScript standard).
-- **Buffer** — Node.js wrapper around ArrayBuffer with helper methods.
-- **TypedArray** (Uint8Array, etc.) — view into ArrayBuffer memory.
-
-Example:
-
-```js
-const buf = Buffer.from('hello');      // Node.js Buffer
-const arrayBuffer = buf.buffer;        // underlying ArrayBuffer
-const view = new Uint8Array(arrayBuffer, buf.byteOffset, buf.byteLength);
-
-console.log(buf.toString());           // hello
-console.log(view[0]);                  // 104 (ASCII of 'h')
-console.log(buf instanceof Uint8Array); // true in modern Node
-```
-
-Convert between them:
-
-```js
-const buf = Buffer.from([1, 2, 3]);
-const uint8 = new Uint8Array(buf.buffer, buf.byteOffset, buf.length);
-const backToBuffer = Buffer.from(uint8);
-```
-
-Interview answer:
-
-```text
-Buffer is Node's high-level binary API built on top of ArrayBuffer. A Buffer shares the same underlying memory as TypedArray views, which is why Buffer methods are fast for network and file I/O.
 ```
 
 ### 144. Buffer.alloc() vs Buffer.allocUnsafe() — memory allocation strategy
@@ -5818,73 +5786,6 @@ writableStream.on('finish', () => {
     console.log("Entire file copied using less than 64KB of RAM total!");
 });
 ```
-
-### 11. The 6 Phases of the Event Loop
-Earlier, we looked at the Event Loop as a single queue. In reality, the Libuv Event Loop executes callbacks by cycling through 6 distinct phases in a strict loop. Each phase has its own dedicated FIFO (First In, First Out) queue of callbacks.
-
-```js
-   ┌───────────────────────────────────────────────┐
-   │ 1. Timers (setTimeout, setInterval)           │
-   └───────────────────────┬───────────────────────┘
-                           ▼
-   ┌───────────────────────────────────────────────┐
-   │ 2. Pending Callbacks (System errors, TCP)     │
-   └───────────────────────┬───────────────────────┘
-                           ▼
-   ┌───────────────────────────────────────────────┐
-   │ 3. Idle, Prepare (Internal Node tasks)        │
-   └───────────────────────┬───────────────────────┘
-                           ▼
-   ┌───────────────────────────────────────────────┐
-   │ 4. Poll (Incoming I/O data, HTTP requests)    │
-   └───────────────────────┬───────────────────────┘
-                           ▼
-   ┌───────────────────────────────────────────────┐
-   │ 5. Check (setImmediate)                       │
-   └───────────────────────┬───────────────────────┘
-                           ▼
-   ┌───────────────────────────────────────────────┐
-   │ 6. Close Callbacks (socket.on('close'))       │
-   └───────────────────────▲───────────────────────┘
-                           │
-                           └───────────────────────┘ (Loops back to Phase 1)
-```
-
-The Execution Flow:
-- Timers Phase: Executes callbacks scheduled by setTimeout() and setInterval().
-- Pending Callbacks Phase: Executes system-level callbacks (e.g., if a TCP socket connection throws an error).
-- Idle, Prepare Phase: Used internally by Node.js for engine optimization. You cannot write code that executes here.
-- Poll Phase: This is where Node.js spends 90% of its time. It waits for incoming I/O data (database responses, file reads, incoming network requests) and executes their callbacks.
-- Check Phase: Executes callbacks scheduled by setImmediate(). If you want a callback to execute immediately after the Poll phase completes, put it here.
-- Close Callbacks Phase: Executes clean-up callbacks like socket.on('close').
-
-Topic 3: Microtask Queues (process.nextTick and Promises)
-- The 6 phases above handle Macrotasks. However, Node.js has a parallel, high-priority system called the Microtask Queue that bypasses the 6 phases completely.
-- The Microtask Queue consists of two lines, ranked by priority:process.nextTick() queue (Highest VIP priority in all of Node.js).Promise callback queue (e.g., .then(), .catch(), or async/await returns).
-
-The VIP Rule:
-- Whenever the Event Loop is moving between any of the 6 phases, or even between individual callbacks within a phase, it will completely pause what it is doing, look at the Microtask Queue, and empty it out fully before continuing to the next phase.
-
-Code Deep Dive: 
-- Predicting the output of this code separates junior developers from masters:
-
-```js
-setTimeout(() => console.log("1. Timeout (Phase 1 Macrotask)"), 0);
-setImmediate(() => console.log("2. Immediate (Phase 5 Macrotask)"));
-
-Promise.resolve().then(() => console.log("3. Promise (Microtask)"));
-process.nextTick(() => console.log("4. NextTick (VIP Microtask)"));
-
-console.log("5. Synchronous Main Thread");
-```
-
-The Output:
-- 5. Synchronous Main Thread   // Runs instantly on the main stack
-- 4. NextTick (VIP Microtask)   // VIP queue empties before loop even starts phase 1
-- 3. Promise (Microtask)        // Remaining microtask queue empties
-- 1. Timeout (Phase 1 Macrotask)// Loop starts, hits Phase 1 (Timers)
-- 2. Immediate (Phase 5 Macrotask)// Loop continues through phases to Phase 5 (Check)
-
 
 ### 12. Event-Driven Architecture in Practice (Streams + EventEmitters)
 Now we can connect everything together. Your first question was about Event-Driven Architecture (EDA). Node's core modules are fundamentally built by combining Streams and EventEmitters.
