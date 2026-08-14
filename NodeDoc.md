@@ -1134,7 +1134,7 @@ Common module systems:
 - CommonJS
 - ES Modules
 
-### 16.1. What are the top 5 built-in modules commonly used in Node.js projects?
+### 16.1. What are the top 7 built-in modules commonly used in Node.js projects?
 
 Node.js has many built-in modules. Built-in means we do not need to install them from npm.
 
@@ -1305,6 +1305,130 @@ Interview answer:
 
 ```text
 The top commonly used built-in Node.js modules are fs, path, http, crypto, and events. fs is used for file operations, path for safe file paths, http for creating servers, crypto for security-related operations, and events for event-driven programming with EventEmitter.
+```
+
+#### 6. dns module used for?
+
+The `dns` module resolves domain names to IP addresses.
+
+```js
+import dns from 'node:dns';
+
+dns.lookup('example.com', (err, address) => {
+  console.log(address); // e.g. '93.184.216.34'
+});
+
+// Promise version
+import dns from 'node:dns/promises';
+const address = await dns.lookup('example.com');
+```
+
+Note: `dns.lookup` uses the libuv thread pool (blocking getaddrinfo). For high-throughput DNS, consider caching or a dedicated DNS resolver.
+
+Interview answer:
+
+```text
+dns resolves hostnames to IPs. dns.lookup uses the libuv thread pool, so heavy DNS lookups can block the pool — cache results when possible.
+```
+
+#### 7. zlib module used for?
+
+The `zlib` module compresses and decompresses data (gzip, deflate).
+
+Common use — compress HTTP responses:
+
+```js
+import zlib from 'node:zlib';
+import { pipeline } from 'node:stream/promises';
+import fs from 'node:fs';
+
+await pipeline(
+  fs.createReadStream('large-log.txt'),
+  zlib.createGzip(),
+  fs.createWriteStream('large-log.txt.gz')
+);
+```
+
+Interview answer:
+
+```text
+zlib handles compression. Use it for gzip responses or compressing large files via streams. Compression is CPU-heavy and may use the libuv thread pool.
+```
+
+#### 8. url module used for?
+
+The `url` module parses and builds URLs.
+
+```js
+import { URL } from 'node:url';
+
+const parsed = new URL('https://api.example.com/users?page=2&limit=10');
+
+console.log(parsed.hostname);  // 'api.example.com'
+console.log(parsed.pathname);  // '/users'
+console.log(parsed.searchParams.get('page')); // '2'
+```
+
+In Express, `req.originalUrl` and `req.query` handle most of this, but `URL` is useful for parsing external URLs and webhook callbacks.
+
+Interview answer:
+
+```text
+The URL class parses and constructs URLs safely. Use it when validating redirect URLs, parsing webhook endpoints, or building query strings.
+```
+
+#### 9. os module used for?
+
+The `os` module provides operating system and hardware information.
+
+Common uses:
+
+```js
+import os from 'node:os';
+
+console.log(os.platform());           // 'linux', 'darwin', 'win32'
+console.log(os.cpus().length);          // number of CPU cores
+console.log(os.totalmem());             // total system memory
+console.log(os.freemem());              // free system memory
+console.log(os.hostname());
+console.log(os.availableParallelism()); // recommended worker count
+```
+
+Used in cluster setups to fork one worker per CPU core.
+
+Interview answer:
+
+```text
+The os module exposes CPU count, memory, platform, and hostname. It is commonly used with the cluster module to scale across all available cores.
+```
+
+### 10. net module used for?
+
+The `net` module creates TCP servers and clients — lower level than HTTP.
+
+Example TCP server:
+
+```js
+import net from 'node:net';
+
+const server = net.createServer((socket) => {
+  socket.write('Hello from TCP server\n');
+  socket.end();
+});
+
+server.listen(4000);
+```
+
+When to use:
+
+- Custom TCP protocols
+- Internal service communication
+- Building non-HTTP servers
+
+Interview answer:
+
+```text
+net handles raw TCP connections. HTTP builds on top of TCP. Use net when you need custom socket-level communication, not for standard REST APIs.
 ```
 
 ### 17. CommonJS vs ES Modules?
@@ -3677,6 +3801,59 @@ Interview answer:
 
 ```text
 nextTick runs first and can starve the loop if overused. queueMicrotask and Promises are microtasks with normal priority. setImmediate runs later in the check phase, after I/O polling.
+```
+
+### 203. What is OpenTelemetry in Node.js?
+
+OpenTelemetry (OTel) is a standard for traces, metrics, and logs across services.
+
+It answers:
+
+- Which route is slow?
+- Which DB query caused the latency?
+- How do requests flow across microservices?
+
+Interview answer:
+
+```text
+OpenTelemetry adds distributed tracing and metrics to Node.js apps. It helps find bottlenecks in production that logs alone cannot explain.
+```
+
+### 201. Why is structured logging important in Node.js?
+
+Plain `console.log` is fine for development, but production needs searchable, parseable logs.
+
+Structured log example:
+
+```js
+console.log(JSON.stringify({
+  level: 'info',
+  message: 'User login success',
+  userId: user.id,
+  requestId: req.id,
+  timestamp: new Date().toISOString()
+}));
+```
+
+Popular libraries:
+
+| Library | Notes |
+|---|---|
+| **pino** | Very fast, JSON-first, low overhead |
+| **winston** | Flexible transports (file, cloud, console) |
+| **morgan** | HTTP request logging middleware for Express |
+
+Morgan example (used in API gateway sections of this doc):
+
+```js
+import morgan from 'morgan';
+app.use(morgan('combined'));
+```
+
+Interview answer:
+
+```text
+Production logs should be structured JSON with timestamps, request IDs, and context fields. Use pino or winston instead of unstructured console.log so log aggregators can search and alert on them.
 ```
 
 ### 132. What are the potential pitfalls of using closures?
@@ -7363,60 +7540,6 @@ Mock slow or external systems like Redis, email, and payment gateways. Keep the 
 
 ## Additional Built-in Modules
 
-### 192. What is the os module used for?
-
-The `os` module provides operating system and hardware information.
-
-Common uses:
-
-```js
-import os from 'node:os';
-
-console.log(os.platform());           // 'linux', 'darwin', 'win32'
-console.log(os.cpus().length);          // number of CPU cores
-console.log(os.totalmem());             // total system memory
-console.log(os.freemem());              // free system memory
-console.log(os.hostname());
-console.log(os.availableParallelism()); // recommended worker count
-```
-
-Used in cluster setups to fork one worker per CPU core.
-
-Interview answer:
-
-```text
-The os module exposes CPU count, memory, platform, and hostname. It is commonly used with the cluster module to scale across all available cores.
-```
-
-### 193. What is the net module used for?
-
-The `net` module creates TCP servers and clients — lower level than HTTP.
-
-Example TCP server:
-
-```js
-import net from 'node:net';
-
-const server = net.createServer((socket) => {
-  socket.write('Hello from TCP server\n');
-  socket.end();
-});
-
-server.listen(4000);
-```
-
-When to use:
-
-- Custom TCP protocols
-- Internal service communication
-- Building non-HTTP servers
-
-Interview answer:
-
-```text
-net handles raw TCP connections. HTTP builds on top of TCP. Use net when you need custom socket-level communication, not for standard REST APIs.
-```
-
 ### 194. What is util.promisify used for?
 
 `util.promisify` converts callback-style functions into Promise-based functions.
@@ -7469,76 +7592,6 @@ Interview answer:
 
 ```text
 https creates encrypted HTTP servers. In production, TLS is often handled by a load balancer or reverse proxy, while Node listens on HTTP internally.
-```
-
-### 196. What is the dns module used for?
-
-The `dns` module resolves domain names to IP addresses.
-
-```js
-import dns from 'node:dns';
-
-dns.lookup('example.com', (err, address) => {
-  console.log(address); // e.g. '93.184.216.34'
-});
-
-// Promise version
-import dns from 'node:dns/promises';
-const address = await dns.lookup('example.com');
-```
-
-Note: `dns.lookup` uses the libuv thread pool (blocking getaddrinfo). For high-throughput DNS, consider caching or a dedicated DNS resolver.
-
-Interview answer:
-
-```text
-dns resolves hostnames to IPs. dns.lookup uses the libuv thread pool, so heavy DNS lookups can block the pool — cache results when possible.
-```
-
-### 197. What is the zlib module used for?
-
-The `zlib` module compresses and decompresses data (gzip, deflate).
-
-Common use — compress HTTP responses:
-
-```js
-import zlib from 'node:zlib';
-import { pipeline } from 'node:stream/promises';
-import fs from 'node:fs';
-
-await pipeline(
-  fs.createReadStream('large-log.txt'),
-  zlib.createGzip(),
-  fs.createWriteStream('large-log.txt.gz')
-);
-```
-
-Interview answer:
-
-```text
-zlib handles compression. Use it for gzip responses or compressing large files via streams. Compression is CPU-heavy and may use the libuv thread pool.
-```
-
-### 198. What is the url module used for?
-
-The `url` module parses and builds URLs.
-
-```js
-import { URL } from 'node:url';
-
-const parsed = new URL('https://api.example.com/users?page=2&limit=10');
-
-console.log(parsed.hostname);  // 'api.example.com'
-console.log(parsed.pathname);  // '/users'
-console.log(parsed.searchParams.get('page')); // '2'
-```
-
-In Express, `req.originalUrl` and `req.query` handle most of this, but `URL` is useful for parsing external URLs and webhook callbacks.
-
-Interview answer:
-
-```text
-The URL class parses and constructs URLs safely. Use it when validating redirect URLs, parsing webhook endpoints, or building query strings.
 ```
 
 ---
@@ -7594,43 +7647,6 @@ nvm pins Node versions per project. Add .nvmrc with the version number so the wh
 
 ## Logging and Observability
 
-### 201. Why is structured logging important in Node.js?
-
-Plain `console.log` is fine for development, but production needs searchable, parseable logs.
-
-Structured log example:
-
-```js
-console.log(JSON.stringify({
-  level: 'info',
-  message: 'User login success',
-  userId: user.id,
-  requestId: req.id,
-  timestamp: new Date().toISOString()
-}));
-```
-
-Popular libraries:
-
-| Library | Notes |
-|---|---|
-| **pino** | Very fast, JSON-first, low overhead |
-| **winston** | Flexible transports (file, cloud, console) |
-| **morgan** | HTTP request logging middleware for Express |
-
-Morgan example (used in API gateway sections of this doc):
-
-```js
-import morgan from 'morgan';
-app.use(morgan('combined'));
-```
-
-Interview answer:
-
-```text
-Production logs should be structured JSON with timestamps, request IDs, and context fields. Use pino or winston instead of unstructured console.log so log aggregators can search and alert on them.
-```
-
 ### 202. What is a request correlation ID?
 
 A correlation ID (request ID) tracks one request across services and log lines.
@@ -7652,23 +7668,6 @@ Interview answer:
 ```text
 Attach a unique request ID to every incoming request and include it in all log lines. This makes it possible to trace one user's request through middleware, DB calls, and errors.
 ```
-
-### 203. What is OpenTelemetry in Node.js?
-
-OpenTelemetry (OTel) is a standard for traces, metrics, and logs across services.
-
-It answers:
-
-- Which route is slow?
-- Which DB query caused the latency?
-- How do requests flow across microservices?
-
-Interview answer:
-
-```text
-OpenTelemetry adds distributed tracing and metrics to Node.js apps. It helps find bottlenecks in production that logs alone cannot explain.
-```
-
 ---
 
 ## GraphQL, Serverless, and Alternative Runtimes
