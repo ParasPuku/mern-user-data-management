@@ -2413,6 +2413,380 @@ In production, developers rarely write custom cluster-module code. Instead, they
 
 2. Self-Healing & Zero DowntimeAuto-Restart: If a worker process crashes due to an unhandled error or a memory leak, PM2 instantly kills it and spawns a new one.Hot Reloading: When you update your code, PM2 reloads workers one by one (pm2 reload). Users experience zero downtime because some workers stay online while others restart.
 
+### 14. What is load balancing and how it works with an example?
+Load balancing is the process of distributing incoming network traffic evenly across a group of backend servers.
+
+Think of a load balancer as a traffic cop standing in front of your infrastructure. Instead of allowing millions of users to hit a single server and crash it, the load balancer intercepts every request and routes it to the least busy server in your fleet.
+
+Real-World Analogy: The Bank Teller Line
+Imagine a popular bank branch. If there is only one teller counter open (one server), a massive line forms. Customers get frustrated, and the teller gets completely overwhelmed and burns out (Server Crash).
+
+Now, the bank manager upgrades the system:
+- They open 4 separate teller counters (a cluster of 4 Node.js servers).
+- They hire a security guard to stand at the entrance (The Load Balancer).
+- When a customer walks into the bank, they do not choose a counter. The security guard looks at the open counters and says, "You go to Counter 1. Next customer, go to Counter 2."
+
+Because of the security guard, no single teller is ever overwhelmed, and customers are served 4 times faster.
+
+How it Works (Step-by-Step Example)
+
+Let's look at how a load balancer handles traffic for a real website, like ://mycoolapp.com.
+
+```js
+               [ USER TRAFFIC ]
+         (Millions of HTTP Requests)
+                     │
+                     ▼
+         ┌───────────────────────┐
+         │     LOAD BALANCER     │  <-- Intercepts everything at Port 80/443
+         └───────────┬───────────┘
+                     │
+      ┌──────────────┼──────────────┐
+      ▼              ▼              ▼
+┌───────────┐  ┌───────────┐  ┌───────────┐
+│ Server A  │  │ Server B  │  │ Server C  │  <-- Identical Node.js instances
+└───────────┘  └───────────┘  └───────────┘
+```
+
+Step 1: The Request Arrives
+- A user types your website URL into their browser. The Domain Name System (DNS) points your domain directly to the IP address of the Load Balancer, not the actual backend servers.
+
+Step 2: The Load Balancer Applies an Algorithm<br/>
+The load balancer receives the request and decides which backend server should handle it using a specific strategy. The most common algorithms are:
+
+- Round Robin: Passes requests sequentially down the line (Server A, then Server B, then Server C, then back to A).
+- Least Connections: Checks the active workload and sends the user to whichever server currently has the fewest open connections.
+- IP Hash: Uses the user's IP address to ensure that a specific user always lands on the exact same backend server (useful for keeping user sessions intact).
+
+Step 3: Routing the Traffic <br/>
+The load balancer acts as a reverse proxy. It forwards the request to the chosen server (e.g., Server B) via a private internal network.
+
+Step 4: The Health Check (The Safety Net)<br/>
+A load balancer continuously pings your backend servers every few seconds (called a Health Check). If Server C suddenly runs out of memory and crashes, the load balancer instantly flags it as "unhealthy" and stops sending traffic there. Users never see an error page because their requests are seamlessly routed to Server A and B instead.
+
+Popular Tools Used for Load Balancing<br/>
+In professional environments, developers rarely write load balancers from scratch. They use highly optimized, battle-tested software or cloud infrastructure:
+- NGINX: A lightning-fast, open-source software reverse proxy frequently used to load balance Node.js applications.
+- AWS ALB (Application Load Balancer): A cloud service managed by Amazon that automatically scales up to handle millions of requests without manual configuration.
+
+### What is load balancer and how to implement load balancer in node js?
+
+In simple terms, a load balancer in Node.js acts like a traffic cop standing in front of your application. <br/>
+
+Because Node.js is single-threaded by default, it can only use one CPU core at a time. If thousands of users visit your app simultaneously, that single core will get overwhelmed, causing the app to slow down or crash. <br/>
+
+A load balancer solves this by taking all incoming user requests and distributing them evenly across multiple copies (instances) of your Node.js application running on different CPU cores or entirely different servers. <br/>
+
+💡 Why Node.js Applications Require Load Balancing<br/>
+- Multi-Core Utilization: Distributes incoming traffic across all available CPU cores of a server.
+- High Availability: Routes traffic away from crashed or failing application processes automatically.
+- Horizontal Scaling: Allows your system to handle larger spikes in user traffic seamlessly.
+- Zero-Downtime Updates: Enables individual application instances to restart for updates without interrupting users.
+
+How It Works<br/>
+- The User Requests: A user visits your website.
+- The Balancer Intercepts: The request goes to the load balancer first, not the app.
+- The Balancer Routes: The balancer picks an available, healthy Node.js instance.
+- The App Responds: That specific instance processes the request and sends the response back through the load balancer to the user.
+
+Why You Need It<br/>
+- Prevents Overload: No single copy of your app takes the entire traffic hit.
+- High Availability: If one copy of your app crashes, the balancer seamlessly routes traffic to the working ones so users never notice a problem.
+- Maximum Performance: It unlocks the full power of modern, multi-core computer processors.
+
+Common Ways to Use It in Node.js<br/>
+You don't always need to install separate hardware to load balance. In the Node.js ecosystem, it is usually handled in three ways:
+- Built-in Cluster Module: Node.js has a native Cluster module that automatically spawns multiple child processes (workers) to share the same server port.
+- Process Managers (PM2): A popular tool called PM2 cluster mode can scale your app across all CPU cores automatically with a single command.
+- Reverse Proxies (Nginx): For heavy production apps, developers place software like Nginx in front of multiple Node.js servers to handle massive scaling.
+
+Load Balaner Implementation <br/>
+Implementing a load balancer in Node.js can be achieved internally within your application code or externally using specialized production tools. Because Node.js runs on a single-threaded event loop, load balancing is critical to utilize multi-core systems and scale horizontally.
+
+1. The Built-in cluster Module (Internal Code) <br/>
+- Node.js includes a native cluster module that allows you to fork multiple worker processes that share the same server port. The master process manages traffic distribution using a round-robin algorithm.
+
+Create a file named server.js:
+```js
+const cluster = require('cluster');
+const http = require('http');
+const numCPUs = require('os').cpus().length; // Get total CPU cores
+
+if (cluster.isMaster) {
+  console.log(`Master process ${process.pid} is running.`);
+
+  // Fork worker processes equal to the number of CPU cores
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  }
+
+  // Listen for dying workers and replace them
+  cluster.on('exit', (worker, code, signal) => {
+    console.log(`Worker ${worker.process.pid} died. Launching a new one...`);
+    cluster.fork();
+  });
+
+} else {
+  // Workers share the TCP connection and listen on the same port
+  http.createServer((req, res) => {
+    res.writeHead(200);
+    res.end(`Response served by Worker Process: ${process.pid}\n`);
+  }).listen(3000);
+
+  console.log(`Worker process ${process.pid} started.`);
+}
+```
+
+2. PM2 Cluster Mode (Process Manager)<br/>
+Using a production process manager like PM2 removes the need to write clustering logic directly into your code. It automatically spins up instances across all CPU cores and distributes traffic via an internal load balancer.
+
+1. Install PM2 globally:
+```js
+npm install pm2 -g
+```
+
+2. Start your standard application in cluster mode:
+
+```js
+pm2 start app.js -i max
+```
+
+(The -i max flag instructs PM2 to auto-detect and utilize all available CPU cores).
+
+3. NGINX Reverse Proxy (Production Standard)
+For large-scale applications, it is standard practice to place an external reverse proxy like NGINX in front of multiple distinct Node.js app instances. This isolates application logic, handles SSL termination, and handles heavy static files efficiently.
+
+- Run separate instances of your Node.js app on different ports (e.g., 3001, 3002, 3003).
+- Modify your NGINX configuration file (typically nginx.conf) to create an upstream cluster:
+
+```js
+http {
+    # Define the backend Node.js servers
+    upstream nodejs_cluster {
+        server 127.0.0.1:3001;
+        server 127.0.0.1:3002;
+        server 127.0.0.1:3003;
+    }
+
+    server {
+        listen 80;
+        server_name yourdomain.com;
+
+        # Forward all traffic to the cluster
+        location / {
+            proxy_pass http://nodejs_cluster;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+    }
+}
+```
+
+### What is rate limit and how to implement rate limit in node js?
+
+A rate limit is a rule that controls how many times a client can talk to a server or API in a set time. If a user goes past this number, the server blocks their extra calls and usually sends back an HTTP 429 Too Many Requests message.
+
+
+How to Implement Rate Limiting in Node.js<br/>
+1. In-Memory (Using Express middleware)
+For a simple application running on a single server, you can use the express-rate-limit package.
+
+Install package:
+```js
+npm install express-rate-limit
+```
+
+Implementation Code:
+```js
+const express = require("express");
+const rateLimit = require("express-rate-limit");
+
+const app = express();
+
+app.use(express.json());
+
+// General application limiter
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: "Too many requests from this IP, please try again later",
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Login-specific limiter
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => {
+        res.status(429).json({success: false, message: "Too many login attempts. Please try again later."})
+    }
+});
+
+app.use(generalLimiter);
+
+app.get("/", (req, res) => {
+    res.send("Server is running");
+});
+
+app.post("/login", loginLimiter, (req, res) => {
+    const { username, password } = req.body;
+
+    // Replace this with your database authentication logic
+    const isValidLogin =
+        username === "admin" && password === "password123";
+
+    if (!isValidLogin) {
+        return res.status(401).json({
+            message: "Invalid username or password",
+        });
+    }
+
+    res.json({
+        message: "Login successful",
+    });
+});
+
+app.listen(3000, () => {
+    console.log("The app is running on port 3000");
+});
+```
+
+2. Distributed Production Setup (Using Redis) <br/>
+If you run multiple instances of your Node.js app behind a load balancer (as discussed previously), an in-memory limit will not work because memory isn't shared between instances. You must use a centralized cache like Redis to keep track of the request counts.
+
+Install packages:
+```js
+npm install express rate-limit-redis redis
+```
+
+Implementation Code:
+```js
+const express = require('express');
+const { rateLimit } = require('express-rate-limit');
+const { RedisStore } = require('rate-limit-redis');
+const { createClient } = require('redis');
+
+const app = express();
+
+async function startServer() {
+  // 1. Connect to Redis Server
+  const redisClient = createClient({ url: 'redis://localhost:6379' });
+  await redisClient.connect();
+
+  // 2. Configure Rate Limiter with Redis Store
+  const limiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute window
+    max: 20, // Limit each IP to 20 requests per minute
+    store: new RedisStore({
+      sendCommand: (...args) => redisClient.sendCommand(args),
+    }),
+    message: 'Too many requests, slow down!',
+  });
+
+  app.use(limiter);
+
+  app.get('/api/data', (req, res) => {
+    res.json({ message: "Secure distributed data fetched." });
+  });
+
+  app.listen(3000, () => console.log('Distributed rate limiter running on port 3000'));
+}
+
+startServer().catch(console.error);
+```
+
+How It Works<br/>
+- Identify the User: The system tracks each incoming request using an IP address, user ID, or API key.
+- Count the Requests: It logs how many calls that specific identifier made during a timer window.
+- Allow or Block: If the count is under the limit, the server does the work. If it is over, the server rejects it.
+
+Common Algorithms<br/>
+- Fixed Window: Counts requests in rigid time chunks (like 100 calls per minute) and resets the counter to zero when the clock hits  the next minute.
+- Sliding Window: Looks at a rolling time frame (the last 60 seconds) so users cannot cheat the system by sending bursts right at the edge of a clock reset.
+- Token Bucket: A container fills with tokens at a steady drip speed. Each request takes one token. If the bucket is empty, requests are blocked.
+- Leaky Bucket: Queues incoming requests up and lets them leak out to the server at a smooth, steady pace.
+
+Why We Need Rate Limits</br/>
+- Stop Server Overload: Keeps CPU, memory, and databases safe from crashing when too many people use the app at once.
+- Block Bad Bots: Stops malicious scripts or scrapers from stealing data or launching Denial of Service (DoS) attacks.
+- Fair Use: Keeps one user from hogging all the system speed so everyone else gets a fair turn.
+- Save Money: Cuts down on cloud computing and server infrastructure bills caused by runaway traffic.
+
+### 149. How to implement a Circuit Breaker in a Node.js microservice?
+
+Simple definition:
+
+A circuit breaker stops calling a failing downstream service after too many failures, giving it time to recover.
+
+States:
+
+- **Closed** — normal calls
+- **Open** — fail fast, no calls
+- **Half-open** — test if service recovered
+
+Simple implementation:
+
+```js
+class CircuitBreaker {
+  constructor(threshold = 5, timeout = 10000) {
+    this.failureCount = 0;
+    this.threshold = threshold;
+    this.timeout = timeout;
+    this.state = 'CLOSED';
+    this.nextAttempt = Date.now();
+  }
+
+  async call(fn) {
+    if (this.state === 'OPEN') {
+      if (Date.now() < this.nextAttempt) {
+        throw new Error('Circuit breaker is OPEN');
+      }
+      this.state = 'HALF_OPEN';
+    }
+
+    try {
+      const result = await fn();
+      this.onSuccess();
+      return result;
+    } catch (error) {
+      this.onFailure();
+      throw error;
+    }
+  }
+
+  onSuccess() {
+    this.failureCount = 0;
+    this.state = 'CLOSED';
+  }
+
+  onFailure() {
+    this.failureCount += 1;
+    if (this.failureCount >= this.threshold) {
+      this.state = 'OPEN';
+      this.nextAttempt = Date.now() + this.timeout;
+    }
+  }
+}
+
+const breaker = new CircuitBreaker();
+
+async function getUserFromService(id) {
+  return breaker.call(() => fetch(`http://user-service/users/${id}`));
+}
+```
+
+Libraries: `opossum`, `cockatiel`.
+
+Interview answer:
+
+```text
+Track failures to a dependency. After a threshold, open the circuit and return fast errors or fallback responses. After a cooldown, allow trial requests in half-open state before fully closing the circuit.
+```
+
 ### 12. Can nodejs use multiple CPU cores?
 Yes, Node.js can use multiple CPU cores, even though its main event loop runs on a single thread. It achieves this by using built-in modules or internal architecture to spread tasks across your processor's cores.
 
@@ -2421,6 +2795,56 @@ How Node.js Uses Multiple Cores
 - The Cluster Module: This allows you to spawn copy instances of your application (worker processes) that run simultaneously. Each worker runs on its own CPU core and shares the same network port to handle incoming traffic.
 - Worker Threads: The worker_threads module lets you execute heavy JavaScript CPU calculations (like data processing or image manipulation) on separate threads inside parallel CPU cores.
 - Process Managers (PM2): Tools like PM2 automate the setup of the Cluster module in production, instantly scaling your single application to use every available core on the server machine.
+
+### 134. What is libuv thread pool? How does the libuv Thread Pool work, and how do you tune its size?
+
+Simple definition:
+
+libuv maintains a fixed pool of worker threads (default **4**) for operations that cannot use pure async OS APIs, such as file system, DNS (`dns.lookup`), and some crypto work.
+
+"Libuv is the underlying C library that provides Node.js with its Event Loop and Thread Pool, allowing a single-threaded language like JavaScript to handle thousands of heavy network and file tasks concurrently without blocking."
+
+libuv is a C library used by Node.js.
+
+It provides:
+
+- event loop
+- async I/O
+- thread pool
+- file system operations
+- timers
+- networking support
+
+Tune size with environment variable:
+
+```bash
+UV_THREADPOOL_SIZE=8 node server.js
+```
+
+Example:
+
+```js
+// These may use thread pool workers:
+const fs = require('fs');
+const crypto = require('crypto');
+const dns = require('dns');
+
+fs.readFile('data.txt', () => {});
+crypto.pbkdf2('password', 'salt', 100000, 64, 'sha512', () => {});
+dns.lookup('example.com', () => {});
+```
+
+Important notes:
+
+- Max recommended size is usually **128**.
+- More threads help I/O-heavy thread-pool work but use more CPU and memory.
+- CPU-heavy JavaScript still blocks the main thread — thread pool does not fix that.
+
+Interview answer:
+
+```text
+The thread pool offloads blocking libuv tasks from the main thread. Default size is 4. Increase UV_THREADPOOL_SIZE when many concurrent file or crypto operations queue up, but profile first because too many threads can hurt performance.
+```
 
 ### 12. What is heap snapshot and startup snapshot?
 Heap Snapshot
@@ -2738,43 +3162,6 @@ Interview answer:
 
 ```text
 libuv bridges JavaScript and the OS. Network sockets use non-blocking OS APIs. Some blocking operations like file reads use libuv's thread pool so the main JavaScript thread stays free.
-```
-
-### 134. How does the libuv Thread Pool work, and how do you tune its size?
-
-Simple definition:
-
-libuv maintains a fixed pool of worker threads (default **4**) for operations that cannot use pure async OS APIs, such as file system, DNS (`dns.lookup`), and some crypto work.
-
-Tune size with environment variable:
-
-```bash
-UV_THREADPOOL_SIZE=8 node server.js
-```
-
-Example:
-
-```js
-// These may use thread pool workers:
-const fs = require('fs');
-const crypto = require('crypto');
-const dns = require('dns');
-
-fs.readFile('data.txt', () => {});
-crypto.pbkdf2('password', 'salt', 100000, 64, 'sha512', () => {});
-dns.lookup('example.com', () => {});
-```
-
-Important notes:
-
-- Max recommended size is usually **128**.
-- More threads help I/O-heavy thread-pool work but use more CPU and memory.
-- CPU-heavy JavaScript still blocks the main thread — thread pool does not fix that.
-
-Interview answer:
-
-```text
-The thread pool offloads blocking libuv tasks from the main thread. Default size is 4. Increase UV_THREADPOOL_SIZE when many concurrent file or crypto operations queue up, but profile first because too many threads can hurt performance.
 ```
 
 ### 135. What are the performance implications of synchronous code in a callback?
@@ -3407,77 +3794,6 @@ Interview answer:
 
 ```text
 Design services to be stateless. Put sessions, cache, locks, and pub/sub in Redis or a database. Avoid assuming data in one process memory is visible to other instances.
-```
-
-### 149. How to implement a Circuit Breaker in a Node.js microservice?
-
-Simple definition:
-
-A circuit breaker stops calling a failing downstream service after too many failures, giving it time to recover.
-
-States:
-
-- **Closed** — normal calls
-- **Open** — fail fast, no calls
-- **Half-open** — test if service recovered
-
-Simple implementation:
-
-```js
-class CircuitBreaker {
-  constructor(threshold = 5, timeout = 10000) {
-    this.failureCount = 0;
-    this.threshold = threshold;
-    this.timeout = timeout;
-    this.state = 'CLOSED';
-    this.nextAttempt = Date.now();
-  }
-
-  async call(fn) {
-    if (this.state === 'OPEN') {
-      if (Date.now() < this.nextAttempt) {
-        throw new Error('Circuit breaker is OPEN');
-      }
-      this.state = 'HALF_OPEN';
-    }
-
-    try {
-      const result = await fn();
-      this.onSuccess();
-      return result;
-    } catch (error) {
-      this.onFailure();
-      throw error;
-    }
-  }
-
-  onSuccess() {
-    this.failureCount = 0;
-    this.state = 'CLOSED';
-  }
-
-  onFailure() {
-    this.failureCount += 1;
-    if (this.failureCount >= this.threshold) {
-      this.state = 'OPEN';
-      this.nextAttempt = Date.now() + this.timeout;
-    }
-  }
-}
-
-const breaker = new CircuitBreaker();
-
-async function getUserFromService(id) {
-  return breaker.call(() => fetch(`http://user-service/users/${id}`));
-}
-```
-
-Libraries: `opossum`, `cockatiel`.
-
-Interview answer:
-
-```text
-Track failures to a dependency. After a threshold, open the circuit and return fast errors or fallback responses. After a cooldown, allow trial requests in half-open state before fully closing the circuit.
 ```
 
 ### 150. How do you profile CPU performance in Node.js?
@@ -5201,309 +5517,6 @@ Key Differences
 When to Choose Which
 - Monolithic: Best for small teams, startups, simple projects, or applications with a stable, well-understood scope where fast initial delivery is the priority.
 - Microservices: Best for large, complex enterprise systems, rapidly growing organizations with multiple autonomous teams, and applications requiring massive, targeted scalability.
-
-### 14. What is load balancing and how it works with an example?
-Load balancing is the process of distributing incoming network traffic evenly across a group of backend servers.
-
-Think of a load balancer as a traffic cop standing in front of your infrastructure. Instead of allowing millions of users to hit a single server and crash it, the load balancer intercepts every request and routes it to the least busy server in your fleet.
-
-Real-World Analogy: The Bank Teller Line
-Imagine a popular bank branch. If there is only one teller counter open (one server), a massive line forms. Customers get frustrated, and the teller gets completely overwhelmed and burns out (Server Crash).
-
-Now, the bank manager upgrades the system:
-- They open 4 separate teller counters (a cluster of 4 Node.js servers).
-- They hire a security guard to stand at the entrance (The Load Balancer).
-- When a customer walks into the bank, they do not choose a counter. The security guard looks at the open counters and says, "You go to Counter 1. Next customer, go to Counter 2."
-
-Because of the security guard, no single teller is ever overwhelmed, and customers are served 4 times faster.
-
-How it Works (Step-by-Step Example)
-
-Let's look at how a load balancer handles traffic for a real website, like ://mycoolapp.com.
-
-```js
-               [ USER TRAFFIC ]
-         (Millions of HTTP Requests)
-                     │
-                     ▼
-         ┌───────────────────────┐
-         │     LOAD BALANCER     │  <-- Intercepts everything at Port 80/443
-         └───────────┬───────────┘
-                     │
-      ┌──────────────┼──────────────┐
-      ▼              ▼              ▼
-┌───────────┐  ┌───────────┐  ┌───────────┐
-│ Server A  │  │ Server B  │  │ Server C  │  <-- Identical Node.js instances
-└───────────┘  └───────────┘  └───────────┘
-```
-
-Step 1: The Request Arrives
-- A user types your website URL into their browser. The Domain Name System (DNS) points your domain directly to the IP address of the Load Balancer, not the actual backend servers.
-
-Step 2: The Load Balancer Applies an Algorithm<br/>
-The load balancer receives the request and decides which backend server should handle it using a specific strategy. The most common algorithms are:
-
-- Round Robin: Passes requests sequentially down the line (Server A, then Server B, then Server C, then back to A).
-- Least Connections: Checks the active workload and sends the user to whichever server currently has the fewest open connections.
-- IP Hash: Uses the user's IP address to ensure that a specific user always lands on the exact same backend server (useful for keeping user sessions intact).
-
-Step 3: Routing the Traffic <br/>
-The load balancer acts as a reverse proxy. It forwards the request to the chosen server (e.g., Server B) via a private internal network.
-
-Step 4: The Health Check (The Safety Net)<br/>
-A load balancer continuously pings your backend servers every few seconds (called a Health Check). If Server C suddenly runs out of memory and crashes, the load balancer instantly flags it as "unhealthy" and stops sending traffic there. Users never see an error page because their requests are seamlessly routed to Server A and B instead.
-
-Popular Tools Used for Load Balancing<br/>
-In professional environments, developers rarely write load balancers from scratch. They use highly optimized, battle-tested software or cloud infrastructure:
-- NGINX: A lightning-fast, open-source software reverse proxy frequently used to load balance Node.js applications.
-- AWS ALB (Application Load Balancer): A cloud service managed by Amazon that automatically scales up to handle millions of requests without manual configuration.
-
-### What is load balancer and how to implement load balancer in node js?
-
-In simple terms, a load balancer in Node.js acts like a traffic cop standing in front of your application. <br/>
-
-Because Node.js is single-threaded by default, it can only use one CPU core at a time. If thousands of users visit your app simultaneously, that single core will get overwhelmed, causing the app to slow down or crash. <br/>
-
-A load balancer solves this by taking all incoming user requests and distributing them evenly across multiple copies (instances) of your Node.js application running on different CPU cores or entirely different servers. <br/>
-
-💡 Why Node.js Applications Require Load Balancing<br/>
-- Multi-Core Utilization: Distributes incoming traffic across all available CPU cores of a server.
-- High Availability: Routes traffic away from crashed or failing application processes automatically.
-- Horizontal Scaling: Allows your system to handle larger spikes in user traffic seamlessly.
-- Zero-Downtime Updates: Enables individual application instances to restart for updates without interrupting users.
-
-How It Works<br/>
-- The User Requests: A user visits your website.
-- The Balancer Intercepts: The request goes to the load balancer first, not the app.
-- The Balancer Routes: The balancer picks an available, healthy Node.js instance.
-- The App Responds: That specific instance processes the request and sends the response back through the load balancer to the user.
-
-Why You Need It<br/>
-- Prevents Overload: No single copy of your app takes the entire traffic hit.
-- High Availability: If one copy of your app crashes, the balancer seamlessly routes traffic to the working ones so users never notice a problem.
-- Maximum Performance: It unlocks the full power of modern, multi-core computer processors.
-
-Common Ways to Use It in Node.js<br/>
-You don't always need to install separate hardware to load balance. In the Node.js ecosystem, it is usually handled in three ways:
-- Built-in Cluster Module: Node.js has a native Cluster module that automatically spawns multiple child processes (workers) to share the same server port.
-- Process Managers (PM2): A popular tool called PM2 cluster mode can scale your app across all CPU cores automatically with a single command.
-- Reverse Proxies (Nginx): For heavy production apps, developers place software like Nginx in front of multiple Node.js servers to handle massive scaling.
-
-Load Balaner Implementation <br/>
-Implementing a load balancer in Node.js can be achieved internally within your application code or externally using specialized production tools. Because Node.js runs on a single-threaded event loop, load balancing is critical to utilize multi-core systems and scale horizontally.
-
-1. The Built-in cluster Module (Internal Code) <br/>
-- Node.js includes a native cluster module that allows you to fork multiple worker processes that share the same server port. The master process manages traffic distribution using a round-robin algorithm.
-
-Create a file named server.js:
-```js
-const cluster = require('cluster');
-const http = require('http');
-const numCPUs = require('os').cpus().length; // Get total CPU cores
-
-if (cluster.isMaster) {
-  console.log(`Master process ${process.pid} is running.`);
-
-  // Fork worker processes equal to the number of CPU cores
-  for (let i = 0; i < numCPUs; i++) {
-    cluster.fork();
-  }
-
-  // Listen for dying workers and replace them
-  cluster.on('exit', (worker, code, signal) => {
-    console.log(`Worker ${worker.process.pid} died. Launching a new one...`);
-    cluster.fork();
-  });
-
-} else {
-  // Workers share the TCP connection and listen on the same port
-  http.createServer((req, res) => {
-    res.writeHead(200);
-    res.end(`Response served by Worker Process: ${process.pid}\n`);
-  }).listen(3000);
-
-  console.log(`Worker process ${process.pid} started.`);
-}
-```
-
-2. PM2 Cluster Mode (Process Manager)<br/>
-Using a production process manager like PM2 removes the need to write clustering logic directly into your code. It automatically spins up instances across all CPU cores and distributes traffic via an internal load balancer.
-
-1. Install PM2 globally:
-```js
-npm install pm2 -g
-```
-
-2. Start your standard application in cluster mode:
-
-```js
-pm2 start app.js -i max
-```
-
-(The -i max flag instructs PM2 to auto-detect and utilize all available CPU cores).
-
-3. NGINX Reverse Proxy (Production Standard)
-For large-scale applications, it is standard practice to place an external reverse proxy like NGINX in front of multiple distinct Node.js app instances. This isolates application logic, handles SSL termination, and handles heavy static files efficiently.
-
-- Run separate instances of your Node.js app on different ports (e.g., 3001, 3002, 3003).
-- Modify your NGINX configuration file (typically nginx.conf) to create an upstream cluster:
-
-```js
-http {
-    # Define the backend Node.js servers
-    upstream nodejs_cluster {
-        server 127.0.0.1:3001;
-        server 127.0.0.1:3002;
-        server 127.0.0.1:3003;
-    }
-
-    server {
-        listen 80;
-        server_name yourdomain.com;
-
-        # Forward all traffic to the cluster
-        location / {
-            proxy_pass http://nodejs_cluster;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        }
-    }
-}
-```
-
-### What is rate limit and how to implement rate limit in node js?
-
-A rate limit is a rule that controls how many times a client can talk to a server or API in a set time. If a user goes past this number, the server blocks their extra calls and usually sends back an HTTP 429 Too Many Requests message.
-
-
-How to Implement Rate Limiting in Node.js<br/>
-1. In-Memory (Using Express middleware)
-For a simple application running on a single server, you can use the express-rate-limit package.
-
-Install package:
-```js
-npm install express-rate-limit
-```
-
-Implementation Code:
-```js
-const express = require("express");
-const rateLimit = require("express-rate-limit");
-
-const app = express();
-
-app.use(express.json());
-
-// General application limiter
-const generalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    message: "Too many requests from this IP, please try again later",
-    standardHeaders: true,
-    legacyHeaders: false,
-});
-
-// Login-specific limiter
-const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 5,
-    standardHeaders: true,
-    legacyHeaders: false,
-    handler: (req, res) => {
-        res.status(429).json({success: false, message: "Too many login attempts. Please try again later."})
-    }
-});
-
-app.use(generalLimiter);
-
-app.get("/", (req, res) => {
-    res.send("Server is running");
-});
-
-app.post("/login", loginLimiter, (req, res) => {
-    const { username, password } = req.body;
-
-    // Replace this with your database authentication logic
-    const isValidLogin =
-        username === "admin" && password === "password123";
-
-    if (!isValidLogin) {
-        return res.status(401).json({
-            message: "Invalid username or password",
-        });
-    }
-
-    res.json({
-        message: "Login successful",
-    });
-});
-
-app.listen(3000, () => {
-    console.log("The app is running on port 3000");
-});
-```
-
-2. Distributed Production Setup (Using Redis) <br/>
-If you run multiple instances of your Node.js app behind a load balancer (as discussed previously), an in-memory limit will not work because memory isn't shared between instances. You must use a centralized cache like Redis to keep track of the request counts.
-
-Install packages:
-```js
-npm install express rate-limit-redis redis
-```
-
-Implementation Code:
-```js
-const express = require('express');
-const { rateLimit } = require('express-rate-limit');
-const { RedisStore } = require('rate-limit-redis');
-const { createClient } = require('redis');
-
-const app = express();
-
-async function startServer() {
-  // 1. Connect to Redis Server
-  const redisClient = createClient({ url: 'redis://localhost:6379' });
-  await redisClient.connect();
-
-  // 2. Configure Rate Limiter with Redis Store
-  const limiter = rateLimit({
-    windowMs: 1 * 60 * 1000, // 1 minute window
-    max: 20, // Limit each IP to 20 requests per minute
-    store: new RedisStore({
-      sendCommand: (...args) => redisClient.sendCommand(args),
-    }),
-    message: 'Too many requests, slow down!',
-  });
-
-  app.use(limiter);
-
-  app.get('/api/data', (req, res) => {
-    res.json({ message: "Secure distributed data fetched." });
-  });
-
-  app.listen(3000, () => console.log('Distributed rate limiter running on port 3000'));
-}
-
-startServer().catch(console.error);
-```
-
-How It Works<br/>
-- Identify the User: The system tracks each incoming request using an IP address, user ID, or API key.
-- Count the Requests: It logs how many calls that specific identifier made during a timer window.
-- Allow or Block: If the count is under the limit, the server does the work. If it is over, the server rejects it.
-
-Common Algorithms<br/>
-- Fixed Window: Counts requests in rigid time chunks (like 100 calls per minute) and resets the counter to zero when the clock hits  the next minute.
-- Sliding Window: Looks at a rolling time frame (the last 60 seconds) so users cannot cheat the system by sending bursts right at the edge of a clock reset.
-- Token Bucket: A container fills with tokens at a steady drip speed. Each request takes one token. If the bucket is empty, requests are blocked.
-- Leaky Bucket: Queues incoming requests up and lets them leak out to the server at a smooth, steady pace.
-
-Why We Need Rate Limits</br/>
-- Stop Server Overload: Keeps CPU, memory, and databases safe from crashing when too many people use the app at once.
-- Block Bad Bots: Stops malicious scripts or scrapers from stealing data or launching Denial of Service (DoS) attacks.
-- Fair Use: Keeps one user from hogging all the system speed so everyone else gets a fair turn.
-- Save Money: Cuts down on cloud computing and server infrastructure bills caused by runaway traffic.
 
 ### How will we handle a server crash?<br/>
 Handling a server crash is all about Redundancy (having backups) and Automation (fixing problems without human intervention). In production, you never rely on a single server.
