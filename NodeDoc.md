@@ -2846,6 +2846,134 @@ Interview answer:
 The thread pool offloads blocking libuv tasks from the main thread. Default size is 4. Increase UV_THREADPOOL_SIZE when many concurrent file or crypto operations queue up, but profile first because too many threads can hurt performance.
 ```
 
+### 135. What is zero downtime in nodejs deployment?
+
+If one worker process crashes due to a bug, the master process can instantly spawn a new one without taking your website offline.
+
+Zero downtime in Node.js refers to the practice of deploying updates, bug fixes, or code changes to a production server without disrupting active users or dropping any incoming HTTP/WebSocket connections. Because Node.js operates on a single-threaded event loop, a standard application restart completely kills the process, creating a window where your app is completely offline. Zero-downtime techniques ensure that a healthy instance of your application is always available to handle traffic while the update occurs.
+
+Note - Zero-downtime deployments in Node.js can be achieved using various techniques. The right method depends on your application’s size, complexity, and traffic patterns.
+
+The best zero-downtime deployment technique for Node.js depends entirely on your infrastructure scale. For single-server or Virtual Private Server (VPS) setups, the absolute best and most efficient technique is a PM2 Cluster Mode Rolling Reload, while for containerized, multi-server cloud environments, Kubernetes Rolling Updates or Blue-Green Deployments via a Load Balancer represent the industry gold standards.
+
+No matter which strategy you choose, you must always couple it with Graceful Shutdown code in Node.js to ensure in-flight connections are not abruptly destroyed.
+
+Core Strategies to Achieve Zero Downtime<br/>
+
+1. Process Management with PM2: PM2 is a process manager for Node.js applications that allows you to restart services without downtime. When using PM2, it automatically handles process restarts in a way that avoids downtime.
+
+```js
+// Install PM2
+npm install -g pm2
+
+// Start your application in cluster mode utilizing maximum available CPU cores
+pm2 start app.js -i max
+
+// Update your application with zero downtime later
+pm2 reload all
+```
+
+2. Load Balancing with Nginx: If your Node.js application serves a high volume of traffic, using a load balancer is a great way to distribute traffic across multiple instances while performing zero-downtime deployments.
+
+How Nginx Ensures Zero Downtime<br/>
+- Spin up multiple instances of your Node.js app
+- Use Nginx to distribute traffic between them
+- Update one instance at a time while others handle the traffic
+
+Example Nginx Configuration
+```js
+upstream my_node_app {
+    server 127.0.0.1:3000;
+    server 127.0.0.1:3001;
+}
+
+server {
+    listen 80;
+
+    location / {
+        proxy_pass http://my_node_app;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+Here’s how this works:
+
+- Nginx routes requests to multiple instances of your Node.js app.
+- When you deploy, you update one instance at a time while others keep handling requests.
+
+To update an instance, you can stop one, replace it, and restart while traffic flows to the other active instance.
+
+3. Rolling Updates with Kubernetes: If your application is containerized and running on Kubernetes, rolling deployments ensure zero downtime by gradually replacing old instances with new ones.
+
+Steps to Perform a Rolling Deployment<br/>
+
+Define a Kubernetes Deployment manifest:
+
+```js
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-node-app
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    spec:
+      containers:
+      - name: node-app
+        image: my-node-app:v2
+```
+
+Apply the new deployment:
+
+```js
+kubectl apply -f deployment.yaml
+```
+
+This ensures that at least one instance is always running while new instances replace the old ones.
+
+4. Blue-Green Deployment: You maintain two identical hardware environments. "Blue" holds the live production code, while "Green" receives the new code. Once Green passes health checks, a load balancer seamlessly routes traffic to it.
+
+- Blue: The current production version
+- Green: The new version being deployed
+
+Traffic is switched from blue to green only when the green version is fully tested and ready.
+
+Steps for Blue-Green Deployment<br/>
+- Deploy the new version (green) alongside the old version (blue).
+- Run tests on the green environment.
+- Switch the traffic to the green version when it’s ready.
+
+If you’re using AWS Elastic Load Balancer (ELB), you can switch instances seamlessly.
+
+5. Canary Deployment: In canary deployments, the new version is deployed to a small percentage of users first. If no issues arise, it gradually replaces the old version.
+
+Steps for Canary Deployment<br/>
+- Deploy the new version to 10% of users.
+- Monitor performance and errors.
+- Gradually increase traffic to the new version.
+- If issues occur, rollback instantly.
+
+This is commonly used in feature flagging systems like LaunchDarkly or in Kubernetes using Istio.
+
+Best Practices for Zero-Downtime Deployments
+- Always test in a staging environment before production
+- Use process managers like PM2 for simple deployments
+- Load balance using Nginx for high-traffic apps
+- Use Kubernetes for containerized applications
+- Leverage Blue-Green or Canary deployments for safer rollouts
+- Automate deployments with CI/CD pipelines
+
+
 ### 12. What is heap snapshot and startup snapshot?
 Heap Snapshot
 A Heap Snapshot is a diagnostic tool that captures a complete picture of your application's memory usage at a specific moment in time. It records every JavaScript object, closure, and DOM node currently allocated in the V8 engine's heap memory.
