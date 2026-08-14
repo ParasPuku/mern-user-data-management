@@ -1843,7 +1843,7 @@ Drop these exact phrases during your interview to stand out:
                         (Uses CLUSTER MODULE)
                      /           |           \
                     ▼            ▼            ▼
-             👷‍♂️ [ WORKER 1 ] 👷‍♂️ [ WORKER 2 ] 👷‍♂️ [ WORKER 3 ]  <-- (CHILD PROCESSES)
+             👷‍♂️ [ WORKER PROCESS 1 ] 👷‍♂️ [ WORKER PROCESS 2 ] 👷‍♂️ [ WORKER PROCESS 3 ]  <-- (CHILD PROCESSES)
               (Express App)   (Express App)   (Express App)
                     │
                     ▼
@@ -1874,6 +1874,15 @@ If one of your Worker Processes (Child Processes) suddenly encounters an incredi
 
 🧩 How They Connect (The Cheat Sheet)<br/>
 Rate Limiting & Load Balancer are your network guards and traffic cops.The Master Process & Cluster Module are your internal management layer.Worker Processes / Child Processes are your actual running servers handling day-to-day web traffic.Worker Threads are the heavy-lifting background assistants hidden inside those individual workers.
+
+🧩 is master process same of node process? is worker process same of child processes?<br/>
+Yes to both! You have mapped the terminology perfectly.
+
+1. Is master process the same as the node process?<br/>
+Yes. The Master Process is just a specific role given to the very first Node Process you start. When you run your application, that initial Node process acts as the boss/manager.
+
+2. Is worker process the same as a child process?<br/>
+Yes. A Worker Process is simply a Child Process created by the master. It is an exact clone of your application running in its own separate memory space on another CPU core to handle incoming traffic.Summary Cheat SheetMaster Process = The original, parent Node Process (The Manager).Worker Process = A spawned Child Process (The Worker).
 
 ### 12. Are master process and node process same?
 Yes, exactly. You nailed it.
