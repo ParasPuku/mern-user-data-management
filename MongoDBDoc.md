@@ -987,6 +987,23 @@ Interview answer:
 Indexes improve read performance by helping MongoDB find documents without scanning the whole collection.
 ```
 
+### 32. How to create an index in MongoDB?
+MongoDB has a createIndex() function to create various types of indexes, such as single-field indexes, text indexes, and 2D indexes. The method has two input parameters: keys defining the columns to index and other options.
+
+Syntax:
+```js
+db.collection.createIndex(keys, options)
+```
+
+- Keys: { field1: 1, field2: -1, ... }, 1 for ascending order and -1 for descending order
+- Options: {unique: true}, {sparse: true}, { expireAfterSeconds: 3600 }
+
+Example:
+
+```js
+db.users.createIndex({ email: 1 }, { unique: true });
+```
+
 ### 32. How does MongoDB index work internally?
 
 MongoDB indexes are usually B-tree based structures.
@@ -1173,6 +1190,36 @@ db.orders.aggregate([
   { $match: { status: "paid" } },
   { $group: { _id: "$customerId", total: { $sum: "$amount" } } },
   { $sort: { total: -1 } }
+]);
+```
+
+### 72. How to implement aggregation in MongoDB?<br/>
+Aggregation typically contains three stages: match, group, and sort. Let’s see how we can implement these in code.
+
+Example “products” document:
+
+```js
+[
+  { "_id": 1, "product_id": "t2409", "amount": $250, "status": "done" },
+  { "_id": 2, "product_id": "t2009", "amount": $300, "status": "done" },
+  { "_id": 3, "product_id": "t1309", "amount": $150, "status": "pending" },
+  { "_id": 4, "product_id": "t1919", "amount": $480, "status": "done" },
+  { "_id": 5, "product_id": "t5459", "amount": $120, "status": "pending" },
+  { "_id": 6, "product_id": "t3829", "amount": $280, "status": "done" }
+]
+```
+
+- $match: To filter documents based on a condition
+- $group: This groups the data and applies aggregation operation
+- $sort: Order the output documents as you need
+
+Example:
+
+```js
+db.products.aggregate([
+  { $match: { status: "completed" } },
+  { $group: { _id: "$product_id", totalAmount: { $sum: "$amount" },
+  { $sort
 ]);
 ```
 
@@ -1474,6 +1521,38 @@ Why:
 It helps recover data after crash.
 ```
 
+Journaling in MongoDB is a safety mechanism that uses a write-ahead log (WAL) to provide crash resiliency and ensure data durability. It intercepts write operations and commits them to a sequential log on the disk before modifying the primary data files. This guarantees that if the server crashes or loses power unexpectedly, the system can fully recover missing data upon restarting.
+
+How Journaling Works<br/>
+MongoDB's default storage engine, WiredTiger, coordinates RAM, journal logs, and data files to handle writes.
+- In-Memory Write: A client sends a write request (insert, update, delete). WiredTiger records the modification inside an in-memory buffer.
+- Journal Logging: The database appends the operation details sequentially into the journal file on disk. By default, this flush occurs every 100 milliseconds.
+- Data File Checkpoint: Every 60 seconds (or when 2 GB of journal data accumulates), WiredTiger creates a checkpoint, permanently flushing the modifications from RAM into the main database data files.
+- Log Cleanup: Once a checkpoint succeeds, the old journal logs spanning before that timestamp are discarded because they are safely recorded in the data files.
+
+The Recovery Process After a Crash<br/>
+If the mongod process stops abruptly between checkpoints, data sitting in the volatile RAM is lost. Upon restarting, the database automatically performs the following steps:
+- Identifies the ID of the last successful checkpoint inside the data files.
+- Searches the journal files for records matching that checkpoint ID.
+- Replays all operations written in the journal after that point, restoring the data to its proper state.
+
+Controlling Journaling with Write Concern<br/>
+Developers can enforce how safe a write operation must be using MongoDB's writeConcern configuration:
+- Default Behavior (j: false / unspecified): MongoDB acknowledges a write command as soon as it updates the memory buffer. There is a minor 100ms vulnerability window where data could be lost if a hard crash occurs before the next journal flush.
+- Immediate Durability (j: true): MongoDB will not send a "success" response back to the client application until the write log is safely written to the disk journal.
+
+An execution example in Node.js or Mongo Shell:
+```js
+db.users.insertOne(
+  { name: "John Doe", email: "john@example.com" },
+  { writeConcern: { w: 1, j: true } } // Forces on-disk journal confirmation
+)
+```
+
+Important Version Differences<br/>
+- MongoDB 6.1 and Newer: Journaling is always enabled. The command-line flags --journal / --nojournal and the configuration property storage.journal.enabled have been deprecated and removed.
+- MongoDB 4.0 to 6.0: Journaling is turned on by default for 64-bit systems but can be explicitly turned off manually to prioritize write performance over complete data safety.
+
 ### 58. What are transactions?
 
 Transaction means multiple operations succeed together or fail together.
@@ -1694,6 +1773,141 @@ db.users.find({ email: "paras@example.com" }).explain("executionStats");
 ```
 
 If output shows `COLLSCAN`, add index.
+
+### 72. where we should store the images, videos and files in nodejs app?
+In a Node.js application, you should store images, videos, and files in Cloud Object Storage (like Amazon S3 or Google Cloud Storage) and save only the file metadata and URLs in your database. Storing raw files directly inside a database or on your local server's disk causes severe scaling, performance, and security issues.
+
+The three main storage approaches, ranked from best to worst -<br/>
+1. Cloud Object Storage (The Industry Standard) 🌟
+You stream the files from your Node.js backend straight to a dedicated third-party storage provider. Your database only keeps a reference string (e.g., https://amazonaws.com).
+
+- Best Options:
+  1. General Files/Videos: Amazon S3, Google Cloud Storage, or DigitalOcean Spaces.
+  2. Images & Media Optimization: Cloudinary or Uploadcare (they automatically handle resizing and compressions).
+- Pros: Highly scalable, cost-effective, faster delivery via Content Delivery Networks (CDNs), and reduces load on your application server.Cons: 
+- Requires external API integration and minor additional cloud costs.
+
+2. Local File System (Good for Small/Prototyping Apps Only) 📁<br/>
+You use Node.js middleware like Multer or express-fileupload to save files into a local folder (e.g., /public/uploads) on your server's hard drive.- Pros: Easy to implement; no external accounts required.
+- Cons: Does not scale. If you deploy your app to multiple server instances or a serverless platform (like AWS Lambda or Vercel), local files will vanish because their file systems are ephemeral (temporary).
+
+3. Inside the Database (Not Recommended) ❌ <br/>
+You convert the file into a binary blob (Buffer) and save it directly inside SQL or NoSQL databases like MongoDB or PostgreSQL.
+- Pros: Backing up your database backs up your files simultaneously.
+- Cons: It severely degrades database read/write speeds, inflates database costs exponentially, and drastically slows down queries.
+
+Recommended Node.js File Architecture<br/>
+The diagram below shows the optimal production workflow:
+- The user uploads a file.
+- The Node.js server acts as a temporary pipeline (using memory storage via Multer) to push the file to the Cloud Bucket.
+- The Cloud Bucket returns a public URL.
+- The Node.js server saves that text URL into MongoDB/PostgreSQL.
+```js
+
+┌────────┐             ┌────────────┐             ┌──────────────┐
+│        │  1. Upload  │  Node.js   │  2. Stream  │ Cloud Bucket │
+│ Client ├────────────>│  Backend   ├────────────>│  (e.g., S3)  │
+│        │             │  (Multer)  │             │              │
+│        │<────────────┤            │<────────────┤              │
+└────────┘   4. URL    └─────┬──────┘   3. URL    └──────────────┘
+             Response        │
+                             │ 3.5 Save URL
+                             v
+                       ┌────────────┐
+                       │  Database  │
+                       └────────────┘
+```
+Security & Optimization Checklist<br/>
+- Enforce File Size Limits: Always set a strict size ceiling in your Multer configuration (e.g., 5MB for images, 50MB for videos) to prevent Denial of Service (DoS) attacks.
+- Validate File Types: Never trust the user's file extension. Check the magic numbers/mime-type of the file buffer to ensure a malicious user isn't uploading an executable .exe disguised as a .jpg.
+- Use Presigned URLs for Large Files: For large videos or assets, avoid routing the file through your Node.js server entirely. Generate an AWS S3 "presigned URL" in Node.js, send it to the client, and let the frontend upload directly to S3. This keeps your server memory completely clear.
+
+### 72. How do you perform SQL join equivalent in MongoDB?
+MongoDB provides aggregation operators like $lookup to perform SQL equivalent joins.
+
+Syntax:
+```js
+db.collection_1_name.aggregate([
+  {
+    $lookup: {
+      from: "collection_2_name",  // The other collection to join with
+      localField: "field_in_collection_1", // The field on which you want to join
+      foreignField: "field_in_collection_2", // The field from the second collection you want to perform join operation
+      as: "result_field" // The name of the new field to store the joined result
+    }
+  }
+])
+```
+
+Example: 
+
+Say you have order and product collections with data as follows:
+
+“Orders” collection:
+
+```js
+[
+  { "_id": 1, "product_id": 101, "order_amount": 250 },
+  { "_id": 2, "product_id": 102, "order_amount": 300 },
+  { "_id": 3, "product_id": 101, "order_amount": 150 }
+]
+```
+
+“Products” collection:
+
+```js
+[
+   { "_id": 3789, "product_id": 102, "product_price": $100},
+   { "_id": 3970, "product_id": 103, "product_price": $297},
+   { "_id": 3509, "product_id": 101, "product_price": $300},
+]
+```
+
+Join operation:
+
+```js
+db.orders.aggregate([
+  {
+    $lookup: {
+      from: "products",              
+      localField: "customer_id",       
+      foreignField: "_id",             
+      as: "customer_info"             
+    }
+  }
+])
+```
+
+### 72. How can you optimize MongoDB queries?
+To optimize MongoDB queries and minimize database response times, you must ensure your queries perform an index scan (IXSCAN) instead of a full collection scan (COLLSCAN). This is primarily achieved by building strategic indexes, writing highly selective queries, utilizing projection, and refining your pipeline sequences.
+
+1. Master Strategic Indexing <br/>
+Indexes are the most impactful tool for database speed. Without them, MongoDB has to read every document in your collection sequentially.
+- Follow the ESR Rule: Design compound indexes by ordering fields as Equality filters first, Sort fields second, and Range filters last.
+- Run Covered Queries: Ensure your query searches and returns only fields present in the index. This allows MongoDB to return data directly from RAM without pulling documents from disk.
+- Use Partial Indexes: Reduce write overhead by only indexing documents that match a filter expression (e.g., indexing status for active users only).
+- Minimize Index Bloat: Every index slows down operations like insert and update. Avoid indexing highly volatile or unused fields.
+
+2. Optimize Query & Schema Structures<br/>
+How you write queries and structure data impacts CPU and memory consumption.
+
+- Apply Projections: Never use a blanket query that returns full documents. Use .find({}, { field1: 1, field2: 1 }) to isolate and pull only necessary data.
+- Avoid Key Slow Operators: Operators like $regex (without a prefix/index), $nin, and massive $in lists force expensive collection scans.
+- Embed Data Wisely: Structure your schema to embed heavily related data into a single document. This avoids costly in-application or $lookup joins.
+
+3. Refine Aggregation Pipelines<br/>
+Aggregation pipelines process data in stages; their layout dictates efficiency.
+- Filter Early: Place $match and $sort stages at the very beginning of your pipeline to leverage index capabilities and filter data volume down fast.
+- Order Modifiers Correctly: Always execute $sort prior to $skip and $limit to minimize memory usage.
+- Optimize Search Facets: If you use MongoDB Atlas Search, apply $limit before a $facet stage, and use $searchMeta for counts instead of counting the whole pipeline.
+
+4. Implement Pagination Properly<br/>
+- Ditch Large Skips: Avoid relying on .skip(10000).limit(10). Large skip values force MongoDB to scan thousands of index entries up to that point.
+- Use Keyset Pagination: Paginate securely using the last retrieved value (e.g., querying _id: { $gt: last_id }), which provides immediate, direct access via index lookups.
+
+5. Diagnose with Performance Tools<br/>
+- Analyze Plans: Append .explain("executionStats") to your query. Pay close attention to totalDocsExamined versus nReturned; they should ideally be close to 1:1.
+- Monitor Metrics: Use the built-in MongoDB Atlas Dashboard or the database profiler to track long-running queries (>100ms).
 
 ### 72. What are execution statistics?
 

@@ -1717,6 +1717,286 @@ In this app:
 .delete(requireRole('admin'), deleteUser)
 ```
 
+### 100. How do you implement multer in mongodb?
+Multer does not save files directly inside MongoDB. Instead, you use Multer to receive the file on your server, upload it to cloud storage (or your server disk), and then save the file's access URL as a text string inside MongoDB.
+
+Here is the complete, industry-standard implementation using Node.js, Express, Multer, and Mongoose (MongoDB).
+
+1. Install Dependencies<br/>
+Run this command in your project terminal:
+
+```js
+npm install express mongoose multer
+```
+
+2. Define the MongoDB Schema<br/>
+Create a schema that stores the file's metadata and its location URL.
+
+```js
+// models/File.js
+const mongoose = require('mongoose');
+
+const fileSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  fileUrl: { type: String, required: true }, // Stores the URL string, NOT the actual file
+  mimeType: String,
+  sizeInBytes: Number,
+  createdAt: { type: Date, default: Date.now }
+});
+
+module.exports = mongoose.model('File', fileSchema);
+```
+
+3. Configure Multer and Express Routes<br/>
+This setup uses Multer's diskStorage to save the file to a local uploads/ folder temporarily. It then saves that local path string directly into MongoDB.
+
+```js
+// server.js
+const express = require('express');
+const mongoose = require('mongoose');
+const multer = require('multer');
+const path = require('path');
+const File = require('./models/File');
+
+const app = express();
+app.use(express.json());
+
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/fileupload_db')
+  .then(() => console.log('MongoDB Connected'))
+  .catch(err => console.log(err));
+
+// 1. Configure Multer Storage Engine
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/'); // Make sure this folder exists in your project root
+  },
+  filename: (req, file, cb) => {
+    // Rename file to prevent naming collisions (e.g., image-171829381.jpg)
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+// 2. Add File Filters and Size Limits (Security Best Practice)
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // Limit: 5MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|pdf/;
+    const extName = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimeType = allowedTypes.test(file.mimetype);
+
+    if (extName && mimeType) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only .png, .jpg, .jpeg and .pdf files are allowed!'));
+    }
+  }
+});
+
+// 3. Serve the Uploads folder publicly so URLs work
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// 4. The Upload Route
+app.post('/api/upload', upload.single('myFile'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded.' });
+    }
+
+    // Construct the accessible file URL
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+
+    // Create a new database entry
+    const newFile = new File({
+      title: req.body.title || 'Untitled',
+      fileUrl: fileUrl,
+      mimeType: req.file.mimetype,
+      sizeInBytes: req.file.size
+    });
+
+    await newFile.save();
+
+    res.status(201).json({
+      message: 'File uploaded and saved to MongoDB metadata successfully!',
+      data: newFile
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Error handling middleware for Multer limits/errors
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({ message: `Multer Error: ${err.message}` });
+  }
+  if (err) {
+    return res.status(400).json({ message: err.message });
+  }
+  next();
+});
+
+app.listen(3000, () => console.log('Server running on port 3000'));
+
+```
+
+Alternative: What if you must put files inside MongoDB?<br/>
+If you are building a small project and strictly want the physical file inside the database, you have two alternative paths:
+
+- Buffer Storage (Under 16MB): Change your Mongoose schema type to Buffer. Configure Multer to use multer.memoryStorage(). You can then save req.file.buffer directly to the document. Warning: This will slow down your database queries drastically.
+- GridFS (Over 16MB): MongoDB has a built-in specification called GridFS for storing large files by splitting them into small chunks. To implement this with Multer, developers use a plugin called multer-gridfs-storage.
+
+### 101. How do we implement helmet in express?
+Helmet is a security middleware for Express that helps protect your app from common web vulnerabilities by automatically setting various HTTP response headers.
+
+1. Install Helmet<br/>
+Run the following command in your project terminal:
+
+```js
+  npm install helmet
+```
+
+2. Basic Implementation
+Import and initialize Helmet at the very top of your Express application, right after creating the app instance. This ensures that headers are set for all subsequent routes and middleware.
+
+```js
+const express = require('express');
+const helmet = require('helmet');
+
+const app = express();
+
+// Use Helmet early in your middleware stack
+app.use(helmet());
+
+app.get('/', (req, res) => {
+  res.send('Secure application headers are active!');
+});
+
+app.listen(3000, () => console.log('Server running on port 3000'));
+```
+
+By adding that single app.use(helmet()) line, Helmet automatically configures 15 different security headers, including:
+- X-Content-Type-Options: Prevents browsers from trying to guess ("sniff") the MIME type of a file.
+- X-Frame-Options: Helps mitigate clickjacking attacks.
+- Strict-Transport-Security (HSTS): Forces secure (HTTPS) connections to the server.
+- X-XSS-Protection: Enables basic browser XSS filtering features.
+
+3. Customizing Helmet Settings (Advanced)<br/>
+By default, Helmet's Content Security Policy (CSP) middleware can be overly strict and might accidentally block external assets (like CDNs, Google Fonts, Bootstrap CSS, or external images/videos).
+
+You can pass configuration objects to adjust or disable specific headers:
+```js
+app.use(
+  helmet({
+    // Customize Content Security Policy
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        // Allow scripts from your own domain and trusted CDNs
+        scriptSrc: ["'self'", "https://jsdelivr.net"],
+        // Allow images from your own domain and Amazon S3
+        imgSrc: ["'self'", "https://*.amazonaws.com", "data:"],
+      },
+    },
+    // Example: Disable a header entirely if it conflicts with your reverse proxy
+    xPoweredBy: false, 
+  })
+);
+```
+
+4. Common Issue with File Uploads (Cross-Origin Opener Policy) <br/>
+If your app loads images or videos hosted on a different server (like AWS S3 or Cloudinary) and you notice they are failing to load after enabling Helmet, it is likely due to the Cross-Origin Resource Policy (CORP) header.
+
+Fix it by adjusting your configuration like this:
+```js
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+  })
+);
+```
+
+### 102. What are the best strategy to implement the cors in express?
+To implement CORS (Cross-Origin Resource Sharing) securely and effectively in Express, your best strategy is to avoid the wildcard (*) configuration in production and instead use the official cors middleware with dynamic origin validation, credential handling, and preflight caching.
+
+1. Install the Middleware<br/>
+Always use the official, well-maintained package rather than writing custom header middleware.
+
+```js
+npm install cors
+```
+
+2. The Best Strategy: Dynamic Origin Whitelisting
+Instead of hardcoding a single domain or leaving your API wide open to the world, use a dynamic whitelist function. This allows you to support multiple environments (development, staging, production) safely.
+
+```js
+const express = require('express');
+const cors = require('cors');
+
+const app = express();
+
+// 1. Define your allowed origins
+const allowedOrigins = [
+  'http://localhost:3000',      // Local React/Next.js frontend
+  'https://yourdomain.com',     // Production frontend
+  'https://yourdomain.com' // Staging frontend
+];
+
+// 2. Configure CORS options
+const corsOptions = {
+  origin: (origin, callback) => {
+    // allow requests with no origin (like mobile apps, curl, or Postman)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true); // Origin allowed
+    } else {
+      callback(new Error('Blocked by CORS policy: Origin not allowed.'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,          // Allows cookies and authorization headers
+  maxAge: 86400               // 24 hours: Caches preflight OPTIONS requests
+};
+
+// 3. Apply the middleware globaly
+app.use(cors(corsOptions));
+```
+
+3. Core Pillars of an Effective CORS Strategy<br/>
+- Enable credentials: true carefully: If your frontend needs to send HTTP cookies, sessions, or Bearer tokens, this must be set to true. Crucial rule: If credentials is true, your origin cannot be a wildcard (*). It must be a specific domain.
+- Leverage Preflight Caching (maxAge): Browsers automatically send an OPTIONS request before every POST, PUT, or DELETE to check permissions. This doubles your API traffic. Setting maxAge: 86400 forces the browser to cache that permission for 24 hours, heavily reducing server load.
+- Restrict Specific Methods and Headers: Do not accept any random headers. Explicitly define your allowedHeaders (like Authorization and Content-Type) and methods to shrink your application's attack surface.
+
+4. Advanced: Route-Specific CORS (Least Privilege)<br/>
+If your app has public endpoints (like a public blog API) and highly secure endpoints (like user dashboards), don't apply the same relaxed CORS rules globally. Apply them selectively.
+
+```js
+// Public route - Accessible by any website
+app.get('/api/public-posts', cors(), (req, res) => {
+  res.json({ message: 'Anyone can see this!' });
+});
+
+// Secure route - Only accessible by your specific frontend setup
+app.post('/api/secure-payment', cors(corsOptions), (req, res) => {
+  res.json({ message: 'Only trusted origins can trigger this.' });
+});
+```
+
+5. Interaction Checklist: Helmet + CORS<br/>
+Since you are using Helmet, keep in mind that Helmet sets the Cross-Origin-Opener-Policy and Cross-Origin-Resource-Policy headers which can sometimes conflict with your CORS setup. If your frontend starts losing access to images or media served by Express after setting up CORS, modify your Helmet configuration to coexist smoothly:
+
+```js
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+app.use(cors(corsOptions)); // Place CORS right after Helmet
+```
+
 ## App-Specific Express Interview Questions
 
 ### 102. Explain Express architecture of this app.
