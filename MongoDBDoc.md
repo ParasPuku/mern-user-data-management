@@ -1158,6 +1158,8 @@ Indexes improve reads but slow writes because MongoDB must update every related 
 
 Aggregation pipeline processes data step by step.
 
+An aggregation pipeline in MongoDB is a framework used to process and analyze data by passing documents through a multi-stage sequence. Each stage transforms the documents as they pass through, allowing you to filter, group, sort, and calculate results.
+
 Think of it like:
 
 ```text
@@ -1379,7 +1381,7 @@ Group products by price ranges.
 
 ### 51. What is replication?
 
-Replication means keeping copies of data on multiple MongoDB servers.
+Replication is a technique in MongoDB to copying and syncing documents data across multiple database servers. It uses a group of instances called a replica set to keep identical data. This setup provides high availability, data redundancy, and automatic recovery if a server crashes.
 
 Replication copies an entire collection (or database/table), not just a single document. It is an ongoing process that keeps entire sets of data in sync across different servers. When a single document changes, that specific change is sent to update the replicated collection.
 
@@ -1391,7 +1393,7 @@ Why:
 
 ### 52. What is a Replica Set?
 
-A replica set is a group of MongoDB nodes.
+A replica set is a group of MongoDB nodes/instances.
 
 A replica set in MongoDB is a group of mongod database instances that maintain the same data set to provide data redundancy, fault tolerance, and high availability. It consists of a single primary node, multiple secondary nodes, and optionally an arbiter node.
 
@@ -1765,6 +1767,64 @@ Use case:
 
 ```text
 Show only active users or summarized reports.
+```
+
+How to implement?<br/>
+You can implement standard MongoDB views by executing the db.createView() method in your database shell or driver. MongoDB views are read-only virtual collections that do not store computed data on disk; instead, they dynamically run a pre-defined aggregation pipeline every time you query them.
+
+Standard Views (db.createView)<br/>
+To create a basic read-only view, provide a view name, a source collection, and an aggregation pipeline array.
+
+```js
+db.createView(
+  "activeUsersView",     // Name of the view to create
+  "users",               // Source collection
+  [
+    { $match: { status: "active" } },
+    { $project: { passwordHash: 0, internalNotes: 0 } } // Hides sensitive fields
+  ]
+)
+```
+
+On-Demand Materialized Views ($merge)<br/>
+If your aggregation involves resource-heavy calculations and you need the results cached on disk for fast read performance, implement an On-Demand Materialized View using the $merge stage in a standard aggregation pipeline:
+
+```js
+db.orders.aggregate([
+  {
+    $group: {
+      _id: "$customerId",
+      totalSpent: { $sum: "$amount" }
+    }
+  },
+  { 
+    $merge: { 
+      into: "customerSpendingReport", // Target collection on disk
+      whenMatched: "replace", 
+      whenNotMatched: "insert" 
+    } 
+  }
+])
+```
+
+Step-by-Step Implementation Guide<br/>
+Follow these steps to successfully design and manage your views:<br/>
+1. Define Your Purpose
+- Data Masking: Create views to exclude personally identifiable information (PII) from specific user roles.
+- Pre-computed Fields: Simplify app-side queries by pre-calculating metrics and computed fields.
+- Collection Joins: Combine multiple disjoint collections seamlessly.
+
+2. Build and Test the PipelineTest your aggregation pipeline stages on the source collection via db.collection.aggregate() before converting them into a view to verify the final schema shape.
+
+3. Execute View Creation<br/>
+- Run the db.createView() command in mongosh.View definitions cannot be altered or renamed directly after execution.
+- To alter a view, you must drop it using db.activeUsersView.drop() and recreate it.
+
+4. Query the View<br/>
+Interact with your newly built view exactly as you would with a typical, read-only collection:
+
+```js
+db.activeUsersView.find({ country: "US" })
 ```
 
 ### 77. Explain Atlas Search.
