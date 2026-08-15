@@ -196,7 +196,7 @@ Remove duplicate values from an array.
 
 ### Code
 
-```js
+``js
 function findDuplicate(arr){
     const newArr = arr;
     var duplicateVal = [];
@@ -222,6 +222,30 @@ console.log("___clean_value", result.cleanValue);
 ```js
 [1, 2, 3, 4, 5]
 ```
+
+DIFFERENT WAY
+
+```js
+// [9,11,2,4,11,1,4,2]
+function removeDuplicate(arr) {
+    var result = [];
+    for(var i=0; i<arr.length; i++) {
+        var isDuplicate = false;
+        for(var j=0; i<arr.length; j++) {
+            if(result[j] === arr[j]) {
+                isDuplicate = tru;
+                break;
+            }
+        }
+        if(!isDuplicate){
+            result.push(arr[i]);
+        }
+    }
+}
+console.log(removeDuplicate([9, 11, 2, 4, 11, 1, 4, 2, 1, 1, 6, 3, 6, 2, 3, 5]));
+```
+Output
+[9, 11, 2, 4, 1,  6, 3, 5]
 
 ### Explanation
 
