@@ -2272,6 +2272,23 @@ Here is the quick comparison of the three fields:<br/>
 - updatedAt: Tracks the latest modifications. It updates every single time any field changes. It helps with cache busting and synchronization.
 - expiresAt: Triggers automated data destruction. It is set to a future date to tell MongoDB when to delete the document via TTL indexes.
 
+### 58. How have you scaled MongoDB in a high-traffic application?
+To scale MongoDB in a high-traffic application, combine proactive query optimization, replica sets for read distribution, and horizontal sharding for massive write throughput. Ensuring that your active data set fits entirely within RAM remains the most critical factor for maintaining low latency under heavy loads.
+
+Performance Optimization and Indexing<br/>
+- Build precise compound indexes to support frequent query patterns and sort operations.
+- Use the database profiler or explain() execution stats to catch and eliminate unindexed collection scans.
+- Shape your aggregation pipelines to place $match and $limit stages as early as possible to minimize data processing overhead.
+
+Managing Read and Write Loads<br/>
+- Deploy replica sets to isolate high availability and handle fault tolerance.
+- Route non-critical analytics or eventual-consistency reads to secondary nodes using read preferences like secondaryPreferred.
+- Tune your write concerns (e.g., using { w: 1 } instead of { w: "majority" }) where absolute durability per individual write can be safely traded for higher ingestion speed.
+
+Horizontal Scaling and Architecture<br/>
+- Implement sharding only when a single replica set hits storage limits or CPU/write bottlenecks that vertical scaling cannot solve.
+- Choose a high-cardinality shard key that aligns tightly with your read and write access patterns to avoid data hotspots.
+- Utilize hashed sharding to distribute uniform write traffic evenly across shards, or range sharding if your application relies heavily on bounded range queries.
 
 ### 57. How to optimize MongoDB queries performance?
 To optimize MongoDB queries, you can use the following techniques:
