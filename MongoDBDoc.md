@@ -977,6 +977,30 @@ db.myCollection.createIndex({ "userId": 1 })
 sh.shardCollection("myDatabase.myCollection", { "userId": 1 })
 ```
 
+### 55. In sharding, if one shard is overloaded and the others remain idle. How do you balance this?
+Two potential issues could be the inappropriate selection of the shard key and uneven data distribution across shards.
+
+Fix 1: Choose the right shard key
+
+- Choose high cardinality columns as shard keys. That is, a shard key should have many unique values.
+- If your workload is write-heavy, ensure your shard key doesn’t direct all writes to a single shard.
+-  Choose a shard key that aligns with your most frequent queries. For instance, if your queries often join on a specific field, that field could be an effective shard key.
+
+Fix 2: Rebalance the uneven distribution
+
+This command below provides the overview of data distributed across shards. If the chunks are not well distributed, enable the balancer.
+
+```js
+sh.status()
+```
+
+The command below gets the balancer's state. If it’s disabled, use the later command to enable it.
+
+```js
+sh.getBalancerState()
+sh.enableBalancing("db_name.collection_name")
+```
+
 ### 55. What is Replication? How it works? is MongoDb automatically handled Replication or do we need to configure it?
 Replication is the process of copying and synching and keeping data on multiple servers. If one server breaks, another server has the exact same data. This stops data loss and keeps your app online.
 
