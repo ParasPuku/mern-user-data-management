@@ -407,6 +407,89 @@ Interview answer:
 References store ObjectId of another document. They are useful when data is large, shared, or should be managed separately.
 ```
 
+### 15. What are the difference between embedded documents and referenced documents in mongodb with an example and query?
+The core difference between embedded and referenced documents in MongoDB lies in whether related data is stored inside a single document (denormalized) or separated across multiple collections and linked via IDs (normalized).
+
+1. Embedded Documents Example & Query<br/>
+Use embedding when the nested data is strictly bounded and uniquely belongs to the parent record (e.g., a user and their shipping addresses).
+
+Document Structure (users collection)<br/>
+```js
+{
+  "_id": ObjectId("60c72b2f9b1d8b2bad000001"),
+  "name": "Alice Smith",
+  "email": "alice@example.com",
+  "addresses": [
+    { "type": "home", "city": "New York", "zip": "10001" },
+    { "type": "work", "city": "Boston", "zip": "02108" }
+  ]
+}
+```
+
+Query (Find users living in Boston)<br/>
+To query embedded documents, utilize dot notation enclosed in quotation marks.
+
+```js
+db.users.find({ "addresses.city": "Boston" });
+```
+
+2. Referenced Documents Example & Query<br/>
+Use referencing when data can grow infinitely or needs to be shared across multiple entities (e.g., an e-commerce order pointing to distinct products).
+
+Document Structure<br/>
+products collection:<br/>
+
+```js
+{
+  "_id": ObjectId("507f1f77bcf86cd799439011"),
+  "name": "Wireless Mouse",
+  "price": 25.99
+}
+```
+
+orders collection:<br/>
+```js
+{
+  "_id": ObjectId("60c72b2f9b1d8b2bad000002"),
+  "order_date": "2026-08-15",
+  "product_ids": [
+    ObjectId("507f1f77bcf86cd799439011")
+  ]
+}
+```
+
+Query (Fetch order details with merged product information)<br/>
+To combine these collections during a read operation, use the $lookup stage in an aggregation pipeline to simulate a SQL join.
+
+```js
+db.orders.aggregate([
+  {
+    $lookup: {
+      from: "products",            // The collection to join with
+      localField: "product_ids",   // The reference key field in orders
+      foreignField: "_id",         // The matching key field in products
+      as: "ordered_products"       // The output array alias
+    }
+  }
+]);
+```
+
+Key Differences
+
+Embedded Documents
+- Data Structure: Stores related data directly inside a single parent document as a sub-document or an array.
+- Data Relationship: Works best for 1-to-1 or 1-to-few relationships where data is tightly coupled.
+- Read Performance: Delivers fast reads because it fetches the parent and child data in one query.
+- Write Performance: Saves or updates data quickly using atomic operations on a single document.
+- Limitations: Risk of hitting MongoDB's 16MB maximum document size limit if arrays grow too large.
+
+Referenced Documents
+- Data Structure: Separates data into different collections and connects them using unique ID references.
+- Data Relationship: Works best for 1-to-many (infinite) or many-to-many relationships to prevent massive data growth.
+- Read Performance: Delivers slower reads because it requires separate queries or complex $lookup join operations.
+- Write Performance: Requires separate database writes across multiple collections to update related records.
+- Limitations: Increases application complexity and lacks native multi-collection ACID transactions in older MongoDB versions.
+
 ## Section 2: Schema Design
 
 ### 11. When should you embed documents?
