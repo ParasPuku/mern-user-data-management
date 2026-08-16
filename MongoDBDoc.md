@@ -176,13 +176,16 @@ Interview answer:
 BSON is MongoDB's binary format for storing documents. It is similar to JSON but supports extra types like ObjectId, Date, and Decimal128.
 ```
 
+### 5. What is the default size limit of a document in MongoDB?
+The default size limit is 16MB per document.
+
 ### 5. Explain ObjectId. How is it generated?
 
-`ObjectId` is the default value for `_id`.
+`ObjectId` is the default value for `_id`. ObjectId is a unique identifier automatically generated for each document. It includes a timestamp, machine ID, process ID, and counter.
 
 Every MongoDB document needs an `_id`.
 
-ObjectId is usually 12 bytes.
+ObjectId is usually 12 bytes. 
 
 It contains:
 
@@ -959,7 +962,7 @@ db.orders.updateOne(
 
 ## Section 4: Indexing
 
-### 31. Why are indexes important?
+### 31. What is index and why are indexes important?
 
 Indexes help MongoDB find data faster.
 
@@ -1426,7 +1429,7 @@ Group products by price ranges.
 
 ## Section 6: Advanced and Frequently Asked
 
-### 51. What is replication?
+### 51. What is replication in mongoDB?
 
 Replication is a technique in MongoDB to copying and syncing documents data across multiple database servers. It uses a group of instances called a replica set to keep identical data. This setup provides high availability, data redundancy, and automatic recovery if a server crashes.
 
@@ -1438,7 +1441,7 @@ Why:
 - backup
 - failover
 
-### 52. What is a Replica Set?
+### 52. What is a Replica Set in mongoDB?
 
 A replica set is a group of MongoDB nodes/instances.
 
@@ -1474,6 +1477,9 @@ Client writes to primary.
 Primary records operation in oplog.
 Secondaries copy and apply oplog.
 ```
+
+### 54. How does MongoDB ensure high availability?
+MongoDB achieves high availability through replication. Replica sets store different copies of data across nodes so that if one node fails, another can take over.
 
 ### 54. What happens if the primary node fails?
 
@@ -1611,11 +1617,13 @@ Isolation   -> transactions do not disturb each other
 Durability  -> committed data is saved
 ```
 
-### 61. What is sharding?
+### 61. What is sharding in mongoDB?
 
 Sharding is a horizontal scaling technique in MongoDB that splits large datasets (collections) into chunks and distributes them across multiple servers.
 
 Sharding in MongoDB is a method for horizontal scaling that splits large datasets across multiple machines. The key components of a sharded cluster are shards, config servers, and query routers (mongos).
+
+Sharding enables horizontal scaling in MongoDB. When a single instance can't manage a large dataset, MongoDB splits the data into smaller chunks and distributes them across multiple servers, known as shards. 
 
 Core Components
 - Shards: Store a subset of the actual data; each shard can be run as a replica set for high availability.
@@ -1963,7 +1971,7 @@ Example:
 db.orders.watch();
 ```
 
-### 76. What are MongoDB Views?
+### 76. What are Views in MongoDB?
 
 View is a saved aggregation query.
 
@@ -2653,6 +2661,1316 @@ db.otptokens.createIndex(
 ```
 
 This removes old OTP records after 5 minutes.
+
+NEW QUESTIONSSSSSSSSS
+==========================
+
+### 53. What is Aggregation? How it works? Methods of Aggregation? How to implement it?
+MongoDB aggregation is a way to process multiple documents in a collection, group them together, perform operations on them, and return a single combined or computed result. Think of it as an assembly line where raw data goes in, gets filtered, sorted, and rebuilt at different stations, and a finished report comes out the other side.
+
+MongoDB provides three primary methods to perform - <br/>
+- aggregation operations: the Aggregation Pipeline (the preferred and most powerful framework), 
+- Single-Purpose Aggregation Methods (for simple counts and distinct values), and 
+- Map-Reduce (a legacy batch-processing framework).
+
+Aggregation Pipeline<br/>
+The aggregation pipeline processes documents through a series of stages. Each stage transforms or computes data before passing the results to the next stage. You run it using db.collection.aggregate().
+- $match: Filters documents to pass only those that meet specified conditions (like a WHERE clause in SQL).
+- $group: Groups documents together by a key and uses accumulators (like $sum, $avg) to calculate values (like GROUP BY in SQL).
+- $sort: Rearranges the order of documents or rrders the documents by specified field values.
+- $project: Reshapes documents by adding, removing, or renaming fields.
+- $limit / $skip: Restricts or skips the number of documents passed along the pipeline.
+- $unwind: Splits an array field from input documents into separate individual documents.
+
+Single-Purpose Aggregation Methods<br/>
+These helper methods perform simple, specific operations on a single collection without building a full pipeline.
+- db.collection.countDocuments(): Counts the exact number of documents matching a query.
+- db.collection.estimatedDocumentCount(): Gives a fast, estimated count of all documents in a collection using collection metadata.
+- db.collection.distinct(): Returns an array of unique values for a specified field.
+
+Map-Reduce<br/>
+Map-reduce is an older data processing technique that uses custom JavaScript functions (map and reduce) to perform large-scale batch aggregations. It has largely been replaced by the more efficient aggregation pipeline.
+
+How to Implement It (Example)
+Imagine an orders collection containing the following documents:
+
+```js
+[
+  { _id: "12233", "cust_id": "A123", "amount": 50, "status": "paid" },
+  { _id: "45444", "cust_id": "A123", "amount": 150, "status": "unpaid" },
+  { _id: "11454", "cust_id": "B456", "amount": 100, "status": "paid" },
+  { _id: "14566", "cust_id": "B456", "amount": 200, "status": "unpaid" }
+]
+```
+
+To find the total amount spent by each customer, but only for orders with a status of "A", you implement the aggregate() method like this:
+
+```js
+db.orders.aggregate([
+  // Stage 1: Filter to keep only status "A"
+  { 
+    $match: { status: "paid" } 
+  },
+  
+  // Stage 2: Group by customer ID and sum their order amounts
+  { 
+    $group: { 
+      _id: "$cust_id", 
+      totalSpent: { $sum: "$amount" } 
+    } 
+  },
+  
+  // Stage 3: Sort by highest spender first
+  {
+    $sort: { totalSpent: -1 }
+  }
+]);
+```
+
+The Final Output:
+
+```js
+[
+  { "_id": "B456", "totalSpent": 100 },
+  { "_id": "A123", "totalSpent": 50 }
+]
+```
+
+### 54. What is Sharding? How it works? is MongoDb automatically handled Sharding or do we need to configure it?
+MongoDB sharding is a method for horizontal scaling that splits large datasets across multiple independent servers or replica sets. It works using a query router (mongos), config servers for metadata, and shards to store data subsets, distributing read and write loads evenly via a chosen shard key.
+
+How Sharding Works<br/>
+- Shards: Each shard holds a subset of the data and is deployed as a replica set for high availability.
+- Config Servers: Store the cluster's metadata and the routing table that maps data chunks to specific shards.
+- Query Routers (mongos): Act as an interface for applications, taking client requests and routing them to the correct shard.
+- Shard Key: A field or group of fields in your documents that MongoDB uses to slice and distribute data into continuous blocks called chunks. A background balancer process moves these chunks across shards to keep the load even.
+
+How to Implement Sharding<br/>
+1. Start the Config Server Replica Set<br/>
+Launch a 3-node replica set to act as the config server (configsvr).
+
+2. Start the Shard Replica Sets<br/>
+Launch your individual mongod instances and configure them as separate replica sets (shardsvr).
+
+3. Start the mongos Query Router<br/>
+Launch the mongos process pointing to your config server replica set.
+
+4. Add Shards to the Cluster<br/>
+Connect to the mongos instance via the Mongo shell (mongosh) and add your shards:
+
+sh.addShard("shard-replica-set-name/host1:27017,host2:27017")
+
+5. Enable Sharding for a Database<br/>
+sh.enableSharding("myDatabase")
+
+6. Shard a Collection<br/>
+Create an index on your chosen shard key field, then run the shard command:
+```js
+db.myCollection.createIndex({ "userId": 1 })
+sh.shardCollection("myDatabase.myCollection", { "userId": 1 })
+```
+
+### 55. What is Replication? How it works? is MongoDb automatically handled Replication or do we need to configure it?
+Replication is the process of copying and synching and keeping data on multiple servers. If one server breaks, another server has the exact same data. This stops data loss and keeps your app online.
+
+In MongoDB, replication uses a group of connected servers called a replica set.
+
+How Replication Works
+- Primary Node: This main server takes all write actions (inserts, updates, and deletes). It logs every change in a special list called an oplog.
+- Secondary Nodes: These backup servers copy the oplog from the primary node. They run those same changes on their own data copies.
+- Automatic Failover: All servers check each other with a quick health signal. If the primary server dies, the backup servers vote and pick a new primary in a few seconds.
+
+Does MongoDB Handle It Automatically?<br/>
+MongoDB does not set up replication by default when you spin up a single local instance. You must configure and start a replica set yourself.
+
+However, once you configure it, MongoDB handles the day-to-day replication, syncing, and emergency elections automatically. You configure it once using commands like rs.initiate() on your primary database instance.
+
+How to set up a MongoDB replica set and connect your application code to handle failovers seamlessly.?
+
+Part 1: How to Set Up a MongoDB Replica Set<br/>
+To configure replication, you need to start your MongoDB instances with a replica set name and then link them together. For testing, you can run three separate instances on your local machine using different ports.
+
+Step 1: Start three separate MongoDB instances<br/>
+Open three separate terminal windows and run these commands to start three nodes (Primary, Secondary 1, and Secondary 2):
+
+```js
+# Node 1 (Will become Primary)
+mongod --dbpath ./data/db1 --port 27017 --replSet myReplicaSet
+
+# Node 2 (Will become Secondary)
+mongod --dbpath ./data/db2 --port 27018 --replSet myReplicaSet
+
+# Node 3 (Will become Secondary)
+mongod --dbpath ./data/db3 --port 27019 --replSet myReplicaSet
+```
+(Note: Ensure the folders ./data/db1, ./data/db2, and ./data/db3 exist before running these commands.)
+
+Step 2: Initialize the Replica Set<br/>
+Connect to your first MongoDB instance using the Mongo Shell (mongosh):
+```js
+mongosh --port 27017
+```
+
+Inside the shell, run the initiation command to tell Node 1 about itself and the other two nodes:
+
+```js
+rs.initiate({
+  _id: "myReplicaSet",
+  members: [
+    { _id: 0, host: "localhost:27017" },
+    { _id: 1, host: "localhost:27018" },
+    { _id: 2, host: "localhost:27019" }
+  ]
+})
+```
+
+Step 3: Verify the Status<br/>
+Check if the replication group is healthy by running:
+
+```js
+rs.status()
+```
+
+Look for "ok": 1 and ensure one node is labeled PRIMARY while the others are SECONDARY. Your database will now sync all data automatically.
+
+Part 2: How to Connect Your App for Automatic Failovers<br/>
+To ensure your application automatically switches to the new Primary if the original one crashes, you must pass all three node addresses in your database connection string (URI).
+
+Here is how you do it in popular programming environments:
+
+Node.js (with Mongoose)
+```js
+const mongoose = require('mongoose');
+
+// Include all hosts separated by commas, and add the replica set name
+const uri = "mongodb://localhost:27017,localhost:27018,localhost:27019/myDatabase?replicaSet=myReplicaSet";
+
+mongoose.connect(uri)
+  .then(() => console.log("Connected to Replica Set!"))
+  .catch(err => console.error("Connection error:", err));
+
+// MongoDB driver automatically routes writes to the Primary node
+```
+
+Example for replication in mongodb<br/>
+Here is a concrete example of how MongoDB replication behaves in real time when you write data, read data, or experience a server crash.
+
+The Setup<br/>
+Imagine you run a food delivery app. You have a standard 3-node MongoDB replica set:
+
+- Server A (Primary)
+- Server B (Secondary)
+- Server C (Secondary)
+
+Scenario 1: Normal Operations (Data Syncing)<br/>
+When a user places an order, your app sends the data to the replica set.
+- The Write: Your app inserts a new document:  { orderId: 101, status: "Preparing" }.
+- Primary Receives It: Server A (Primary) writes this order into its database and logs the action in its oplog (operation log).
+- Secondaries Copy It: Server B and Server C constantly watch Server A's oplog. They see the new order, copy it, and apply it to their own databases.
+- Result: All three servers now hold the exact same copy of Order 101.
+
+Scenario 2: Server Crash (Automatic Failover)<br/>
+Now, imagine a power outage happens at the data center housing Server A, and it goes completely offline.
+- Heartbeat Detection: Every 2 seconds, the servers send a "heartbeat" ping to each other. Server B and Server C notice that Server A is not responding.
+- The Election: Since the primary is gone, Server B and Server C start an automatic vote. They agree that Server B has the most up-to-date data.
+- New Primary: Server B automatically becomes the new Primary. Server C remains a Secondary.
+- App Continuity: Your food delivery app automatically notices Server B is the new Primary because of your connection string. The app keeps working smoothly, and users can still place orders without seeing any error screen.
+
+Scenario 3: The Broken Server Returns
+The power issue is fixed, and Server A boots back up.
+- Re-joining: Server A connects back to the group.
+- Role Check: It looks at the group and sees that Server B is already the elected Primary. Server A gracefully accepts this and demotes itself to a Secondary.
+- Catching Up: Server A checks Server B's log for any orders placed while it was offline and copies them to catch up.
+
+
+### 56. What is Replica Set? How it works? is MongoDb automatically handled Sharding or do we need to configure it?
+In simple terms, a MongoDB Replica Set is a group of connected MongoDB servers (called nodes) that keep identical copies of your data. Its main job is to protect your application from losing data and going offline if a database server crashes.
+
+The Components of a Replica Set<br/>
+A standard replica set needs a minimum of three nodes to work properly. Each node has a specific role:
+- Primary Node (The Leader): There is only one primary node. It is the only server that handles write operations (saving, updating, or deleting data). By default, it also handles read operations.
+- Secondary Nodes (The Followers): There are usually two or more secondary nodes. They continuously copy data from the Primary node to stay completely synchronized.
+- Arbiter Node (Optional): This node doesn't hold any data. It exists purely to vote in elections if one of your data-bearing servers goes down.
+
+How It Works<br/>
+MongoDB manages this system automatically through three core processes:<br/>
+
+1. Data Replication (The Oplog)When your application saves data, it goes to the Primary node. The Primary logs every single change inside a special, ongoing history file called the oplog (operations log). The Secondary nodes constantly monitor this oplog, pull the new changes, and apply them to their own copies of the data.
+
+2. Heartbeats (Checking the Pulse)All servers in the replica set "talk" to each other continuously using a heartbeat mechanism. Every 2 seconds, they send a ping to ensure everyone is alive and healthy.
+
+3. Automatic Failover (The Election)If the Primary node crashes or disconnects, the heartbeat stops. If it stays silent for 10 seconds, the Secondary nodes notice and immediately trigger an election. The remaining nodes vote, and one of the Secondary nodes is automatically promoted to be the new Primary. This happens in seconds without requiring manual human intervention.
+
+Why Use a Replica Set?<br/>
+- High Availability: If a server catches fire, your app stays online because a secondary node takes over instantly.
+- Data Safety (Redundancy): Your data lives in multiple physical locations, protecting you from hardware failures.
+- Read Scaling: You can configure your app to read heavy reports from the Secondary nodes, freeing up the Primary node to focus strictly on heavy writing.
+
+
+
+### 57. What is Views in MongoDb? How it works with an exmpale?
+A View in MongoDB is a saved query that acts like a virtual table. It does not store physical data. When you call a view, MongoDB runs the underlying aggregation pipeline on a source collection to return live data.
+
+Why Use Views in MongoDB<br/>
+Views are helpful when you want to:
+
+- hide complexity from application queries
+- reuse the same aggregation logic in multiple places
+- expose only selected data for reporting or restricted access
+- create a cleaner abstraction over large collections
+
+Because views do not store data separately, they consume very little storage. Only the view definition itself is saved.
+
+Types of views in mongodb<br/>
+1. Standard Views<br/>
+A Standard View is a completely virtual collection. It computes the data on-demand every single time you query it. Computed on the fly every time you query them; they do not use extra disk storage for data and rely on the indexes of the underlying source collection.
+- How it works: Think of it as a shortcut or an alias for a complex query.
+- Best use case: Hiding sensitive fields for data privacy, or creating simple filters like active_users where data needs to be 100% accurate in real-time.
+
+Standard Views <br/>
+- Storage: Virtual. Only the query definition is saved to disk.
+- Data Freshness: Real-time. Computes data instantly when read.
+- Read Speed: Slower for complex computations.
+- Custom Indexes: No. Uses indexes from the underlying base collection.
+
+Creation example:
+```js
+db.createView("active_users", "users", [{ $match: { status: "active" } }])
+```
+
+2. On-Demand Materialized Views<br/>
+An On-Demand Materialized View executes an aggregation query and dumps the physical results into a real, concrete collection on disk. Pre-computed results stored directly on disk using a $merge or $out aggregation stage, offering faster reads for heavy datasets.
+
+Materialized Views<br/>
+- Storage: Physical. The resulting data is saved to disk.
+- Data Freshness: Stale until refreshed. Requires a manual update trigger.
+- Read Speed: Fast. Reads directly from stored disk space.
+- Custom Indexes: Yes. You can build custom indexes directly on it.
+
+- How it works: It uses the $merge or $out pipeline stages to pre-compute and store data. Because the data is physically sitting on disk, reading from it is incredibly fast. However, it does not auto-update when the source data changes; you must re-run the pipeline to refresh it.
+- Best use case: Heavy data analytics, daily sales summaries, or generating data reports where a slight delay in freshness (e.g., cached from 1 hour ago) is acceptable.
+- Creation/Refresh example:
+
+```js
+db.orders.aggregate([
+  { $group: { _id: "$date", totalSales: { $sum: "$price" } } },
+  { $merge: { into: "daily_sales_summary", whenMatched: "replace" } }
+])
+```
+
+Example of a View<br/>
+Step 1: Source Collection<br/>
+Imagine you have a collection named orders with these documents:
+
+```js
+{ item: "Apple", status: "completed", price: 10 }
+{ item: "Banana", status: "pending", price: 5 }
+{ item: "Orange", status: "completed", price: 8 }
+```
+
+Step 2: Create the View<br/>
+You create a view named completed_orders that only shows orders where the status is "completed".
+
+```js
+db.createView(
+  "completed_orders",
+  "orders",
+  [
+    { $match: { status: "completed" } }
+  ]
+)
+```
+
+Step 3: Query the View<br/>
+When you run a find command on the view:
+
+```js
+db.completed_orders.find()
+```
+
+Step 4: The Result<br/>
+MongoDB runs the match filter behind the scenes and returns only the completed items:
+
+```js
+{ item: "Apple", status: "completed", price: 10 }
+{ item: "Orange", status: "completed", price: 8 }
+```
+
+Updating a View<br/>
+You cannot change data directly through a view because it is read-only. However, you can update the view's data or modify its definition.
+
+Changing the Data<br/>
+- Update the source: Modify the original documents in the base collection.
+- Live sync: The view updates automatically because it queries the source collection in real-time.
+
+Changing the View Definition<br/>
+- Collisions: You cannot create a view with a name that already exists.
+- Drop first: Delete the old view using db.completed_orders.drop().
+- Recreate: Run db.createView() again with your new aggregation pipeline.
+
+Data Security and Hiding Fields<br/>
+Views are excellent for security. They let you share specific data with a user or client without exposing sensitive information.
+
+Step 1: Source Collection (employees)<br/>
+Imagine a collection that contains salaries and home addresses:
+- { name: "Alice", role: "Dev", salary: 90000, phone: "555-1234" }
+- { name: "Bob", role: "Designer", salary: 75000, phone: "555-5678" }
+
+Step 2: Create a Public View<br/>
+You can create a view called public_staff that hides the salary field using the $project stage.
+
+```js
+db.createView(
+  "public_staff",
+  "employees",
+  [
+    { $project: { name: 1, role: 1, phone: 1, salary: 0 } }
+  ]
+)
+```
+
+Step 3: Grant Access<br/>
+- Restrict collection: Block the public database user from reading the employees collection.
+- Allow view: Grant that same user read access only to the public_staff view.
+- Result: The user can see names and roles but has no way to access the salary data.
+
+
+### 58. What is Projection? How it works with an example?
+
+Projection in MongoDB means picking only the specific fields you want to see in your query results. It helps you save network bandwidth by not sending extra data you do not need.
+
+Projection in MongoDB is a way to choose which fields to show or hide in your search results. It helps you get only the data you need. This saves time and memory.
+
+MongoDB Projection is a special feature allowing you to select only the necessary data rather than selecting the whole set of data from the document. For Example, If a Document contains 10 fields and only 5 fields are to be shown the same can be achieved using the Projections. 
+
+How Projection Works?<br/>
+- You pass a second argument to the find() method.
+- You use a value of 1 to include a field.
+- You use a value of 0 to exclude a field.
+- You cannot mix 1 and 0 in the same query, except for the default _id field.
+- The _id field is always shown by default unless you set it to 0.
+
+Code Example<br/>
+Imagine a collection named users with this document:
+
+```js
+{
+  "_id": 1,
+  "name": "Alice",
+  "age": 25,
+  "email": "alice@example.com",
+  "city": "New York"
+}
+```
+
+If you only want the name and email fields, run this command:
+
+db.users.find({}, { name: 1, email: 1, _id: 0 })
+
+Result:
+
+```js
+{
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+```
+
+The four primary projection operators:<br/>
+1. The $ Positional Operator
+- Limits array data to return only the first element that matches your query condition.
+- Requires the array field to be part of your search query filter.
+- Works well when searching for a specific item inside an array.Example:
+
+Example: 
+
+```js
+// Finds the document and returns ONLY the first semester grade that is 85 or higher
+db.students.find(
+  { grades: { $gte: 85 } }, 
+  { "grades.$": 1 }
+)
+```
+
+2. The $elemMatch Operator<br/>
+- Limits array data to return only the first element that matches a specific criteria.
+- Does not require the array field to be in your search query filter.
+- Allows you to project based on conditions completely separate from your search query.
+
+Example:
+
+```js
+// Finds all active students, but only returns the first book that matches the category
+db.students.find(
+  { status: "active" }, 
+  { books: { $elemMatch: { category: "science" } } }
+)
+```
+
+3. The $slice Operator<br/>
+- Controls the number of items returned from an array.
+- Accepts a single number to return the first n or last -n elements.
+- Accepts an array [skip, limit] to skip a specific number of items and return a set limit.
+
+```js
+// Returns only the first 3 comments from the array
+db.posts.find({}, { comments: { $slice: 3 } })
+
+// Skips the first 2 comments and returns the next 5 comments
+db.posts.find({}, { comments: { $slice: [2, 5] } })
+```
+
+4. The $meta Operator
+- Returns metadata associated with the document.
+- Used primarily with text search to return the relevance score of a text index search.
+- Helps sort or display results based on how well they match your text search keyword.
+
+Example:
+```js
+// Returns the text search relevance score under a new field called "score"
+db.articles.find(
+  { $text: { $search: "database" } },
+  { score: { $meta: "textScore" } }
+)
+```
+
+### 61. What is $lookup? How joining two collections work with an example?
+In MongoDB, $lookup is a tool that joins data from two different collections. It works like an SQL LEFT OUTER JOIN. It looks at a field in your first collection, finds matching documents in a second collection, and adds those matches into your main documents as a new array field.
+
+How $lookup Works<br/>
+- From Collection: You start with your main collection.
+- Local Field: This is the field in your main collection.
+- Foreign Field: This is the matching field in the second collection.
+- As: This is the name of the new field that holds the joined data.
+
+Example: Orders and Customers<br/>
+Imagine you have two collections in your database.
+
+1. The orders collection<br/>
+```js
+{ "_id": 1, "item": "Laptop", "customerId": 101 }
+```
+
+2. The customers collection<br/>
+```js
+{ "_id": 101, "name": "Alice", "city": "New York" }
+```
+
+3. The Query<br/>
+You want to attach customer details to each order. You run this aggregation:
+```js
+{
+  "$lookup": {
+    "from": "customers",
+    "localField": "customerId",
+    "foreignField": "_id",
+    "as": "customerDetails"
+  }
+}
+```
+
+4. The Result<br/>
+MongoDB finds the match where customerId equals _id and outputs this:
+```js
+{
+  "_id": 1,
+  "item": "Laptop",
+  "customerId": 101,
+  "customerDetails": [
+    { "_id": 101, "name": "Alice", "city": "New York" }
+  ]
+}
+```
+
+1. Complex Joins (The pipeline Syntax)<br/>
+You do not have to rely on a simple single-field match. You can pass variables (let) and run a full multi-step filtering pipeline on the joined collection.
+
+Example<br/>
+If you only want to join active users who made a purchase:
+
+```js
+{
+  "$lookup": {
+    "from": "users",
+    "let": { "order_user_id": "$userId" },
+    "pipeline": [
+      { "$match": { 
+        "$expr": { "$eq": ["$_id", "$$order_user_id"] },
+        "status": "active" 
+      }}
+    ],
+    "as": "activeUserInfo"
+  }
+}
+```
+
+- let: Defines variables from the main collection.
+- $$: Used to reference those variables inside the pipeline.
+
+2. Performance and Indexing (Critical)<br/>
+$lookup can easily crash your database or slow it down to a crawl if you do not index.
+
+- Missing Index Killers: If your foreignField is not indexed, MongoDB must do a full collection scan for every single document in your main collection.
+- The Fix: Always create an index on the foreignField in the target collection.
+- Memory Limits: Aggregation stages have a 100MB RAM limit. If your joined data exceeds this, you must pass { allowDiskUse: true } to your query.
+
+3. Self-Joins
+You can join a collection to itself. This is incredibly useful for hierarchical data like employee/manager relationships or threaded comment sections.
+- Example: Matching a comment's replyToId to the _id of the exact same comments collection.
+
+4. Correlated vs. Uncorrelated Joins
+- Uncorrelated (Basic): Standard localField/foreignField matching. Highly optimized by MongoDB internally.
+- Correlated (Advanced): Using the pipeline syntax. Gives you ultimate flexibility but requires more processing power.
+
+### 60. What is Explain() method? How it works with an example?
+The explain() method in MongoDB is a diagnostic tool that shows how MongoDB executes a query. It tells you what happens behind the scenes when you read, update, or delete data.
+
+What is the Real Use?<br/>
+The primary use of explain() is query optimization. It helps you:
+- Check Index Usage: See if your query uses an index or scans the entire database.
+- Fix Slow Queries: Pinpoint exactly why a specific database request is running slowly.
+- Compare Performance: Test different index strategies to find the fastest execution path.
+- Analyze Execution Statistics: View exact metrics like execution time and the number of documents scanned.
+
+How it Works (With an Example)<br/>
+Imagine you have a users collection with 1 million documents. You want to find a user named "Alice".
+
+1. The Setup<br/>
+Without explain(), you run this query:
+
+```js
+db.users.find({ name: "Alice" })
+``
+
+2. Using Explain<br/>
+To see how MongoDB finds Alice, append .explain() to your query:
+
+```js
+db.users.find({ name: "Alice" }).explain("executionStats")
+```
+
+(Passing "executionStats" provides the most detailed real-world performance data).
+
+3. Reading the Output
+MongoDB returns a JSON document. Look for these two critical fields in the output.
+
+stage: Tells you the strategy MongoDB used.<br/>
+- COLLSCAN (Collection Scan): MongoDB searched every single one of the 1 million documents from start to finish. This is slow and inefficient.
+- IXSCAN (Index Scan): MongoDB used an index (like a book index) to jump straight to "Alice". This is fast and efficient.
+
+nReturned vs totalDocsExamined:<br/>
+- nReturned: The number of documents that matched your query (e.g., 1).
+- totalDocsExamined: The number of documents MongoDB had to open and look at.
+- The Goal: You want totalDocsExamined to match nReturned as closely as possible. If totalDocsExamined is 1,000,000 but nReturned is 1, you need to add an index on the name field.
+
+
+### 59. What is Populate? How it works with an example?
+
+### 62. What is Embedding? How Embedding works with an example?
+
+### 63. Difference between $lookup and Embedding?
+
+### 64. How to find a slow queries?
+
+### 54. How to query a document in MongoDB?
+In MongoDB, you can query documents using the find() method. To query all documents in a collection, use db.collection_name.find(). The find method has two input parameters: query and projection. The query parameter is used to filter documents that match a specific condition. 
+
+Syntax for query parameter:
+
+```js
+db.collection_name.find({condition}) 
+```
+
+The second is a projection parameter that indicates the columns to include or exclude in the output. Assign 1 to the columns that you want to fetch. Here is the syntax:
+
+```js
+db.collection_name.find({},{column1: 1, column2: 1})
+```
+
+### 55. what is gridFS in mongodb?
+GridFS is a built-in tool in MongoDB used to store and read large files (like videos, music, and big PDFs) that are too big to fit into a normal database record limit of 16 MB. It cuts large files into small pieces called chunks and saves them as separate parts.
+
+How GridFS Works?<br/>
+GridFS splits your file and saves it using two separate parts inside your database:
+- Files collection (fs.files): Saves details about your file like the file name, size, and type.
+- Chunks collection (fs.chunks): Saves the actual pieces of the file (usually sized at 255 KB each).
+
+When you want to read or download the file later, the system automatically glues all the small pieces back together for you.
+
+When to Use GridFS
+- Big Files: Use it when your files are larger than 16 MB.
+- Partial Reads: Use it when you need to read only a piece of a big file (like skipping to a timestamp in a movie) without loading the whole thing into your computer's memory.
+- Sync Storage: Use it to keep your files backed up alongside your regular data automatically.
+
+Simple example using the standard Node.js driver for MongoDB to upload and read a file.
+
+1. Uploading a File<br/>
+This script takes a large video file from your hard drive and streams it into GridFS.
+
+```js
+const { MongoClient, GridFSBucket } = require('mongodb');
+const fs = require('fs');
+
+async function uploadFile() {
+  const client = await MongoClient.connect('mongodb://localhost:27017');
+  const db = client.db('myDatabase');
+  
+  // Create the GridFS bucket
+  const bucket = new GridFSBucket(db);
+
+  // Open the file from your computer and stream it into MongoDB
+  fs.createReadStream('./large_movie.mp4')
+    .pipe(bucket.openUploadStream('my_awesome_movie.mp4'))
+    .on('finish', () => {
+      console.log('Upload complete! File split into chunks.');
+      client.close();
+    });
+}
+
+uploadFile();
+```
+
+2. Reading a File<br/>
+This script finds the file by its name, downloads the chunks, and stitches them back together into a new file on your computer.
+
+```js
+const { MongoClient, GridFSBucket } = require('mongodb');
+const fs = require('fs');
+
+async function downloadFile() {
+  const client = await MongoClient.connect('mongodb://localhost:27017');
+  const db = client.db('myDatabase');
+  
+  const bucket = new GridFSBucket(db);
+
+  // Find the file in MongoDB and stream it back to your computer
+  bucket.openDownloadStreamByName('my_awesome_movie.mp4')
+    .pipe(fs.createWriteStream('./downloaded_movie.mp4'))
+    .on('finish', () => {
+      console.log('Download complete! File stitched back together.');
+      client.close();
+    });
+}
+
+downloadFile();
+```
+
+### 56. What are capped collections in MongoDB?
+Capped collections are fixed-size collections in MongoDB that automatically overwrite their oldest documents when they run out of space. They work exactly like a circular queue.
+
+Key Characteristics
+- Fixed Size: You set a maximum byte size or document limit during creation.
+- First-In, First-Out (FIFO): Once full, the oldest data is deleted to make room for new data.
+- Insertion Order: Data is permanently stored in the exact order it was inserted.
+- No Sharding: You cannot shard a capped collection.
+- No Manual Deletions: You cannot delete individual documents; you can only drop the entire collection.
+
+Common Use Cases
+- Application Logs: Storing high-volume logging data without filling up the disk.
+- Caching: Keeping a small pool of recently used data readily available.
+- Event Tracking: Storing recent user actions or system events in chronological order.
+
+How to Create One<br/>
+You must use the createCollection command explicitly to make a capped collection:
+
+```js
+db.createCollection("logCollection", { capped: true, size: 5242880, max: 5000 })
+```
+
+(This creates a collection capped at 5 MB or 5,000 documents, whichever limit is hit first).
+
+How to Convert a Normal Collection?<br/>
+You can convert an existing non-capped collection using the convertToCapped command.
+
+```js
+db.runCommand({ convertToCapped: "myOldCollection", size: 10485760 })
+```
+
+- Size Requirement: You must specify the size argument in bytes (e.g., 10485760 is 10 MB).
+- Blocking Operation: This command takes a exclusive lock on the database. It will block other operations until finished.
+- Index Loss: All existing indexes except the _id index are automatically dropped during conversion.
+
+how to query a capped collection?<br/>
+You query a capped collection using standard MongoDB find methods, but you can take advantage of special behaviors like guaranteed order and tailable cursors.
+
+1. Basic Queries (Preserving Order)<br/>
+By default, a basic search returns documents in the exact order they were inserted. You do not need to create an index or use a .sort() modifier to get chronological order.
+
+```js
+// Returns documents from oldest to newest
+db.logCollection.find() 
+```
+
+2. Reverse Chronological Order<br/>
+If you want to view the most recent entries first (like a live feed), use the $natural operator. Sorting by { $natural: -1 } is extremely fast because MongoDB just reads the disk allocation backwards.
+
+```js
+// Returns documents from newest to oldest
+db.logCollection.find().sort({ $natural: -1 })
+```
+
+3. Real-Time Streaming (Tailable Cursors)<br/>
+A Tailable Cursor remains open after the client exhausting the initial results. It behaves like the Linux tail -f command, waiting and streaming new data into your application as it is written to the database.
+
+Here is how to implement it using the Node.js driver:
+```js
+const collection = db.collection('logCollection');
+
+// Create a cursor that stays alive and awaits new data
+const cursor = collection.find({}, {
+  tailable: true,
+  awaitData: true
+});
+
+// Stream the new incoming documents continuously
+cursor.forEach(doc => {
+  console.log("New log received:", doc);
+}, err => {
+  console.error("Cursor closed due to error:", err);
+});
+```
+
+### 57. What is the role of the ObjectId?
+An ObjectId is a unique ID value. Databases like MongoDB use it as a primary key for records. It helps find, update, or link data items quickly without duplicates.
+
+Key Parts of an ObjectId
+- Unique Tag: It ensures every single document in a collection has its own separate ID.
+- Time Stamp: The first few bytes store the creation time. You can see when the record was made.
+- Machine and Process ID: It includes codes for the server and process that made the ID. This stops conflicts when many servers write data at the same time.
+- Counter: A random start number goes up by one each time to keep IDs in order during that second.
+
+Why We Use It
+- Fast Creation: Computers make it fast. They do not need to ask a central database for the next number.
+- No Clashes: Two different servers can make IDs at the same time without making the same one.
+- Easy Sorting: Because it holds the time, you can sort records by when they were made without an extra date column.
+
+How to Query Data with ObjectId?<br/>
+Database tools need the actual ID object to find a match. A plain text string will not work.
+
+🖥️ In the MongoDB Shell (Mongosh)
+Use the ObjectId() wrapper around your 24-character string:
+
+```js
+db.users.findOne({ _id: ObjectId("60c72b2f9b1d8b2bad000001") })
+```
+
+🟢 In Node.js (Mongoose / MongoDB Driver)
+Import the type from your driver to convert a string into a database ID:
+
+```js
+const { ObjectId } = require('mongodb'); 
+
+// Querying the database
+const user = await db.collection('users').findOne({ 
+  _id: new ObjectId("60c72b2f9b1d8b2bad000001") 
+});
+```
+
+How to Generate a New ObjectId<br/>
+The database automatically makes a new ID when you insert data. You can also make one manually in your code.
+
+🖥️ In the MongoDB Shell
+Just call the function without any arguments:
+
+```js
+let newId = ObjectId()
+print(newId) // Outputs: ObjectId("65c3a2f...")
+```
+
+### 58. what is index in mongodb? how it works? types of indexes?
+An index in MongoDB is like the alphabetical index at the back of a large book. Instead of reading every single page to find a specific word or topic, you look at the index first to see the exact page number. This helps MongoDB find data very fast.
+
+How It Works Without and With an Index<br/>
+- Without an index: MongoDB must look at every single document in a collection. This is called a collection scan and takes a lot of time.
+- With an index: MongoDB keeps a small, sorted list of specific fields. It jumps straight to the matching data without checking the rest.
+
+Key Things to Know<br/>
+- Faster reads: Searching, filtering, and sorting data become much faster.
+- Slower writes: Adding, changing, or deleting data takes a bit more time because MongoDB must update the index too.Uses more space: The database needs extra memory space to store these index lists.
+- With an index: MongoDB keeps a small, sorted list of specific fields. It jumps straight to the matching data without checking the rest.
+
+How to Create Core Indexes<br/>
+- Single Field Index: Run db.collection.createIndex({ fieldName: 1 }). Use 1 for ascending or -1 for descending order.
+- Compound Index: Run db.collection.createIndex({ fieldA: 1, fieldB: -1 }). Order matters here for sorting capabilities.
+- Multikey Index: Run db.collection.createIndex({ arrayField: 1 }). MongoDB creates this automatically if the field holds an array.
+- Text Index: Run db.collection.createIndex({ description: "text" }). You can only have one text index per collection.
+- Geospatial Index: Run db.collection.createIndex({ location: "2dsphere" }) for coordinates stored in GeoJSON format.
+- Hashed Index: Run db.collection.createIndex({ userId: "hashed" }) to support even distribution across shards.
+- Wildcard Index: Run db.collection.createIndex({ "attributes.$**": 1 }) to index all sub-fields under a dynamic object.
+
+How to Apply Specialized Properties
+- Unique Index: Enforce unique values by running db.collection.createIndex({ email: 1 }, { unique: true }).
+- Partial Index: Index specific data by running db.collection.createIndex({ status: 1 }, { partialFilterExpression: { rating: { $gt: 5 } } }).
+- Sparse Index: Skip missing fields by running db.collection.createIndex({ middleName: 1 }, { sparse: true }).
+- TTL Index: Expire data by running db.collection.createIndex({ createdAt: 1 }, { expireAfterSeconds: 3600 }).
+
+How to Check and Verify Usage
+- List Existing Indexes: Run db.collection.getIndexes() to see all currently active indexes on a collection.
+- Verify Index Usage: Append .explain("executionStats") to your query (e.g., db.collection.find({ age: 25 }).explain("executionStats")).
+- Confirming Success: Look for IXSCAN (Index Scan) in the winning plan. Avoid COLLSCAN (Collection Scan), which means MongoDB scanned every document.
+
+### 59. What is a compound index, and when would you use it?
+A Compound Index is a single index structure that holds references to multiple fields within a collection's documents. MongoDB allows you to combine up to 32 fields in a single compound index. The order of the fields listed in the index is critical.
+
+When to Use It
+- Multi-Field Filters: When your queries frequently filter on more than one field simultaneously (e.g., searching for users by both status and age).
+- Filter and Sort Combinations: When you need to filter by one field and sort the results by another field.
+- Covered Queries: When the index contains all the fields returned by the query, allowing MongoDB to return results without reading the actual documents.
+- The ESR Rule: Always order your index fields by Equalities first, Sort fields second, and Ranges last.
+
+How to Use It<br/>
+```js
+// Creates a compound index on 'status' (ascending) and 'age' (descending)
+db.users.createIndex({ status: 1, age: -1 })
+
+// This index supports queries filtering on:
+// 1. both 'status' and 'age'
+// 2. 'status' alone (the prefix field)
+db.users.find({ status: "active", age: { $gte: 21 } })
+```
+
+### 60. What is a TTL Index, when would you use it and how?
+A TTL(Time to live) Index is a single-field index that MongoDB uses to automatically remove documents from a collection after a certain amount of time or at a specific clock time. It can only be built on fields that store a Date BSON type.
+
+When to Use It<br/>
+- Session Management: Automatically clearing out expired user sessions.
+- Temporary Logs: Storing system or application logs that only need to be retained for a rolling 30-day window.
+- Verification Tokens: Expiring password reset links or 2FA OTP codes after 10 or 15 minutes.
+
+How to Use It<br/>
+```js
+// Automatically deletes documents 1 hour (3600 seconds) after the 'createdAt' time
+db.sessions.createIndex(
+  { createdAt: 1 }, 
+  { expireAfterSeconds: 3600 }
+)
+```
+
+you set up the Time-To-Live (TTL) expiration time by creating a specialized single-field TTL index on a Date field using the expireAfterSeconds option.
+
+You configure this directly on the target collection through the db.collection.createIndex() command, rather than through global database settings.
+
+1. Basic Setup (Expire after a specific duration)<br/>
+To delete documents automatically after a specific number of seconds have passed since they were created, index your timestamp field and pass the duration in seconds:
+
+```js
+// Expiry after 1 hour (3600 seconds)
+db.sessions.createIndex( 
+  { "createdAt": 1 }, 
+  { expireAfterSeconds: 3600 } 
+)
+```
+- How it works: If a document has a createdAt field set to 10:00 AM, the background thread will flag it for deletion after 11:00 AM.
+
+2. Advanced Setup (Expire at a specific clock time)<br/>
+If you want individual documents to expire at completely different, pre-calculated times, set expireAfterSeconds to 0.
+
+```js
+// Dynamic expiry setup
+db.orders.createIndex( 
+  { "expireAt": 1 }, 
+  { expireAfterSeconds: 0 } 
+)
+```
+
+- How it works: When you insert data, you insert the exact future date/time you want that document to disappear (e.g., expireAt: ISODate("2026-12-31T23:59:59Z")).
+
+3. Setup for Time Series Collections<br/>
+For high-throughput time series data, you do not use createIndex(). Instead, you define the expiration directly in the collection options using db.createCollection():
+
+```js
+db.createCollection("sensorReadings", {
+   timeseries: {
+      timeField: "timestamp",
+      metaField: "sensorId"
+   },
+   expireAfterSeconds: 604800 // Automatically delete after 7 days
+})
+```
+
+### 61. What is Text Index, when would you use it and how?
+A Text Index tokenizes and stems string content to support full-text search queries inside a collection. It strips out common stop words (like "the", "a", "and") and matches words based on their root forms (e.g., "running" matches "run"). A collection can only have one text index, but that single index can cover multiple fields.
+
+When to Use It<br/>
+- Search Bars: Building a search feature for product catalogs, blog articles, or forum posts where users type unstructured text.
+- Multi-Language Search: Searching through text fields that support specific global languages.
+- Weighted Relevance: When you need to search multiple string fields (like title and body) and give more priority/weight to matches found in the title.
+
+How to Use It<br/>
+```js
+// Creates a text index on the 'description' field
+db.products.createIndex({ description: "text" })
+
+// Query the text index using the $text operator
+db.products.find({ $text: { $search: "coffee maker" } })
+```
+
+How to perform Multi-field Text Index with Weights?<br/>
+Creating the Index with Weights<br/>
+When you index multiple fields, you assign a weight to each field. The higher the number, the more influence that field has on the final search relevance score (textScore).
+
+```js
+db.articles.createIndex(
+  {
+    title: "text",
+    summary: "text",
+    content: "text"
+  },
+  {
+    weights: {
+      title: 10,     // Highest priority
+      summary: 5     // Medium priority
+    },               // 'content' defaults to a weight of 1
+    name: "ArticleTextSearchIndex"
+  }
+)
+```
+
+Querying and Sorting by Relevance<br/>
+
+To see the weights in action, you must explicitly project the textScore and sort by it. Otherwise, MongoDB returns the matching documents in natural order rather than by relevance.
+
+```js
+db.articles.find(
+  { $text: { $search: "database security" } },
+  { score: { $meta: "textScore" } }             // Projects the calculated score
+).sort(
+  { score: { $meta: "textScore" } }             // Sorts highest score first
+)
+```
+
+Why Use Weights?<br/>
+- Matches in Titles Matter More: A document with "database" in the title will rank significantly higher than a document where "database" only appears in the body content.
+- Fine-Tuning Control: It allows you to tweak search results based on user intent without changing your underlying data structure.
+
+### 62. What is Sparse Index, when would you use it and how?
+A Sparse Index is an index that only contains entries for documents that actually possess the indexed field. It completely skips documents where the indexed field is missing or contains an explicit null value.
+
+When to Use It<br/>
+- Optional Fields: When only a small percentage of your documents contain a specific field (e.g., middleName or twitterHandle), saving massive amounts of disk space and memory.
+- Preventing Unique Constraints on Missing Fields: If you want a field to be unique (like phoneNumber), but many users don't provide one, a standard unique index will reject multiple documents missing the field. A Sparse Unique Index allows multiple documents to lack the field while ensuring uniqueness for the ones that do have it.
+
+How to Use It<br/>
+```js
+// Creates a unique, sparse index on 'phoneNumber'
+db.users.createIndex({ phoneNumber: 1 }, { unique: true, sparse: true })
+```
+
+### 63. Explain write concern and read concern in MongoDB?
+In MongoDB, write concern controls how securely data is written to the database before the application gets a success acknowledgment, while read concern controls the isolation and freshness level of the data returned by queries. Together, they allow developers to balance application speed against data consistency and durability guarantees.
+
+Write Concern: Securing Data Entry<br/>
+Write concern dictates how many replica set nodes must log a write before it is marked complete. It is configured using three main options:
+- w (Write Guarantee): Specifies the number of data-bearing nodes that must acknowledge the write.
+- j (Journaling Guarantee): A boolean flag (true/false) determining if the write must be saved to the on-disk journal before returning success.
+- wtimeout (Time Limit): Prevents the application from hanging indefinitely if replication fails to hit the specified w target.
+
+Common Levels
+- w: 0 (Fire-and-Forget): The driver does not wait for any acknowledgment from the server. This provides maximum throughput but zero durability guarantees.
+- w: 1: The primary node acknowledges the write. If that primary node crashes before replicating the data to its secondaries, the data could be permanently rolled back.
+- w: "majority": The write is acknowledged only after being saved to a majority of the replica set nodes. This is the default setting in modern MongoDB setups and ensures the data can survive a primary node failover.
+
+Read Concern: Reading the Right Data State<br/>
+Read concern defines what version of the data a query sees. It directly prevents issues like dirty reads (reading uncommitted or unsafe data that might get wiped out later).
+
+Common Levels<br/>
+- local: Returns the node’s most recent data instantly. It does not check if the data has been replicated to other nodes. This data can still be rolled back if a node crashes.
+- available: Behaves exactly like local for standard replica sets, but optimizes performance for sharded clusters by skipping specific cross-shard isolation checks.
+- majority: Only returns data that has successfully been acknowledged by a majority of the replica set nodes. It completely protects against dirty reads because majority-committed data is durable and cannot be rolled back.
+- linearizable: The primary node checks with a majority of peers during the read operation to ensure it is still the actual primary. This prevents a split-brain scenario where a stale primary serves outdated data, giving you the strongest single-document consistency.
+- snapshot: Used primarily inside multi-document transactions. It extracts a point-in-time view of the database to guarantee total data isolation throughout the transaction steps.
+
+How do we implement?<br/>
+MongoDB handles these tasks automatically using default settings, but you can easily override and implement custom configurations at different levels of your application.
+
+By default in modern MongoDB versions, every write uses w: "majority" and every read uses level: "local". If these defaults fit your app, you do not need to write any extra code.
+
+How to Implement Custom Concerns<br/>
+If you need higher safety or faster performance, you can implement custom write and read concerns at three different levels. MongoDB applies them using a hierarchy: Operation Level overrides Collection Level, which overrides Database Level, which overrides Client Level.
+
+1. At the Connection (Client) Level<br/>
+This sets the global default for your entire application. You define it directly inside your MongoDB Connection URI string.
+
+```js
+// Example using Node.js connection string
+const url = "mongodb://localhost:27017/mydb?w=majority&wtimeoutMS=5000&readConcernLevel=majority";
+```
+
+2. At the Database or Collection Level<br/>
+You can set defaults for a specific database or collection when initializing them in your backend code.
+
+```js
+// Example using Node.js MongoDB Driver
+const db = client.db("financial_db");
+
+// Apply to a specific collection
+const ordersCollection = db.collection("orders", {
+  writeConcern: { w: "majority", j: true, wtimeout: 2000 },
+  readConcern: { level: "majority" }
+});
+```
+
+3. At the Individual Operation Level<br/>
+You can override everything for a single, critical query or write operation by passing an options object at the end of the method.
+
+```js
+// A highly critical write that MUST be journaled to disk immediately
+await db.collection("users").insertOne(
+  { username: "alice", balance: 500 },
+  { writeConcern: { w: "majority", j: true } }
+);
+
+// A highly critical read that cannot accept stale or rolled-back data
+const safeData = await db.collection("users").find({ username: "alice" })
+  .readConcern({ level: "linearizable" })
+  .toArray();
+```
+
+Summary of Implementation Best Practices<br/>
+- For standard apps (Blogs, Social Feeds): Do nothing. MongoDB's automatic defaults (w: "majority", local read) balance safety and speed perfectly.- For critical apps (Finance, Inventory): Explicitly implement readConcern: { level: "majority" } on your queries to prevent dirty reads, and ensure j: true on your write concerns to protect against sudden power loss.
+
+### 56. What is Timestamp? How it works? What are the types of Timestamp?
+Timestamping is the process of recording the exact time an event or operation happens. In databases, it helps track when data changes. MongoDB handles time using internal system counters and application-level date types to maintain data order and history.
+
+In MongoDB, createdAt, updatedAt, and expiresAt are BSON Date timestamp fields used to track a document's lifecycle, but they serve completely different operational purposes.
+
+Deep Dive<br/>
+📅 createdAt
+- What it does: Represents the permanent creation date of the document.
+- Behavior: It remains immutable after it is set during the first insertion.
+- Automation: MongoDB natively does not inject this automatically, but Object Data Model (ODM) libraries like Mongoose Timestamps generate it seamlessly when timestamps: true is configured in the schema.
+
+🔄 updatedAt
+- What it does: Tracks the last time any piece of data inside the document was changed.
+- Behavior: Initially, it matches createdAt. Every subsequent update, save, or replace database command refreshes this field to the current execution time.
+- Automation: Handled automatically by ODMs or manually via MongoDB's $currentDate operator during partial updates.
+
+⏳ expiresAt
+- What it does: Explicitly tells MongoDB when to automatically delete the document from the database.
+- Behavior: It pairs with a Time-To-Live (TTL) Index. MongoDB runs a background thread once every 60 seconds, reads this index, and drops any document where the expiresAt clock time is in the past.
+- Common Use Cases: Cleaning up temporary user sessions, verification OTP tokens, temporary carts, or short-lived system logs.
+
+Implementation Example
+If you are using Mongoose, you can configure all three fields inside your schema structure like this:
+
+```js
+const userSessionSchema = new Schema({
+  userId: ObjectId,
+  sessionToken: String,
+  // 1. Manually managed or calculated target expiration
+  expiresAt: { 
+    type: Date, 
+    required: true 
+  }
+}, { 
+  // 2. Automatically manages createdAt and updatedAt
+  timestamps: true 
+});
+
+// 3. Create the TTL index pointing to your expiration field
+userSessionSchema.index({ "expiresAt": 1 }, { expireAfterSeconds: 0 });
+```
+
+(Note: Setting expireAfterSeconds: 0 means the document will be dropped precisely at the clock time saved inside the expiresAt property. Alternatively, you can index createdAt with expireAfterSeconds: 3600 to drop the file exactly one hour after creation).
+
+If you are writing raw queries, you can review how to set up automated lifecycles directly within the MongoDB TTL Documentation.
+
+Here is the quick comparison of the three fields:<br/>
+- createdAt: Tracks when the record was born. It is set only once during initial document creation. It helps with auditing and sorting the newest records.
+- updatedAt: Tracks the latest modifications. It updates every single time any field changes. It helps with cache busting and synchronization.
+- expiresAt: Triggers automated data destruction. It is set to a future date to tell MongoDB when to delete the document via TTL indexes.
+
+
+### 57. How to optimize MongoDB queries performance?
+To optimize MongoDB queries, you can use the following techniques:
+
+- Indexing: Create indexes on the fields you frequently search for to improve query performance.
+
+Indexing in MongoDB is a way to improve query performance by creating an index on one or more fields in a collection. When you create an index, MongoDB creates a data structure that stores the values of the indexed field(s) in a way that allows for fast and efficient searching.
+
+For example, consider a collection of blog posts with the following structure:
+
+```js
+{
+   _id: ObjectId(...),
+   title: "Hello World!",
+   body: "Lorem ipsum...",
+   tags: ["mongodb", "indexing"],
+   date: ISODate("2022-01-01T00:00:00.000Z")
+}
+```
+
+If you frequently search for blog posts by their tags, you can create an index on the tags field to improve query performance:
+
+```js
+db.posts.createIndex({ tags: 1 })
+```
+
+Now, when you search for blog posts with a specific tag, MongoDB can use the index to quickly find the relevant documents, rather than scanning the entire collection. For example:
+
+```js
+db.posts.find({ tags: "mongodb" })
+```
+
+In this example, MongoDB can use the tags index to quickly find all blog posts with the tag "mongodb". This makes the query much faster and more efficient than if MongoDB had to scan the entire collection to find the relevant documents.
+
+
+- Query Optimization: Use the explain() method to analyze query performance and determine if additional indexes or other optimizations are needed.
+db.posts.find({ tags: "mongodb" }).explain()
+
+The explain() method in MongoDB is used to analyze query performance and determine if additional indexes or other optimizations are needed. It provides information about how the query is executed, including the query plan, the number of documents scanned, and the number of documents returned.
+
+For example, consider the following query:
+
+db.posts.find({ tags: "mongodb" })
+
+You can use the explain() method to analyze the performance of this query:
+
+db.posts.find({ tags: "mongodb" }).explain()
+
+The output of the explain() method will show the query plan that MongoDB used to execute the query, including information about how the query was optimized and which indexes were used (if any).
+
+- Projection: Limit the fields returned in a query to only the fields you need, reducing the amount of data transferred from the database to your application.
+
+Projection in MongoDB is a way to limit the fields returned in a query to only the fields that you need, reducing the amount of data transferred from the database to your application. This can improve query performance and reduce the amount of memory required to store the query results.
+
+For example, consider a collection of blog posts with the following structure:
+
+```js
+{
+   _id: ObjectId(...),
+   title: "Hello World!",
+   body: "Lorem ipsum...",
+   tags: ["mongodb", "indexing"],
+   date: ISODate("2022-01-01T00:00:00.000Z")
+}
+```
+
+If you only need the title and date fields from the blog posts, you can use projection to limit the fields returned in the query:
+
+```js
+db.posts.find({}, { title: 1, date: 1 })
+```
+
+In this example, the second argument to the find() method specifies the projection, and the 1 values indicate that the title and date fields should be included in the results. The _id field is included by default, so you don't need to include it in the projection.
+
+This query returns the following results:
+
+```js
+{
+   "_id" : ObjectId(...),
+   "title" : "Hello World!",
+   "date" : ISODate("2022-01-01T00:00:00.000Z")
+}
+```
+
+Note that the body and tags fields are not included in the results, which reduces the amount of data transferred from the database to your application and improves query performance.
+
+- Pagination: Use limit() and skip() to retrieve a subset of data and minimize the amount of data transferred.
+
+Pagination in MongoDB is a way to retrieve a subset of data by limiting the number of documents returned in a query and skipping a specified number of documents. This can be useful when you need to retrieve a large number of documents from a collection, but you only want to display a limited number of documents at a time.
+
+For example, consider a collection of blog posts with the following structure:
+
+```js
+{
+   _id: ObjectId(...),
+   title: "Hello World!",
+   body: "Lorem ipsum...",
+   tags: ["mongodb", "indexing"],
+   date: ISODate("2022-01-01T00:00:00.000Z")
+}
+```
+
+To retrieve the second page of blog posts, where each page displays 10 posts, you can use the limit() and skip() methods:
+
+```js
+db.posts.find({}).skip(10).limit(10)
+```
+
+In this example, the skip() method skips the first 10 documents, and the limit() method limits the number of documents returned to 10.
+
+This query returns the following results:
+
+```js
+[   
+    {      
+      "_id" : ObjectId(...),      
+      "title" : "Hello World!",      
+      "body" : "Lorem ipsum...",      
+      "tags" : ["mongodb", "indexing"],
+      "date" : ISODate("2022-01-01T00:00:00.000Z")
+    },
+    ...
+]
+```
+Note that the limit() method must be called after the skip() method in order to ensure that the correct number of documents are returned. Using pagination in this way minimizes the amount of data transferred from the database to your application and improves query performance.
+
+
+- Caching: Use a caching layer, such as Redis, to store frequently used data and reduce the number of queries to the database.
+
+Caching in MongoDB involves using a caching layer, such as Redis, to store frequently used data in memory, and reducing the number of queries to the database. This can improve the performance of your application by reducing the latency and load on the database.
+
+For example, consider an e-commerce website that displays the top 10 products based on sales. The product data is stored in a MongoDB collection, and the sales data is stored in a separate collection.
+
+To improve the performance of the website, you can use Redis to cache the top 10 products based on sales. Every time a sale is made, you update the Redis cache with the latest top 10 products.
+
+Here’s an example of how you could implement this using Redis and Node.js:
+
+```js
+const redis = require("redis");
+const client = redis.createClient();
+
+// Query MongoDB for the top 10 products based on sales
+const getTopProducts = async () => {
+  const products = await db.products.aggregate([
+    { $sort: { sales: -1 } },
+    { $limit: 10 }
+  ]);
+
+  return products;
+};
+
+// Store the top 10 products in the Redis cache
+const setTopProductsCache = async () => {
+  const topProducts = await getTopProducts();
+  client.set("topProducts", JSON.stringify(topProducts));
+};
+
+// Retrieve the top 10 products from the Redis cache
+const getTopProductsCache = () => {
+  return new Promise((resolve, reject) => {
+    client.get("topProducts", (err, data) => {
+      if (err) return reject(err);
+      resolve(JSON.parse(data));
+    });
+  });
+};
+
+// Get the top 10 products from the Redis cache if it exists, otherwise query MongoDB
+const getTopProductsWithCache = async () => {
+  let topProducts;
+
+  try {
+    topProducts = await getTopProductsCache();
+  } catch (err) {
+    topProducts = await getTopProducts();
+    setTopProductsCache();
+  }
+
+  return topProducts;
+};
+```
+
+In this example, the getTopProducts function queries MongoDB for the top 10 products based on sales, the setTopProductsCache function stores the top 10 products in the Redis cache, and the getTopProductsCache function retrieves the top 10 products from the Redis cache. The getTopProductsWithCache function gets the top 10 products from the Redis cache if it exists, and otherwise queries MongoDB.
+
+By using a caching layer like Redis, you can reduce the number of queries to the database, which can improve the performance of your application.
+
+- Proper Data Modeling: Store related data together in the same document to reduce the number of database queries needed to retrieve all the data needed for a single request.
+- Use Proper Data Types: Use the proper data type for each field to reduce the size of data stored and improve query performance.
+- Monitoring and Maintenance: Regularly monitor the performance of your database and take proactive measures to address potential performance issues before they become problems.
+
+### 58. 
 
 ## Most Important Short Answers
 
