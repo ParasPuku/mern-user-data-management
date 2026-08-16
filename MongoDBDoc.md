@@ -3240,7 +3240,7 @@ Without explain(), you run this query:
 
 ```js
 db.users.find({ name: "Alice" })
-``
+```
 
 2. Using Explain<br/>
 To see how MongoDB finds Alice, append .explain() to your query:
