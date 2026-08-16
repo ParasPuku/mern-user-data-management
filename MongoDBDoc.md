@@ -2492,6 +2492,14 @@ db.users.updateOne(
 );
 ```
 
+### 29. How to Handle Backups and Disaster Recovery in MongoDB?
+Handling backups and disaster recovery in MongoDB involves regularly creating backups of your data and having a plan for restoring data in case of failure. Methods include:
+
+- Mongodump/Mongorestore: Use the mongodump and mongorestore utilities to create and restore binary backups.
+- File System Snapshots: Use file system snapshots to take consistent backups of the data files.
+- Cloud Backups: If using MongoDB Atlas, leverage automated backups provided by the service.
+- Replica Sets: Use replica sets to ensure data redundancy and high availability. Regularly test the failover and recovery process.
+
 ### 29. How do you update array elements?
 
 Use positional operators.
@@ -2765,6 +2773,62 @@ Example:
 ```js
 db.orders.watch();
 ```
+
+### 76. What are Change Streams in MongoDB, and How are They Used?
+Change Streams in MongoDB allow applications to listen for real-time changes to data in collections, databases, or entire clusters. They provide a powerful way to implement event-driven architectures by capturing insert, update, replace, and delete operations. To use Change Streams, you typically open a change stream cursor and process the change events as they occur.
+
+Example:
+
+```js
+const changeStream = db.collection('orders').watch();
+changeStream.on('change', (change) => {
+  console.log(change);
+});
+```
+
+This example listens for changes in the orders collection and logs the change events.
+
+### 77. What is MongoDB Atlas, and How Does it Differ From Self-Hosted MongoDB?
+MongoDB Atlas is a fully managed cloud database service provided by MongoDB. It offers automated deployment, scaling, and management of MongoDB clusters across various cloud providers (AWS, Azure, Google Cloud). Key differences from self-hosted MongoDB include:
+
+- Managed Service: Atlas handles infrastructure management, backups, monitoring, and upgrades.
+- Scalability: Easily scale clusters up or down based on demand.
+- Security: Built-in security features such as encryption, access controls, and compliance certifications.
+- Global Distribution: Deploy clusters across multiple regions for low-latency access and high availability.
+- Integrations: Seamless integration with other cloud services and MongoDB tools.
+
+### 78. How to Handle Transactions in MongoDB?
+MongoDB supports multi-document ACID transactions by allowing us to perform a series of read and write operations across multiple documents and collections in a transaction. This ensures data consistency and integrity. To use transactions we typically start a session, begin a transaction, perform the operations and then commit or abort the transaction.
+
+Example in JavaScript:
+
+const session = client.startSession();
+
+session.startTransaction();
+
+```js 
+try {
+  db.collection1.insertOne({ name: "Alice" }, { session });
+  db.collection2.insertOne({ name: "Bob" }, { session });
+  session.commitTransaction();
+} catch (error) {
+  session.abortTransaction();
+} finally {
+  session.endSession();
+}
+```
+
+### 79. Describe the Process of Migrating Data from a Relational Database to MongoDB
+Migrating data from a relational database to MongoDB involves several steps:
+
+- Schema Design: Redesign the relational schema to fit MongoDB's document-oriented model. Decide on embedding vs. referencing, and plan for indexes and collections.
+- Data Export: Export data from the relational database in a format suitable for MongoDB (e.g., CSV, JSON).
+- Data Transformation: Restructure and convert data to fit the MongoDB schema and relationships.
+- Data Import: Import the transformed data into MongoDB using tools like mongoimport or custom scripts.
+- Validation: Validate the imported data to ensure consistency and completeness.
+- Application Changes: Update the application code to interact with MongoDB instead of the relational database.
+- Testing: Thoroughly test the application and the database to ensure everything works as expected.
+- Go Live: Deploy the MongoDB database in production and monitor the transition.
 
 ### 78. Explain Time Series Collections.
 
