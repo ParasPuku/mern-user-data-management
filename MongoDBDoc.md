@@ -340,6 +340,45 @@ Interview answer:
 Embedded documents are nested documents stored inside another MongoDB document. We use them when related data belongs to the parent and is usually read together. For example, storing address inside user or order items inside order.
 ```
 
+Embeded Query - To query embedded documents (also called nested documents or arrays) in MongoDB, you use dot notation ("array.field"). Here is how you can query the data based on your specific document structure.
+
+1. Match a specific item in the array<br/>
+To find orders that contain a specific product, wrap the dot notation path in quotes.
+
+```js
+db.orders.find({ "items.productName": "Keyboard" })
+```
+
+2. Match multiple conditions inside the same embedded document<br/>
+If you want to find an order where a single item meets multiple conditions (e.g., product name is "Mouse" and quantity is 2), use the $elemMatch operator.
+
+```js
+db.orders.find({
+  items: {
+    $elemMatch: { productName: "Mouse", quantity: 2 }
+  }
+})
+```
+
+3. Match by exact array object (Order-sensitive)<br/>
+To find an exact match for the entire embedded document, pass the exact object. Note: This requires the fields to be in the exact order they appear in the database.
+
+```js
+db.orders.find({
+  items: { productName: "Keyboard", price: 1200, quantity: 1 }
+})
+```
+
+4. Project (Return) only specific fields<br/>
+If you want to find the document but only return the customerName and the items, use projection:
+
+```js
+db.orders.find(
+  { orderId: "ORD001" },
+  { customerName: 1, items: 1, _id: 0 }
+)
+```
+
 ### 8. What are references in MongoDB?
 
 References means storing another document's `_id`.
