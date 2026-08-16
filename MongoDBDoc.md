@@ -240,7 +240,7 @@ Example:
 }
 ```
 
-### 7. What are embedded documents?
+### 7. What are embedded documents in mongoDB?
 
 Embedded document means one document kept inside another document.
 
@@ -387,27 +387,6 @@ Simple meaning:
 
 ```text
 Validation prevents bad or incomplete data from entering the collection.
-```
-
-### 10. What are capped collections?
-
-A capped collection is a fixed-size collection.
-
-When it reaches the limit, old documents are removed automatically.
-
-Use cases:
-
-- logs
-- events
-- temporary records
-
-Example:
-
-```js
-db.createCollection("logs", {
-  capped: true,
-  size: 100000
-});
 ```
 
 ## Section 2: Schema Design
