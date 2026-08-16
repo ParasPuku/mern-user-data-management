@@ -893,1778 +893,6 @@ db.users.updateOne(
 );
 ```
 
-### 28. How do you update nested fields?
-
-Use dot notation.
-
-Example:
-
-```js
-db.users.updateOne(
-  { _id: userId },
-  { $set: { "address.city": "Bangalore" } }
-);
-```
-
-### 29. How do you update array elements?
-
-Use positional operators.
-
-Example document:
-
-```json
-{
-  "items": [
-    { "productId": "p1", "qty": 1 },
-    { "productId": "p2", "qty": 2 }
-  ]
-}
-```
-
-Update matching item:
-
-```js
-db.orders.updateOne(
-  { "items.productId": "p1" },
-  { $set: { "items.$.qty": 3 } }
-);
-```
-
-### 30. Explain positional operators ($, $[], $[identifier]).
-
-`$` updates first matching array element.
-
-```js
-db.orders.updateOne(
-  { "items.productId": "p1" },
-  { $set: { "items.$.qty": 5 } }
-);
-```
-
-`$[]` updates all elements.
-
-```js
-db.orders.updateOne(
-  { _id: orderId },
-  { $set: { "items.$[].status": "checked" } }
-);
-```
-
-`$[identifier]` updates elements matching array filter.
-
-```js
-db.orders.updateOne(
-  { _id: orderId },
-  { $set: { "items.$[item].qty": 10 } },
-  { arrayFilters: [{ "item.productId": "p1" }] }
-);
-```
-
-## Section 4: Indexing
-
-### 31. What is index and why are indexes important?
-
-Indexes help MongoDB find data faster.
-
-Without index:
-
-```text
-MongoDB scans all documents.
-```
-
-With index:
-
-```text
-MongoDB jumps quickly to matching documents.
-```
-
-Example:
-
-```js
-db.users.createIndex({ email: 1 });
-```
-
-Interview answer:
-
-```text
-Indexes improve read performance by helping MongoDB find documents without scanning the whole collection.
-```
-
-### 32. How to create an index in MongoDB?
-MongoDB has a createIndex() function to create various types of indexes, such as single-field indexes, text indexes, and 2D indexes. The method has two input parameters: keys defining the columns to index and other options.
-
-Syntax:
-```js
-db.collection.createIndex(keys, options)
-```
-
-- Keys: { field1: 1, field2: -1, ... }, 1 for ascending order and -1 for descending order
-- Options: {unique: true}, {sparse: true}, { expireAfterSeconds: 3600 }
-
-Example:
-
-```js
-db.users.createIndex({ email: 1 }, { unique: true });
-```
-
-### 32. How does MongoDB index work internally?
-
-MongoDB indexes are usually B-tree based structures.
-
-Simple meaning:
-
-```text
-Index keeps field values sorted with pointers to documents.
-```
-
-Example:
-
-```text
-email index:
-amit@example.com  -> document location
-paras@example.com -> document location
-```
-
-This makes search faster.
-
-### 33. What is a compound index?
-
-A compound index is an index on multiple fields.
-
-Example:
-
-```js
-db.orders.createIndex({ customerId: 1, createdAt: -1 });
-```
-
-Good for query:
-
-```js
-db.orders.find({ customerId: "c1" }).sort({ createdAt: -1 });
-```
-
-Important:
-
-```text
-Field order matters in compound indexes.
-```
-
-### 34. What is a multikey index?
-
-Multikey index is created when indexing an array field.
-
-Example:
-
-```js
-db.products.createIndex({ tags: 1 });
-```
-
-Document:
-
-```json
-{
-  "name": "Laptop",
-  "tags": ["electronics", "computer"]
-}
-```
-
-MongoDB indexes each array value.
-
-### 35. What is a unique index?
-
-Unique index prevents duplicate values.
-
-Example:
-
-```js
-db.users.createIndex({ email: 1 }, { unique: true });
-```
-
-Use case:
-
-```text
-No two users should have same email.
-```
-
-### 36. What is a sparse index?
-
-Sparse index includes only documents that have the indexed field.
-
-Example:
-
-```js
-db.users.createIndex({ phone: 1 }, { sparse: true });
-```
-
-If some users do not have `phone`, they are not included in the index.
-
-### 37. What is a partial index?
-
-Partial index indexes only documents matching a filter.
-
-Example:
-
-```js
-db.users.createIndex(
-  { email: 1 },
-  { partialFilterExpression: { status: "active" } }
-);
-```
-
-Meaning:
-
-```text
-Only active users are indexed.
-```
-
-### 38. What is a TTL index?
-
-TTL means Time To Live.
-
-TTL index automatically deletes documents after a time.
-
-Example:
-
-```js
-db.otptokens.createIndex(
-  { createdAt: 1 },
-  { expireAfterSeconds: 300 }
-);
-```
-
-Use cases:
-
-- OTP tokens
-- temporary sessions
-- logs
-- password reset tokens
-
-### 39. What is a text index?
-
-Text index is used for text search.
-
-Example:
-
-```js
-db.products.createIndex({ name: "text", description: "text" });
-```
-
-Search:
-
-```js
-db.products.find({ $text: { $search: "gaming laptop" } });
-```
-
-### 40. Why can too many indexes slow down writes?
-
-Every insert/update/delete must update indexes also.
-
-More indexes means:
-
-- slower writes
-- more storage usage
-- more memory usage
-- longer index maintenance
-
-Interview answer:
-
-```text
-Indexes improve reads but slow writes because MongoDB must update every related index whenever data changes.
-```
-
-## Section 5: Aggregation Framework
-
-### 41. What is the Aggregation Pipeline?
-
-Aggregation pipeline processes data step by step.
-
-An aggregation pipeline in MongoDB is a framework used to process and analyze data by passing documents through a multi-stage sequence. Each stage transforms the documents as they pass through, allowing you to filter, group, sort, and calculate results.
-
-Think of it like:
-
-```text
-filter -> group -> sort -> shape output
-```
-
-Example:
-
-```js
-db.orders.aggregate([
-  { $match: { status: "paid" } },
-  { $group: { _id: "$customerId", total: { $sum: "$amount" } } },
-  { $sort: { total: -1 } }
-]);
-```
-
-### 72. How to implement aggregation in MongoDB?<br/>
-Aggregation typically contains three stages: match, group, and sort. Let’s see how we can implement these in code.
-
-Example “products” document:
-
-```js
-[
-  { "_id": 1, "product_id": "t2409", "amount": $250, "status": "done" },
-  { "_id": 2, "product_id": "t2009", "amount": $300, "status": "done" },
-  { "_id": 3, "product_id": "t1309", "amount": $150, "status": "pending" },
-  { "_id": 4, "product_id": "t1919", "amount": $480, "status": "done" },
-  { "_id": 5, "product_id": "t5459", "amount": $120, "status": "pending" },
-  { "_id": 6, "product_id": "t3829", "amount": $280, "status": "done" }
-]
-```
-
-- $match: To filter documents based on a condition
-- $group: This groups the data and applies aggregation operation
-- $sort: Order the output documents as you need
-
-Example:
-
-```js
-db.products.aggregate([
-  { $match: { status: "completed" } },
-  { $group: { _id: "$product_id", totalAmount: { $sum: "$amount" },
-  { $sort
-]);
-```
-
-### 42. Explain $match.
-
-`$match` filters documents.
-
-It is like `find()`.
-
-Example:
-
-```js
-db.orders.aggregate([
-  { $match: { status: "paid" } }
-]);
-```
-
-Tip:
-
-```text
-Put $match early to reduce data for next stages.
-```
-
-### 43. Explain $group.
-
-`$group` groups documents and calculates values.
-
-Example:
-
-```js
-db.orders.aggregate([
-  {
-    $group: {
-      _id: "$customerId",
-      totalAmount: { $sum: "$amount" },
-      orderCount: { $sum: 1 }
-    }
-  }
-]);
-```
-
-### 44. Explain $project.
-
-`$project` chooses or creates fields in output.
-
-Example:
-
-```js
-db.users.aggregate([
-  {
-    $project: {
-      _id: 0,
-      name: 1,
-      email: 1
-    }
-  }
-]);
-```
-
-### 45. Explain $lookup.
-
-`$lookup` joins collections.
-
-Example: join orders with users.
-
-```js
-db.orders.aggregate([
-  {
-    $lookup: {
-      from: "users",
-      localField: "customerId",
-      foreignField: "_id",
-      as: "customer"
-    }
-  }
-]);
-```
-
-Simple meaning:
-
-```text
-Bring related documents from another collection.
-```
-
-### 46. Difference between $lookup and embedding.
-
-Embedding:
-
-```text
-Data is stored inside same document.
-Fast reads.
-Good when data is read together.
-```
-
-`$lookup`:
-
-```text
-Data is stored in separate collections.
-Joined during query.
-Good when data is large or shared.
-```
-
-### 47. Explain $sort, $limit, and $skip.
-
-`$sort` sorts documents.
-
-`$limit` limits results.
-
-`$skip` skips documents.
-
-Example:
-
-```js
-db.orders.aggregate([
-  { $sort: { createdAt: -1 } },
-  { $skip: 20 },
-  { $limit: 10 }
-]);
-```
-
-For large collections:
-
-```text
-Avoid large skip. Use cursor-based pagination.
-```
-
-### 48. Explain $unwind.
-
-`$unwind` breaks array items into separate documents.
-
-Example document:
-
-```json
-{
-  "orderId": 1,
-  "items": ["Mouse", "Keyboard"]
-}
-```
-
-Aggregation:
-
-```js
-db.orders.aggregate([
-  { $unwind: "$items" }
-]);
-```
-
-Output:
-
-```text
-One document for Mouse
-One document for Keyboard
-```
-
-### 49. Explain $facet.
-
-`$facet` runs multiple pipelines in one query.
-
-Example:
-
-```js
-db.orders.aggregate([
-  {
-    $facet: {
-      totalOrders: [{ $count: "count" }],
-      paidOrders: [{ $match: { status: "paid" } }, { $count: "count" }]
-    }
-  }
-]);
-```
-
-Use case:
-
-```text
-Pagination data + total count in one aggregation.
-```
-
-### 50. Explain $bucket.
-
-`$bucket` groups documents into ranges.
-
-Example:
-
-```js
-db.products.aggregate([
-  {
-    $bucket: {
-      groupBy: "$price",
-      boundaries: [0, 1000, 5000, 10000],
-      default: "10000+",
-      output: {
-        count: { $sum: 1 }
-      }
-    }
-  }
-]);
-```
-
-Use case:
-
-```text
-Group products by price ranges.
-```
-
-## Section 6: Advanced and Frequently Asked
-
-### 51. What is replication in mongoDB?
-
-Replication is a technique in MongoDB to copying and syncing documents data across multiple database servers. It uses a group of instances called a replica set to keep identical data. This setup provides high availability, data redundancy, and automatic recovery if a server crashes.
-
-Replication copies an entire collection (or database/table), not just a single document. It is an ongoing process that keeps entire sets of data in sync across different servers. When a single document changes, that specific change is sent to update the replicated collection.
-
-Why:
-
-- high availability
-- backup
-- failover
-
-### 52. What is a Replica Set in mongoDB?
-
-A replica set is a group of MongoDB nodes/instances.
-
-A replica set in MongoDB is a group of mongod database instances that maintain the same data set to provide data redundancy, fault tolerance, and high availability. It consists of a single primary node, multiple secondary nodes, and optionally an arbiter node.
-
-Core Components
-- Primary Node: Receives and processes all write operations from client applications, logging every data change into its oplog (operations log).
-- Secondary Nodes: Copy the primary node's oplog asynchronously and apply the changes to maintain an identical copy of the data. They can also be configured to handle read operations.
-- Arbiter Node: Does not hold any data or accept writes; it is used strictly to cast votes during automated primary elections to help achieve a voting majority.
-
-Key Features
-- Automatic Failover: If the primary node goes offline or stops responding, the remaining nodes hold an election to automatically promote a secondary node to the primary role.
-- Read Scaling: Client applications can direct read queries to secondary nodes to reduce the load on the primary.
-- Quorum Requirement: Most configurations require an odd number of voting members (minimum of 3 nodes recommended) to ensure proper consensus during elections.
-
-Usually:
-
-```text
-1 primary
-multiple secondary nodes
-```
-
-Primary handles writes.
-
-Secondary copies data from primary.
-
-### 53. How does Primary-Secondary replication work?
-
-Flow:
-
-```text
-Client writes to primary.
-Primary records operation in oplog.
-Secondaries copy and apply oplog.
-```
-
-### 54. How does MongoDB ensure high availability?
-MongoDB achieves high availability through replication. Replica sets store different copies of data across nodes so that if one node fails, another can take over.
-
-### 54. What happens if the primary node fails?
-
-Replica set elects a new primary.
-
-This is called failover.
-
-During election, writes may pause briefly.
-
-### 55. What is Read Preference?
-
-Read preference controls where reads go.
-
-Examples:
-
-- primary
-- secondary
-- nearest
-
-Use secondary reads only when stale data is acceptable.
-
-### 56. What is Write Concern?
-
-Write concern controls how many nodes must confirm a write.
-
-Example:
-
-```js
-{ w: "majority" }
-```
-
-Meaning:
-
-```text
-Write is confirmed by majority of replica set nodes.
-```
-
-### 57. What is Journaling?
-
-Journaling writes changes to a journal before applying them.
-
-Why:
-
-```text
-It helps recover data after crash.
-```
-
-Journaling in MongoDB is a safety mechanism that uses a write-ahead log (WAL) to provide crash resiliency and ensure data durability. It intercepts write operations and commits them to a sequential log on the disk before modifying the primary data files. This guarantees that if the server crashes or loses power unexpectedly, the system can fully recover missing data upon restarting.
-
-How Journaling Works<br/>
-MongoDB's default storage engine, WiredTiger, coordinates RAM, journal logs, and data files to handle writes.
-- In-Memory Write: A client sends a write request (insert, update, delete). WiredTiger records the modification inside an in-memory buffer.
-- Journal Logging: The database appends the operation details sequentially into the journal file on disk. By default, this flush occurs every 100 milliseconds.
-- Data File Checkpoint: Every 60 seconds (or when 2 GB of journal data accumulates), WiredTiger creates a checkpoint, permanently flushing the modifications from RAM into the main database data files.
-- Log Cleanup: Once a checkpoint succeeds, the old journal logs spanning before that timestamp are discarded because they are safely recorded in the data files.
-
-The Recovery Process After a Crash<br/>
-If the mongod process stops abruptly between checkpoints, data sitting in the volatile RAM is lost. Upon restarting, the database automatically performs the following steps:
-- Identifies the ID of the last successful checkpoint inside the data files.
-- Searches the journal files for records matching that checkpoint ID.
-- Replays all operations written in the journal after that point, restoring the data to its proper state.
-
-Controlling Journaling with Write Concern<br/>
-Developers can enforce how safe a write operation must be using MongoDB's writeConcern configuration:
-- Default Behavior (j: false / unspecified): MongoDB acknowledges a write command as soon as it updates the memory buffer. There is a minor 100ms vulnerability window where data could be lost if a hard crash occurs before the next journal flush.
-- Immediate Durability (j: true): MongoDB will not send a "success" response back to the client application until the write log is safely written to the disk journal.
-
-An execution example in Node.js or Mongo Shell:
-```js
-db.users.insertOne(
-  { name: "John Doe", email: "john@example.com" },
-  { writeConcern: { w: 1, j: true } } // Forces on-disk journal confirmation
-)
-```
-
-Important Version Differences<br/>
-- MongoDB 6.1 and Newer: Journaling is always enabled. The command-line flags --journal / --nojournal and the configuration property storage.journal.enabled have been deprecated and removed.
-- MongoDB 4.0 to 6.0: Journaling is turned on by default for 64-bit systems but can be explicitly turned off manually to prioritize write performance over complete data safety.
-
-### 58. What are transactions?
-
-Transaction means multiple operations succeed together or fail together.
-
-Example:
-
-```text
-Debit wallet
-Create order
-Update inventory
-```
-
-If one fails, all should rollback.
-
-### 59. How do transactions work internally?
-
-Basic steps:
-
-1. Start session.
-2. Start transaction.
-3. Run operations.
-4. Commit if all succeed.
-5. Abort if any fail.
-
-Example:
-
-```js
-const session = await mongoose.startSession();
-
-try {
-  session.startTransaction();
-
-  await Order.create([orderData], { session });
-  await Product.updateOne(
-    { _id: productId },
-    { $inc: { stock: -1 } },
-    { session }
-  );
-
-  await session.commitTransaction();
-} catch (error) {
-  await session.abortTransaction();
-} finally {
-  session.endSession();
-}
-```
-
-### 60. What are ACID properties in MongoDB?
-
-ACID means:
-
-```text
-Atomicity    -> all or nothing
-Consistency -> data remains valid
-Isolation   -> transactions do not disturb each other
-Durability  -> committed data is saved
-```
-
-### 61. What is sharding in mongoDB?
-
-Sharding is a horizontal scaling technique in MongoDB that splits large datasets (collections) into chunks and distributes them across multiple servers.
-
-Sharding in MongoDB is a method for horizontal scaling that splits large datasets across multiple machines. The key components of a sharded cluster are shards, config servers, and query routers (mongos).
-
-Sharding enables horizontal scaling in MongoDB. When a single instance can't manage a large dataset, MongoDB splits the data into smaller chunks and distributes them across multiple servers, known as shards. 
-
-Core Components
-- Shards: Store a subset of the actual data; each shard can be run as a replica set for high availability.
-- Config Servers: Store metadata and the cluster's data routing configuration.
-- Query Routers (mongos): Act as an interface for client applications, directing operations to the correct shard.
-
-How It Works
-- Shard Key: A field or group of fields in a collection used to slice data into smaller chunks.
-- Distribution Strategies: Split data using either range-based methods (grouping by value ranges) or hashed methods (using an MD5 hash).
-- Balancing: MongoDB tracks chunk distribution and auto-migrates data across shards to prevent performance bottlenecks.
-
-Why:
-
-```text
-One server cannot handle unlimited data or traffic.
-```
-
-MongoDB uses sharding for horizontal scaling.
-
-### 62. How does MongoDB distribute data?
-
-MongoDB splits data into chunks.
-
-Chunks are distributed across shards.
-
-Simple flow:
-
-```text
-collection -> chunks -> shards
-```
-
-### 63. What is a shard key?
-
-Shard key is the field MongoDB uses to distribute data.
-
-Example:
-
-```js
-{ customerId: 1 }
-```
-
-Bad shard key can cause uneven data distribution.
-
-### 64. How do you choose a good shard key?
-
-Good shard key should:
-
-- have high cardinality
-- distribute writes evenly
-- match common queries
-- avoid hot partitions
-
-Bad shard key:
-
-```text
-status: active/inactive
-```
-
-Why bad:
-
-```text
-Only few values, data distribution is poor.
-```
-
-### 65. What is chunk migration?
-
-Chunk migration means MongoDB moves chunks from one shard to another.
-
-Why:
-
-```text
-To balance data between shards.
-```
-
-### 66. What is Balancer?
-
-Balancer is MongoDB process that keeps shards balanced.
-
-It moves chunks when some shards have too much data.
-
-### 67. What is Query Planner?
-
-Query planner decides how MongoDB should run a query.
-
-It chooses:
-
-- collection scan
-- index scan
-- best available index
-
-### 68. Explain explain() output.
-
-`explain()` shows how MongoDB executed a query.
-
-Example:
-
-```js
-db.users.find({ email: "paras@example.com" }).explain("executionStats");
-```
-
-Important fields:
-
-```text
-COLLSCAN -> collection scan, usually bad for large data
-IXSCAN   -> index scan, usually good
-totalDocsExamined -> how many documents MongoDB checked
-totalKeysExamined -> how many index keys checked
-executionTimeMillis -> query time
-```
-
-### 69. What is a Covered Query?
-
-A covered query is answered fully from index.
-
-MongoDB does not need to read full documents.
-
-Example:
-
-```js
-db.users.createIndex({ email: 1, name: 1 });
-
-db.users.find(
-  { email: "paras@example.com" },
-  { email: 1, name: 1, _id: 0 }
-);
-```
-
-### 70. How do you optimize slow MongoDB queries?
-
-Step-by-step:
-
-1. Run `explain("executionStats")`.
-2. Check if query uses index.
-3. Check `totalDocsExamined`.
-4. Add proper index.
-5. Use projection.
-6. Avoid large skip.
-7. Reduce `$lookup` if possible.
-8. Put `$match` early in aggregation.
-9. Limit returned data.
-
-### 71. How do you identify missing indexes?
-
-Signs:
-
-- `COLLSCAN` in explain
-- high `totalDocsExamined`
-- query slow on large data
-- frequent filter/sort fields have no index
-
-Example:
-
-```js
-db.users.find({ email: "paras@example.com" }).explain("executionStats");
-```
-
-If output shows `COLLSCAN`, add index.
-
-### 72. where we should store the images, videos and files in nodejs app?
-In a Node.js application, you should store images, videos, and files in Cloud Object Storage (like Amazon S3 or Google Cloud Storage) and save only the file metadata and URLs in your database. Storing raw files directly inside a database or on your local server's disk causes severe scaling, performance, and security issues.
-
-The three main storage approaches, ranked from best to worst -<br/>
-1. Cloud Object Storage (The Industry Standard) 🌟
-You stream the files from your Node.js backend straight to a dedicated third-party storage provider. Your database only keeps a reference string (e.g., https://amazonaws.com).
-
-- Best Options:
-  1. General Files/Videos: Amazon S3, Google Cloud Storage, or DigitalOcean Spaces.
-  2. Images & Media Optimization: Cloudinary or Uploadcare (they automatically handle resizing and compressions).
-- Pros: Highly scalable, cost-effective, faster delivery via Content Delivery Networks (CDNs), and reduces load on your application server.Cons: 
-- Requires external API integration and minor additional cloud costs.
-
-2. Local File System (Good for Small/Prototyping Apps Only) 📁<br/>
-You use Node.js middleware like Multer or express-fileupload to save files into a local folder (e.g., /public/uploads) on your server's hard drive.- Pros: Easy to implement; no external accounts required.
-- Cons: Does not scale. If you deploy your app to multiple server instances or a serverless platform (like AWS Lambda or Vercel), local files will vanish because their file systems are ephemeral (temporary).
-
-3. Inside the Database (Not Recommended) ❌ <br/>
-You convert the file into a binary blob (Buffer) and save it directly inside SQL or NoSQL databases like MongoDB or PostgreSQL.
-- Pros: Backing up your database backs up your files simultaneously.
-- Cons: It severely degrades database read/write speeds, inflates database costs exponentially, and drastically slows down queries.
-
-Recommended Node.js File Architecture<br/>
-The diagram below shows the optimal production workflow:
-- The user uploads a file.
-- The Node.js server acts as a temporary pipeline (using memory storage via Multer) to push the file to the Cloud Bucket.
-- The Cloud Bucket returns a public URL.
-- The Node.js server saves that text URL into MongoDB/PostgreSQL.
-```js
-
-┌────────┐             ┌────────────┐             ┌──────────────┐
-│        │  1. Upload  │  Node.js   │  2. Stream  │ Cloud Bucket │
-│ Client ├────────────>│  Backend   ├────────────>│  (e.g., S3)  │
-│        │             │  (Multer)  │             │              │
-│        │<────────────┤            │<────────────┤              │
-└────────┘   4. URL    └─────┬──────┘   3. URL    └──────────────┘
-             Response        │
-                             │ 3.5 Save URL
-                             v
-                       ┌────────────┐
-                       │  Database  │
-                       └────────────┘
-```
-Security & Optimization Checklist<br/>
-- Enforce File Size Limits: Always set a strict size ceiling in your Multer configuration (e.g., 5MB for images, 50MB for videos) to prevent Denial of Service (DoS) attacks.
-- Validate File Types: Never trust the user's file extension. Check the magic numbers/mime-type of the file buffer to ensure a malicious user isn't uploading an executable .exe disguised as a .jpg.
-- Use Presigned URLs for Large Files: For large videos or assets, avoid routing the file through your Node.js server entirely. Generate an AWS S3 "presigned URL" in Node.js, send it to the client, and let the frontend upload directly to S3. This keeps your server memory completely clear.
-
-### 72. How do you perform SQL join equivalent in MongoDB?
-MongoDB provides aggregation operators like $lookup to perform SQL equivalent joins.
-
-Syntax:
-```js
-db.collection_1_name.aggregate([
-  {
-    $lookup: {
-      from: "collection_2_name",  // The other collection to join with
-      localField: "field_in_collection_1", // The field on which you want to join
-      foreignField: "field_in_collection_2", // The field from the second collection you want to perform join operation
-      as: "result_field" // The name of the new field to store the joined result
-    }
-  }
-])
-```
-
-Example: 
-
-Say you have order and product collections with data as follows:
-
-“Orders” collection:
-
-```js
-[
-  { "_id": 1, "product_id": 101, "order_amount": 250 },
-  { "_id": 2, "product_id": 102, "order_amount": 300 },
-  { "_id": 3, "product_id": 101, "order_amount": 150 }
-]
-```
-
-“Products” collection:
-
-```js
-[
-   { "_id": 3789, "product_id": 102, "product_price": $100},
-   { "_id": 3970, "product_id": 103, "product_price": $297},
-   { "_id": 3509, "product_id": 101, "product_price": $300},
-]
-```
-
-Join operation:
-
-```js
-db.orders.aggregate([
-  {
-    $lookup: {
-      from: "products",              
-      localField: "customer_id",       
-      foreignField: "_id",             
-      as: "customer_info"             
-    }
-  }
-])
-```
-
-### 72. How can you optimize MongoDB queries?
-To optimize MongoDB queries and minimize database response times, you must ensure your queries perform an index scan (IXSCAN) instead of a full collection scan (COLLSCAN). This is primarily achieved by building strategic indexes, writing highly selective queries, utilizing projection, and refining your pipeline sequences.
-
-1. Master Strategic Indexing <br/>
-Indexes are the most impactful tool for database speed. Without them, MongoDB has to read every document in your collection sequentially.
-- Follow the ESR Rule: Design compound indexes by ordering fields as Equality filters first, Sort fields second, and Range filters last.
-- Run Covered Queries: Ensure your query searches and returns only fields present in the index. This allows MongoDB to return data directly from RAM without pulling documents from disk.
-- Use Partial Indexes: Reduce write overhead by only indexing documents that match a filter expression (e.g., indexing status for active users only).
-- Minimize Index Bloat: Every index slows down operations like insert and update. Avoid indexing highly volatile or unused fields.
-
-2. Optimize Query & Schema Structures<br/>
-How you write queries and structure data impacts CPU and memory consumption.
-
-- Apply Projections: Never use a blanket query that returns full documents. Use .find({}, { field1: 1, field2: 1 }) to isolate and pull only necessary data.
-- Avoid Key Slow Operators: Operators like $regex (without a prefix/index), $nin, and massive $in lists force expensive collection scans.
-- Embed Data Wisely: Structure your schema to embed heavily related data into a single document. This avoids costly in-application or $lookup joins.
-
-3. Refine Aggregation Pipelines<br/>
-Aggregation pipelines process data in stages; their layout dictates efficiency.
-- Filter Early: Place $match and $sort stages at the very beginning of your pipeline to leverage index capabilities and filter data volume down fast.
-- Order Modifiers Correctly: Always execute $sort prior to $skip and $limit to minimize memory usage.
-- Optimize Search Facets: If you use MongoDB Atlas Search, apply $limit before a $facet stage, and use $searchMeta for counts instead of counting the whole pipeline.
-
-4. Implement Pagination Properly<br/>
-- Ditch Large Skips: Avoid relying on .skip(10000).limit(10). Large skip values force MongoDB to scan thousands of index entries up to that point.
-- Use Keyset Pagination: Paginate securely using the last retrieved value (e.g., querying _id: { $gt: last_id }), which provides immediate, direct access via index lookups.
-
-5. Diagnose with Performance Tools<br/>
-- Analyze Plans: Append .explain("executionStats") to your query. Pay close attention to totalDocsExamined versus nReturned; they should ideally be close to 1:1.
-- Monitor Metrics: Use the built-in MongoDB Atlas Dashboard or the database profiler to track long-running queries (>100ms).
-
-### 72. What are execution statistics?
-
-Execution statistics show query performance details.
-
-Check:
-
-- execution time
-- documents examined
-- keys examined
-- index used
-- documents returned
-
-### 73. Difference between count() and countDocuments().
-
-`count()` is older and can be inaccurate in some cases.
-
-`countDocuments()` counts matching documents accurately.
-
-Use:
-
-```js
-db.users.countDocuments({ status: "active" });
-```
-
-### 74. Difference between estimatedDocumentCount() and countDocuments().
-
-`estimatedDocumentCount()` is fast but approximate.
-
-```js
-db.users.estimatedDocumentCount();
-```
-
-`countDocuments()` is accurate but can be slower.
-
-```js
-db.users.countDocuments({ city: "Bangalore" });
-```
-
-### 75. What is Change Stream?
-
-Change Stream listens to changes in collection.
-
-Use cases:
-
-- real-time notifications
-- sync systems
-- audit logs
-
-Example:
-
-```js
-db.orders.watch();
-```
-
-### 76. What are Views in MongoDB?
-
-View is a saved aggregation query.
-
-It does not store data separately.
-
-MongoDB views are read-only virtual collections whose contents are computed dynamically using an aggregation pipeline. MongoDB supports standard views, which calculate data on read without storing it to disk, and on-demand materialized views, which store pre-computed results on disk.
-
-Key Characteristics
-- Standard Views: Computed on the fly every time you query them; they do not use extra disk storage for data and rely on the indexes of the underlying source collection.
-- On-Demand Materialized Views: Pre-computed results stored directly on disk using a $merge or $out aggregation stage, offering faster reads for heavy datasets.
-- Read-Only: You cannot perform insert, update, or delete operations directly on a view.
-- Creation: Built using the db.createView() method or via platform tools like the MongoDB Atlas UI.
-
-Use case:
-
-```text
-Show only active users or summarized reports.
-```
-
-How to implement?<br/>
-You can implement standard MongoDB views by executing the db.createView() method in your database shell or driver. MongoDB views are read-only virtual collections that do not store computed data on disk; instead, they dynamically run a pre-defined aggregation pipeline every time you query them.
-
-Standard Views (db.createView)<br/>
-To create a basic read-only view, provide a view name, a source collection, and an aggregation pipeline array.
-
-```js
-db.createView(
-  "activeUsersView",     // Name of the view to create
-  "users",               // Source collection
-  [
-    { $match: { status: "active" } },
-    { $project: { passwordHash: 0, internalNotes: 0 } } // Hides sensitive fields
-  ]
-)
-```
-
-On-Demand Materialized Views ($merge)<br/>
-If your aggregation involves resource-heavy calculations and you need the results cached on disk for fast read performance, implement an On-Demand Materialized View using the $merge stage in a standard aggregation pipeline:
-
-```js
-db.orders.aggregate([
-  {
-    $group: {
-      _id: "$customerId",
-      totalSpent: { $sum: "$amount" }
-    }
-  },
-  { 
-    $merge: { 
-      into: "customerSpendingReport", // Target collection on disk
-      whenMatched: "replace", 
-      whenNotMatched: "insert" 
-    } 
-  }
-])
-```
-
-Step-by-Step Implementation Guide<br/>
-Follow these steps to successfully design and manage your views:<br/>
-1. Define Your Purpose
-- Data Masking: Create views to exclude personally identifiable information (PII) from specific user roles.
-- Pre-computed Fields: Simplify app-side queries by pre-calculating metrics and computed fields.
-- Collection Joins: Combine multiple disjoint collections seamlessly.
-
-2. Build and Test the PipelineTest your aggregation pipeline stages on the source collection via db.collection.aggregate() before converting them into a view to verify the final schema shape.
-
-3. Execute View Creation<br/>
-- Run the db.createView() command in mongosh.View definitions cannot be altered or renamed directly after execution.
-- To alter a view, you must drop it using db.activeUsersView.drop() and recreate it.
-
-4. Query the View<br/>
-Interact with your newly built view exactly as you would with a typical, read-only collection:
-
-```js
-db.activeUsersView.find({ country: "US" })
-```
-
-### 77. Explain Atlas Search.
-
-Atlas Search is MongoDB Atlas feature for advanced search.
-
-It supports:
-
-- full-text search
-- autocomplete
-- relevance scoring
-- fuzzy search
-
-Use it when normal text index is not enough.
-
-### 78. Explain Time Series Collections.
-
-Time Series collections store time-based data.
-
-Use cases:
-
-- IoT data
-- metrics
-- logs
-- stock prices
-
-Example:
-
-```text
-temperature readings every minute
-```
-
-### 79. Explain Wildcard Indexes.
-
-Wildcard index indexes many fields dynamically.
-
-Example:
-
-```js
-db.products.createIndex({ "$**": 1 });
-```
-
-Useful when document fields are flexible.
-
-But do not use everywhere blindly because it can increase index size.
-
-### 80. What are Retryable Writes?
-
-Retryable writes allow MongoDB driver to retry certain write operations if network error happens.
-
-Simple meaning:
-
-```text
-If temporary network issue happens, driver can safely retry the write.
-```
-
-## Section 7: Scenario-Based Questions
-
-### 81. Your query takes 10 seconds. How do you debug it?
-
-Step-by-step:
-
-1. Run `explain("executionStats")`.
-2. Check if it uses `COLLSCAN` or `IXSCAN`.
-3. Check `totalDocsExamined`.
-4. Check if filter/sort fields have index.
-5. Use projection.
-6. Check if aggregation stages are in good order.
-7. Check server CPU/memory.
-8. Check if query returns too much data.
-
-Short answer:
-
-```text
-I start with explain(), check index usage, documents examined, execution time, sort stage, and then add or adjust indexes based on query pattern.
-```
-
-### 82. A collection has 50 million documents. Pagination is slow. How would you improve it?
-
-Problem:
-
-```js
-db.orders.find().skip(1000000).limit(20);
-```
-
-Large `skip` is slow because MongoDB still walks through skipped records.
-
-Better: cursor-based pagination.
-
-```js
-db.orders.find({
-  _id: { $lt: lastSeenId }
-})
-.sort({ _id: -1 })
-.limit(20);
-```
-
-Add index:
-
-```js
-db.orders.createIndex({ _id: -1 });
-```
-
-### 83. An index exists but MongoDB is not using it. Why?
-
-Possible reasons:
-
-- query does not match index order
-- low selectivity index
-- collection scan is cheaper
-- wrong compound index order
-- query uses different field type
-- sort does not match index
-- index is partial and filter does not match
-
-Debug:
-
-```js
-db.users.find({ email: "a@test.com" }).explain("executionStats");
-```
-
-### 84. A document exceeds the 16 MB limit. What would you do?
-
-Fix:
-
-- split large arrays into separate collection
-- use references
-- store files in GridFS/object storage
-- keep only summary data in parent document
-
-Example:
-
-```text
-Do not store all comments inside post if comments can grow forever.
-```
-
-### 85. Write operations have become slow after adding several indexes. Why?
-
-Because every write must update all indexes.
-
-Fix:
-
-- remove unused indexes
-- keep only query-needed indexes
-- check index usage
-- avoid indexing fields with low value
-
-### 86. How would you design a chat application's database?
-
-Collections:
-
-```text
-users
-conversations
-messages
-```
-
-Conversation:
-
-```json
-{
-  "_id": ObjectId("conversation_id"),
-  "participantIds": ["user1", "user2"],
-  "lastMessage": "Hello",
-  "updatedAt": "Date"
-}
-```
-
-Message:
-
-```json
-{
-  "conversationId": ObjectId("conversation_id"),
-  "senderId": ObjectId("user_id"),
-  "text": "Hello",
-  "createdAt": "Date",
-  "readBy": []
-}
-```
-
-Indexes:
-
-```js
-db.messages.createIndex({ conversationId: 1, createdAt: -1 });
-db.conversations.createIndex({ participantIds: 1, updatedAt: -1 });
-```
-
-### 87. How would you store product reviews?
-
-If reviews are many, store in separate collection.
-
-Product:
-
-```json
-{
-  "_id": ObjectId("product_id"),
-  "name": "Laptop",
-  "averageRating": 4.5,
-  "reviewCount": 120
-}
-```
-
-Review:
-
-```json
-{
-  "productId": ObjectId("product_id"),
-  "userId": ObjectId("user_id"),
-  "rating": 5,
-  "comment": "Good",
-  "createdAt": "Date"
-}
-```
-
-Index:
-
-```js
-db.reviews.createIndex({ productId: 1, createdAt: -1 });
-```
-
-### 88. How would you design an inventory management system?
-
-Collections:
-
-```text
-products
-warehouses
-inventory
-stock_movements
-```
-
-Inventory:
-
-```json
-{
-  "productId": ObjectId("product_id"),
-  "warehouseId": ObjectId("warehouse_id"),
-  "quantity": 100
-}
-```
-
-Stock movement:
-
-```json
-{
-  "productId": ObjectId("product_id"),
-  "warehouseId": ObjectId("warehouse_id"),
-  "type": "OUT",
-  "quantity": 2,
-  "createdAt": "Date"
-}
-```
-
-### 89. Users frequently search by name and email. What indexes would you create?
-
-If exact email search:
-
-```js
-db.users.createIndex({ email: 1 }, { unique: true });
-```
-
-If name search:
-
-```js
-db.users.createIndex({ name: 1 });
-```
-
-If searching both:
-
-```js
-db.users.createIndex({ name: 1, email: 1 });
-```
-
-For text search:
-
-```js
-db.users.createIndex({ name: "text", email: "text" });
-```
-
-### 90. How would you migrate data from SQL to MongoDB?
-
-Step-by-step:
-
-1. Understand SQL tables and relationships.
-2. Identify read patterns.
-3. Decide embed vs reference.
-4. Export SQL data.
-5. Transform rows into MongoDB documents.
-6. Import into MongoDB.
-7. Create indexes.
-8. Validate counts and sample records.
-9. Run both systems in parallel if needed.
-10. Switch traffic carefully.
-
-## Section 8: Coding Query Questions
-
-### 91. Find duplicate documents by email.
-
-```js
-db.users.aggregate([
-  {
-    $group: {
-      _id: "$email",
-      count: { $sum: 1 },
-      ids: { $push: "$_id" }
-    }
-  },
-  { $match: { count: { $gt: 1 } } }
-]);
-```
-
-### 92. Remove duplicate documents by email.
-
-Keep first document and delete remaining duplicates.
-
-```js
-db.users.aggregate([
-  {
-    $group: {
-      _id: "$email",
-      ids: { $push: "$_id" },
-      count: { $sum: 1 }
-    }
-  },
-  { $match: { count: { $gt: 1 } } }
-]).forEach((doc) => {
-  doc.ids.shift();
-  db.users.deleteMany({ _id: { $in: doc.ids } });
-});
-```
-
-### 93. Return the top 5 highest-paid employees.
-
-```js
-db.employees.find()
-  .sort({ salary: -1 })
-  .limit(5);
-```
-
-### 94. Find the second-highest salary.
-
-```js
-db.employees.find()
-  .sort({ salary: -1 })
-  .skip(1)
-  .limit(1);
-```
-
-For distinct salaries:
-
-```js
-db.employees.aggregate([
-  { $group: { _id: "$salary" } },
-  { $sort: { _id: -1 } },
-  { $skip: 1 },
-  { $limit: 1 }
-]);
-```
-
-### 95. Count users by city.
-
-```js
-db.users.aggregate([
-  {
-    $group: {
-      _id: "$city",
-      totalUsers: { $sum: 1 }
-    }
-  }
-]);
-```
-
-### 96. Calculate monthly sales.
-
-```js
-db.orders.aggregate([
-  { $match: { status: "paid" } },
-  {
-    $group: {
-      _id: {
-        year: { $year: "$createdAt" },
-        month: { $month: "$createdAt" }
-      },
-      totalSales: { $sum: "$amount" }
-    }
-  },
-  { $sort: { "_id.year": 1, "_id.month": 1 } }
-]);
-```
-
-### 97. Join Orders and Users using $lookup.
-
-```js
-db.orders.aggregate([
-  {
-    $lookup: {
-      from: "users",
-      localField: "customerId",
-      foreignField: "_id",
-      as: "customer"
-    }
-  },
-  { $unwind: "$customer" }
-]);
-```
-
-### 98. Flatten nested arrays using $unwind.
-
-```js
-db.orders.aggregate([
-  { $unwind: "$items" },
-  {
-    $project: {
-      orderId: 1,
-      productName: "$items.name",
-      quantity: "$items.quantity"
-    }
-  }
-]);
-```
-
-### 99. Calculate average ratings.
-
-```js
-db.reviews.aggregate([
-  {
-    $group: {
-      _id: "$productId",
-      averageRating: { $avg: "$rating" },
-      reviewCount: { $sum: 1 }
-    }
-  }
-]);
-```
-
-### 100. Find products never ordered.
-
-```js
-db.products.aggregate([
-  {
-    $lookup: {
-      from: "orders",
-      localField: "_id",
-      foreignField: "items.productId",
-      as: "orders"
-    }
-  },
-  { $match: { orders: { $size: 0 } } }
-]);
-```
-
-### 101. Implement pagination with sorting.
-
-Basic pagination:
-
-```js
-db.orders.find()
-  .sort({ createdAt: -1 })
-  .skip(20)
-  .limit(10);
-```
-
-Better cursor pagination:
-
-```js
-db.orders.find({
-  createdAt: { $lt: lastCreatedAt }
-})
-.sort({ createdAt: -1 })
-.limit(10);
-```
-
-Index:
-
-```js
-db.orders.createIndex({ createdAt: -1 });
-```
-
-### 102. Return latest order per customer.
-
-```js
-db.orders.aggregate([
-  { $sort: { createdAt: -1 } },
-  {
-    $group: {
-      _id: "$customerId",
-      latestOrder: { $first: "$$ROOT" }
-    }
-  }
-]);
-```
-
-### 103. Update nested array elements.
-
-```js
-db.orders.updateOne(
-  { _id: orderId },
-  { $set: { "items.$[item].status": "cancelled" } },
-  {
-    arrayFilters: [
-      { "item.productId": productId }
-    ]
-  }
-);
-```
-
-### 104. Delete duplicate emails.
-
-```js
-db.users.aggregate([
-  {
-    $group: {
-      _id: "$email",
-      ids: { $push: "$_id" },
-      count: { $sum: 1 }
-    }
-  },
-  { $match: { count: { $gt: 1 } } }
-]).forEach((user) => {
-  user.ids.shift();
-  db.users.deleteMany({ _id: { $in: user.ids } });
-});
-```
-
-### 105. Find users inactive for the last 6 months.
-
-```js
-db.users.find({
-  lastLoginAt: {
-    $lt: new Date(new Date().setMonth(new Date().getMonth() - 6))
-  }
-});
-```
-
-## Section 9: App-Specific MongoDB Notes
-
-### 106. Explain MongoDB design of this MERN app.
-
-This app has collections like:
-
-```text
-accounts
-users
-userprofiles
-skills
-userskills
-teams
-teammemberships
-otptokens
-```
-
-Simple design:
-
-- `accounts` handles login/auth.
-- `users` stores managed users.
-- `userprofiles` stores extra user profile details.
-- `skills` stores skill master data.
-- `userskills` connects users and skills.
-- `teams` stores team details.
-- `teammemberships` connects users and teams.
-- `otptokens` stores temporary OTP data.
-
-### 107. How Account and User are related?
-
-Account is for authentication.
-
-User is business data managed inside app.
-
-This separation is useful because login identity and managed user records are different concepts.
-
-### 108. How User and Skill are related?
-
-User and Skill are many-to-many.
-
-One user can have many skills.
-
-One skill can belong to many users.
-
-Use join collection:
-
-```text
-userskills
-```
-
-### 109. Why use indexes in this app?
-
-Indexes help:
-
-- prevent duplicate email
-- speed up search
-- speed up filters
-- speed up joins
-- improve pagination
-
-Example:
-
-```js
-db.users.createIndex({ ownerAccountId: 1, email: 1 }, { unique: true });
-```
-
-### 110. Why use TTL index for OTP tokens?
-
-OTP should expire automatically.
-
-Example:
-
-```js
-db.otptokens.createIndex(
-  { createdAt: 1 },
-  { expireAfterSeconds: 300 }
-);
-```
-
-This removes old OTP records after 5 minutes.
-
-NEW QUESTIONSSSSSSSSS
-==========================
-
 ### 53. What is Aggregation? How it works? Methods of Aggregation? How to implement it?
 MongoDB aggregation is a way to process multiple documents in a collection, group them together, perform operations on them, and return a single combined or computed result. Think of it as an assembly line where raw data goes in, gets filtered, sorted, and rebuilt at different stations, and a finished report comes out the other side.
 
@@ -4254,6 +2482,896 @@ By using a caching layer like Redis, you can reduce the number of queries to the
 - Proper Data Modeling: Store related data together in the same document to reduce the number of database queries needed to retrieve all the data needed for a single request.
 - Use Proper Data Types: Use the proper data type for each field to reduce the size of data stored and improve query performance.
 - Monitoring and Maintenance: Regularly monitor the performance of your database and take proactive measures to address potential performance issues before they become problems.
+
+### 28. How do you update nested fields?
+
+Use dot notation.
+
+Example:
+
+```js
+db.users.updateOne(
+  { _id: userId },
+  { $set: { "address.city": "Bangalore" } }
+);
+```
+
+### 29. How do you update array elements?
+
+Use positional operators.
+
+Example document:
+
+```json
+{
+  "items": [
+    { "productId": "p1", "qty": 1 },
+    { "productId": "p2", "qty": 2 }
+  ]
+}
+```
+
+Update matching item:
+
+```js
+db.orders.updateOne(
+  { "items.productId": "p1" },
+  { $set: { "items.$.qty": 3 } }
+);
+```
+
+### 30. Explain positional operators ($, $[], $[identifier]).
+
+`$` updates first matching array element.
+
+```js
+db.orders.updateOne(
+  { "items.productId": "p1" },
+  { $set: { "items.$.qty": 5 } }
+);
+```
+
+`$[]` updates all elements.
+
+```js
+db.orders.updateOne(
+  { _id: orderId },
+  { $set: { "items.$[].status": "checked" } }
+);
+```
+
+`$[identifier]` updates elements matching array filter.
+
+```js
+db.orders.updateOne(
+  { _id: orderId },
+  { $set: { "items.$[item].qty": 10 } },
+  { arrayFilters: [{ "item.productId": "p1" }] }
+);
+```
+
+### 54. How does MongoDB ensure high availability?
+MongoDB achieves high availability through replication. Replica sets store different copies of data across nodes so that if one node fails, another can take over.
+
+### 54. What happens if the primary node fails?
+
+Replica set elects a new primary.
+
+This is called failover.
+
+During election, writes may pause briefly.
+
+### 58. What are transactions?
+
+Transaction means multiple operations succeed together or fail together.
+
+Example:
+
+```text
+Debit wallet
+Create order
+Update inventory
+```
+
+If one fails, all should rollback.
+
+### 59. How do transactions work internally?
+
+Basic steps:
+
+1. Start session.
+2. Start transaction.
+3. Run operations.
+4. Commit if all succeed.
+5. Abort if any fail.
+
+Example:
+
+```js
+const session = await mongoose.startSession();
+
+try {
+  session.startTransaction();
+
+  await Order.create([orderData], { session });
+  await Product.updateOne(
+    { _id: productId },
+    { $inc: { stock: -1 } },
+    { session }
+  );
+
+  await session.commitTransaction();
+} catch (error) {
+  await session.abortTransaction();
+} finally {
+  session.endSession();
+}
+```
+
+### 60. What are ACID properties in MongoDB?
+
+ACID means:
+
+```text
+Atomicity    -> all or nothing
+Consistency -> data remains valid
+Isolation   -> transactions do not disturb each other
+Durability  -> committed data is saved
+```
+
+### 70. How do you optimize slow MongoDB queries?
+
+Step-by-step:
+
+1. Run `explain("executionStats")`.
+2. Check if query uses index.
+3. Check `totalDocsExamined`.
+4. Add proper index.
+5. Use projection.
+6. Avoid large skip.
+7. Reduce `$lookup` if possible.
+8. Put `$match` early in aggregation.
+9. Limit returned data.
+
+### 71. How do you identify missing indexes?
+
+Signs:
+
+- `COLLSCAN` in explain
+- high `totalDocsExamined`
+- query slow on large data
+- frequent filter/sort fields have no index
+
+Example:
+
+```js
+db.users.find({ email: "paras@example.com" }).explain("executionStats");
+```
+
+If output shows `COLLSCAN`, add index.
+
+### 72. where we should store the images, videos and files in nodejs app?
+In a Node.js application, you should store images, videos, and files in Cloud Object Storage (like Amazon S3 or Google Cloud Storage) and save only the file metadata and URLs in your database. Storing raw files directly inside a database or on your local server's disk causes severe scaling, performance, and security issues.
+
+The three main storage approaches, ranked from best to worst -<br/>
+1. Cloud Object Storage (The Industry Standard) 🌟
+You stream the files from your Node.js backend straight to a dedicated third-party storage provider. Your database only keeps a reference string (e.g., https://amazonaws.com).
+
+- Best Options:
+  1. General Files/Videos: Amazon S3, Google Cloud Storage, or DigitalOcean Spaces.
+  2. Images & Media Optimization: Cloudinary or Uploadcare (they automatically handle resizing and compressions).
+- Pros: Highly scalable, cost-effective, faster delivery via Content Delivery Networks (CDNs), and reduces load on your application server.Cons: 
+- Requires external API integration and minor additional cloud costs.
+
+2. Local File System (Good for Small/Prototyping Apps Only) 📁<br/>
+You use Node.js middleware like Multer or express-fileupload to save files into a local folder (e.g., /public/uploads) on your server's hard drive.- Pros: Easy to implement; no external accounts required.
+- Cons: Does not scale. If you deploy your app to multiple server instances or a serverless platform (like AWS Lambda or Vercel), local files will vanish because their file systems are ephemeral (temporary).
+
+3. Inside the Database (Not Recommended) ❌ <br/>
+You convert the file into a binary blob (Buffer) and save it directly inside SQL or NoSQL databases like MongoDB or PostgreSQL.
+- Pros: Backing up your database backs up your files simultaneously.
+- Cons: It severely degrades database read/write speeds, inflates database costs exponentially, and drastically slows down queries.
+
+Recommended Node.js File Architecture<br/>
+The diagram below shows the optimal production workflow:
+- The user uploads a file.
+- The Node.js server acts as a temporary pipeline (using memory storage via Multer) to push the file to the Cloud Bucket.
+- The Cloud Bucket returns a public URL.
+- The Node.js server saves that text URL into MongoDB/PostgreSQL.
+```js
+
+┌────────┐             ┌────────────┐             ┌──────────────┐
+│        │  1. Upload  │  Node.js   │  2. Stream  │ Cloud Bucket │
+│ Client ├────────────>│  Backend   ├────────────>│  (e.g., S3)  │
+│        │             │  (Multer)  │             │              │
+│        │<────────────┤            │<────────────┤              │
+└────────┘   4. URL    └─────┬──────┘   3. URL    └──────────────┘
+             Response        │
+                             │ 3.5 Save URL
+                             v
+                       ┌────────────┐
+                       │  Database  │
+                       └────────────┘
+```
+Security & Optimization Checklist<br/>
+- Enforce File Size Limits: Always set a strict size ceiling in your Multer configuration (e.g., 5MB for images, 50MB for videos) to prevent Denial of Service (DoS) attacks.
+- Validate File Types: Never trust the user's file extension. Check the magic numbers/mime-type of the file buffer to ensure a malicious user isn't uploading an executable .exe disguised as a .jpg.
+- Use Presigned URLs for Large Files: For large videos or assets, avoid routing the file through your Node.js server entirely. Generate an AWS S3 "presigned URL" in Node.js, send it to the client, and let the frontend upload directly to S3. This keeps your server memory completely clear.
+
+### 72. How do you perform SQL join equivalent in MongoDB?
+MongoDB provides aggregation operators like $lookup to perform SQL equivalent joins.
+
+Syntax:
+```js
+db.collection_1_name.aggregate([
+  {
+    $lookup: {
+      from: "collection_2_name",  // The other collection to join with
+      localField: "field_in_collection_1", // The field on which you want to join
+      foreignField: "field_in_collection_2", // The field from the second collection you want to perform join operation
+      as: "result_field" // The name of the new field to store the joined result
+    }
+  }
+])
+```
+
+Example: 
+
+Say you have order and product collections with data as follows:
+
+“Orders” collection:
+
+```js
+[
+  { "_id": 1, "product_id": 101, "order_amount": 250 },
+  { "_id": 2, "product_id": 102, "order_amount": 300 },
+  { "_id": 3, "product_id": 101, "order_amount": 150 }
+]
+```
+
+“Products” collection:
+
+```js
+[
+   { "_id": 3789, "product_id": 102, "product_price": $100},
+   { "_id": 3970, "product_id": 103, "product_price": $297},
+   { "_id": 3509, "product_id": 101, "product_price": $300},
+]
+```
+
+Join operation:
+
+```js
+db.orders.aggregate([
+  {
+    $lookup: {
+      from: "products",              
+      localField: "customer_id",       
+      foreignField: "_id",             
+      as: "customer_info"             
+    }
+  }
+])
+```
+
+### 75. What is Change Stream?
+
+Change Stream listens to changes in collection.
+
+Use cases:
+
+- real-time notifications
+- sync systems
+- audit logs
+
+Example:
+
+```js
+db.orders.watch();
+```
+
+### 78. Explain Time Series Collections.
+
+Time Series collections store time-based data.
+
+Use cases:
+
+- IoT data
+- metrics
+- logs
+- stock prices
+
+Example:
+
+```text
+temperature readings every minute
+```
+
+### 79. Explain Wildcard Indexes.
+
+Wildcard index indexes many fields dynamically.
+
+Example:
+
+```js
+db.products.createIndex({ "$**": 1 });
+```
+
+Useful when document fields are flexible.
+
+But do not use everywhere blindly because it can increase index size.
+
+### 80. What are Retryable Writes?
+
+Retryable writes allow MongoDB driver to retry certain write operations if network error happens.
+
+Simple meaning:
+
+```text
+If temporary network issue happens, driver can safely retry the write.
+```
+
+## Section 7: Scenario-Based Questions
+
+### 81. Your query takes 10 seconds. How do you debug it?
+
+Step-by-step:
+
+1. Run `explain("executionStats")`.
+2. Check if it uses `COLLSCAN` or `IXSCAN`.
+3. Check `totalDocsExamined`.
+4. Check if filter/sort fields have index.
+5. Use projection.
+6. Check if aggregation stages are in good order.
+7. Check server CPU/memory.
+8. Check if query returns too much data.
+
+Short answer:
+
+```text
+I start with explain(), check index usage, documents examined, execution time, sort stage, and then add or adjust indexes based on query pattern.
+```
+
+### 82. A collection has 50 million documents. Pagination is slow. How would you improve it?
+
+Problem:
+
+```js
+db.orders.find().skip(1000000).limit(20);
+```
+
+Large `skip` is slow because MongoDB still walks through skipped records.
+
+Better: cursor-based pagination.
+
+```js
+db.orders.find({
+  _id: { $lt: lastSeenId }
+})
+.sort({ _id: -1 })
+.limit(20);
+```
+
+Add index:
+
+```js
+db.orders.createIndex({ _id: -1 });
+```
+
+### 83. An index exists but MongoDB is not using it. Why?
+
+Possible reasons:
+
+- query does not match index order
+- low selectivity index
+- collection scan is cheaper
+- wrong compound index order
+- query uses different field type
+- sort does not match index
+- index is partial and filter does not match
+
+Debug:
+
+```js
+db.users.find({ email: "a@test.com" }).explain("executionStats");
+```
+
+### 84. A document exceeds the 16 MB limit. What would you do?
+
+Fix:
+
+- split large arrays into separate collection
+- use references
+- store files in GridFS/object storage
+- keep only summary data in parent document
+
+Example:
+
+```text
+Do not store all comments inside post if comments can grow forever.
+```
+
+### 85. Write operations have become slow after adding several indexes. Why?
+
+Because every write must update all indexes.
+
+Fix:
+
+- remove unused indexes
+- keep only query-needed indexes
+- check index usage
+- avoid indexing fields with low value
+
+### 86. How would you design a chat application's database?
+
+Collections:
+
+```text
+users
+conversations
+messages
+```
+
+Conversation:
+
+```json
+{
+  "_id": ObjectId("conversation_id"),
+  "participantIds": ["user1", "user2"],
+  "lastMessage": "Hello",
+  "updatedAt": "Date"
+}
+```
+
+Message:
+
+```json
+{
+  "conversationId": ObjectId("conversation_id"),
+  "senderId": ObjectId("user_id"),
+  "text": "Hello",
+  "createdAt": "Date",
+  "readBy": []
+}
+```
+
+Indexes:
+
+```js
+db.messages.createIndex({ conversationId: 1, createdAt: -1 });
+db.conversations.createIndex({ participantIds: 1, updatedAt: -1 });
+```
+
+### 87. How would you store product reviews?
+
+If reviews are many, store in separate collection.
+
+Product:
+
+```json
+{
+  "_id": ObjectId("product_id"),
+  "name": "Laptop",
+  "averageRating": 4.5,
+  "reviewCount": 120
+}
+```
+
+Review:
+
+```json
+{
+  "productId": ObjectId("product_id"),
+  "userId": ObjectId("user_id"),
+  "rating": 5,
+  "comment": "Good",
+  "createdAt": "Date"
+}
+```
+
+Index:
+
+```js
+db.reviews.createIndex({ productId: 1, createdAt: -1 });
+```
+
+### 88. How would you design an inventory management system?
+
+Collections:
+
+```text
+products
+warehouses
+inventory
+stock_movements
+```
+
+Inventory:
+
+```json
+{
+  "productId": ObjectId("product_id"),
+  "warehouseId": ObjectId("warehouse_id"),
+  "quantity": 100
+}
+```
+
+Stock movement:
+
+```json
+{
+  "productId": ObjectId("product_id"),
+  "warehouseId": ObjectId("warehouse_id"),
+  "type": "OUT",
+  "quantity": 2,
+  "createdAt": "Date"
+}
+```
+
+### 89. Users frequently search by name and email. What indexes would you create?
+
+If exact email search:
+
+```js
+db.users.createIndex({ email: 1 }, { unique: true });
+```
+
+If name search:
+
+```js
+db.users.createIndex({ name: 1 });
+```
+
+If searching both:
+
+```js
+db.users.createIndex({ name: 1, email: 1 });
+```
+
+For text search:
+
+```js
+db.users.createIndex({ name: "text", email: "text" });
+```
+
+### 90. How would you migrate data from SQL to MongoDB?
+
+Step-by-step:
+
+1. Understand SQL tables and relationships.
+2. Identify read patterns.
+3. Decide embed vs reference.
+4. Export SQL data.
+5. Transform rows into MongoDB documents.
+6. Import into MongoDB.
+7. Create indexes.
+8. Validate counts and sample records.
+9. Run both systems in parallel if needed.
+10. Switch traffic carefully.
+
+## Section 8: Coding Query Questions
+
+### 91. Find duplicate documents by email.
+
+```js
+db.users.aggregate([
+  {
+    $group: {
+      _id: "$email",
+      count: { $sum: 1 },
+      ids: { $push: "$_id" }
+    }
+  },
+  { $match: { count: { $gt: 1 } } }
+]);
+```
+
+### 92. Remove duplicate documents by email.
+
+Keep first document and delete remaining duplicates.
+
+```js
+db.users.aggregate([
+  {
+    $group: {
+      _id: "$email",
+      ids: { $push: "$_id" },
+      count: { $sum: 1 }
+    }
+  },
+  { $match: { count: { $gt: 1 } } }
+]).forEach((doc) => {
+  doc.ids.shift();
+  db.users.deleteMany({ _id: { $in: doc.ids } });
+});
+```
+
+### 93. Return the top 5 highest-paid employees.
+
+```js
+db.employees.find()
+  .sort({ salary: -1 })
+  .limit(5);
+```
+
+### 94. Find the second-highest salary.
+
+```js
+db.employees.find()
+  .sort({ salary: -1 })
+  .skip(1)
+  .limit(1);
+```
+
+For distinct salaries:
+
+```js
+db.employees.aggregate([
+  { $group: { _id: "$salary" } },
+  { $sort: { _id: -1 } },
+  { $skip: 1 },
+  { $limit: 1 }
+]);
+```
+
+### 95. Count users by city.
+
+```js
+db.users.aggregate([
+  {
+    $group: {
+      _id: "$city",
+      totalUsers: { $sum: 1 }
+    }
+  }
+]);
+```
+
+### 96. Calculate monthly sales.
+
+```js
+db.orders.aggregate([
+  { $match: { status: "paid" } },
+  {
+    $group: {
+      _id: {
+        year: { $year: "$createdAt" },
+        month: { $month: "$createdAt" }
+      },
+      totalSales: { $sum: "$amount" }
+    }
+  },
+  { $sort: { "_id.year": 1, "_id.month": 1 } }
+]);
+```
+
+### 97. Join Orders and Users using $lookup.
+
+```js
+db.orders.aggregate([
+  {
+    $lookup: {
+      from: "users",
+      localField: "customerId",
+      foreignField: "_id",
+      as: "customer"
+    }
+  },
+  { $unwind: "$customer" }
+]);
+```
+
+### 98. Flatten nested arrays using $unwind.
+
+```js
+db.orders.aggregate([
+  { $unwind: "$items" },
+  {
+    $project: {
+      orderId: 1,
+      productName: "$items.name",
+      quantity: "$items.quantity"
+    }
+  }
+]);
+```
+
+### 99. Calculate average ratings.
+
+```js
+db.reviews.aggregate([
+  {
+    $group: {
+      _id: "$productId",
+      averageRating: { $avg: "$rating" },
+      reviewCount: { $sum: 1 }
+    }
+  }
+]);
+```
+
+### 100. Find products never ordered.
+
+```js
+db.products.aggregate([
+  {
+    $lookup: {
+      from: "orders",
+      localField: "_id",
+      foreignField: "items.productId",
+      as: "orders"
+    }
+  },
+  { $match: { orders: { $size: 0 } } }
+]);
+```
+
+### 101. Implement pagination with sorting.
+
+Basic pagination:
+
+```js
+db.orders.find()
+  .sort({ createdAt: -1 })
+  .skip(20)
+  .limit(10);
+```
+
+Better cursor pagination:
+
+```js
+db.orders.find({
+  createdAt: { $lt: lastCreatedAt }
+})
+.sort({ createdAt: -1 })
+.limit(10);
+```
+
+Index:
+
+```js
+db.orders.createIndex({ createdAt: -1 });
+```
+
+### 102. Return latest order per customer.
+
+```js
+db.orders.aggregate([
+  { $sort: { createdAt: -1 } },
+  {
+    $group: {
+      _id: "$customerId",
+      latestOrder: { $first: "$$ROOT" }
+    }
+  }
+]);
+```
+
+### 103. Update nested array elements.
+
+```js
+db.orders.updateOne(
+  { _id: orderId },
+  { $set: { "items.$[item].status": "cancelled" } },
+  {
+    arrayFilters: [
+      { "item.productId": productId }
+    ]
+  }
+);
+```
+
+### 104. Delete duplicate emails.
+
+```js
+db.users.aggregate([
+  {
+    $group: {
+      _id: "$email",
+      ids: { $push: "$_id" },
+      count: { $sum: 1 }
+    }
+  },
+  { $match: { count: { $gt: 1 } } }
+]).forEach((user) => {
+  user.ids.shift();
+  db.users.deleteMany({ _id: { $in: user.ids } });
+});
+```
+
+### 105. Find users inactive for the last 6 months.
+
+```js
+db.users.find({
+  lastLoginAt: {
+    $lt: new Date(new Date().setMonth(new Date().getMonth() - 6))
+  }
+});
+```
+
+## Section 9: App-Specific MongoDB Notes
+
+### 106. Explain MongoDB design of this MERN app.
+
+This app has collections like:
+
+```text
+accounts
+users
+userprofiles
+skills
+userskills
+teams
+teammemberships
+otptokens
+```
+
+Simple design:
+
+- `accounts` handles login/auth.
+- `users` stores managed users.
+- `userprofiles` stores extra user profile details.
+- `skills` stores skill master data.
+- `userskills` connects users and skills.
+- `teams` stores team details.
+- `teammemberships` connects users and teams.
+- `otptokens` stores temporary OTP data.
+
+### 107. How Account and User are related?
+
+Account is for authentication.
+
+User is business data managed inside app.
+
+This separation is useful because login identity and managed user records are different concepts.
+
+### 108. How User and Skill are related?
+
+User and Skill are many-to-many.
+
+One user can have many skills.
+
+One skill can belong to many users.
+
+Use join collection:
+
+```text
+userskills
+```
+
+### 109. Why use indexes in this app?
+
+Indexes help:
+
+- prevent duplicate email
+- speed up search
+- speed up filters
+- speed up joins
+- improve pagination
+
+Example:
+
+```js
+db.users.createIndex({ ownerAccountId: 1, email: 1 }, { unique: true });
+```
+
+### 110. Why use TTL index for OTP tokens?
+
+OTP should expire automatically.
+
+Example:
+
+```js
+db.otptokens.createIndex(
+  { createdAt: 1 },
+  { expireAfterSeconds: 300 }
+);
+```
+
+This removes old OTP records after 5 minutes.
+
+NEW QUESTIONSSSSSSSSS
+==========================
 
 ### 58. 
 
