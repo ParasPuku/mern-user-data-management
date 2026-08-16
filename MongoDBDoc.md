@@ -86,21 +86,29 @@ MongoDB is a NoSQL document-oriented database. It stores data as flexible BSON d
 
 ### 2. Why would you choose MongoDB over SQL databases?
 
-Choose MongoDB when:
+1. Data Structure: 
+- SQL uses fixed tables, rows, and columns. 
+- MongoDB stores data as JSON-like documents.
 
-- data is document-shaped
-- data structure changes frequently
-- nested data is common
-- application needs fast reads
-- horizontal scaling is important
-- schema flexibility is needed
+2. Schema Flexibility: 
+- SQL requires a strict schema defined upfront. 
+- MongoDB allows dynamic schemas where fields vary by document.
 
-SQL is better when:
+3. Data Relationships: 
+- SQL links tables together using foreign keys and JOIN operations. 
+- MongoDB prefers nesting related data inside a single document.
 
-- data is highly relational
-- strong joins are required
-- strict schema is important
-- complex transactions are common
+4. Scalability: 
+- SQL scales vertically by adding power to a single server. 
+- MongoDB scales horizontally by distributing data across multiple servers.
+
+5. Query Language: 
+- SQL uses a standard declarative query language. 
+- MongoDB uses object-oriented queries written in JSON syntax.
+
+6. Data Integrity: 
+- SQL prioritizes strict transactional consistency (ACID compliance). 
+- MongoDB prioritizes high speed and continuous availability.
 
 Simple example:
 
