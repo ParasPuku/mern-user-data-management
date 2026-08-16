@@ -407,35 +407,6 @@ Interview answer:
 References store ObjectId of another document. They are useful when data is large, shared, or should be managed separately.
 ```
 
-### 9. What is schema validation?
-
-MongoDB is flexible, but we can still add validation rules.
-
-Schema validation means MongoDB checks document structure before saving.
-
-Example:
-
-```js
-db.createCollection("users", {
-  validator: {
-    $jsonSchema: {
-      bsonType: "object",
-      required: ["name", "email"],
-      properties: {
-        name: { bsonType: "string" },
-        email: { bsonType: "string" }
-      }
-    }
-  }
-});
-```
-
-Simple meaning:
-
-```text
-Validation prevents bad or incomplete data from entering the collection.
-```
-
 ## Section 2: Schema Design
 
 ### 11. When should you embed documents?
