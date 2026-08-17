@@ -1819,7 +1819,7 @@ Key Differences Checklist
 
 
 ### 59. What is Populate in mongodb? How it works with an example?
-In MongoDB, Populate is a feature in Mongoose (a popular Node.js tool) that lets you reference documents in other collections.
+In MongoDB, Populate is a feature in Mongoose (a popular Node.js tool) that allows you to reference documents in other collections.
 
 MongoDB is a document database. It does not use traditional SQL "joins." Instead, it uses references (like storing an ID). Populate is the tool that automatically replaces those IDs with the actual data from the referenced document.
 
