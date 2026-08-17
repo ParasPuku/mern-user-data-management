@@ -811,31 +811,66 @@ db.users.insertMany([
 ```
 
 ### 22. Difference between updateOne() and replaceOne().
+The core difference is that updateOne modifies specific fields inside an existing document, while replaceOne completely overwrites the entire document with a brand-new one (keeping only the original _id).
 
-`updateOne()` updates selected fields.
+updateOne - <br/>
+- What it does: Updates or adds specific fields.
+- Atomic Operator: Yes (e.g., $set, $inc).
+- Unmentioned Fields: Remain untouched.
+- The _id Field: Stays exactly the same.
+
+replaceOne - <br/>
+- What it does: Replaces the whole document.
+- Atomic Operator: No (takes a direct object).
+- Unmentioned Fields: Are completely deleted.
+- The _id Field: Stays exactly the same.
+
+How They Work (With Examples)<br/>
+Imagine you have this user document in your MongoDB database:
+
+```js
+{
+  "_id": 1,
+  "name": "Alice",
+  "age": 30,
+  "role": "admin"
+}
+```
+
+1. Using updateOne
+You want to change Alice's age to 31. You must use an operator like $set:
 
 ```js
 db.users.updateOne(
-  { email: "paras@example.com" },
-  { $set: { city: "Bangalore" } }
-);
+  { _id: 1 },
+  { $set: { age: 31 } }
+)
 ```
 
-`replaceOne()` replaces the full document except `_id`.
+Result: Only the age changes. The name and role fields are safe.
+
+```js
+{ "_id": 1, "name": "Alice", "age": 31, "role": "admin" }
+```
+
+2. Using replaceOne<br/>
+You pass a whole new document to swap out the old one. No operators like $set are allowed:
 
 ```js
 db.users.replaceOne(
-  { email: "paras@example.com" },
-  { name: "Paras", city: "Bangalore" }
-);
+  { _id: 1 },
+  { name: "Alice", age: 31 }
+)
+```
+- Result: The database drops the old document and saves this new one under the same _id. Because role was missing from your new object, it is now gone.
+
+```js
+{ "_id": 1, "name": "Alice", "age": 31 }
 ```
 
-Simple rule:
-
-```text
-Use updateOne for field updates.
-Use replaceOne when you want to replace the whole document.
-```
+When to use which?
+- Use db.collection.updateOne() when you only want to tweak a few values or add a new field without breaking anything else.
+- Use db.collection.replaceOne() when you are reshaping the entire data structure or matching a completely new payload from a web form.
 
 ### 23. Difference between deleteOne() and deleteMany().
 
