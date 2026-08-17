@@ -1901,56 +1901,6 @@ Mongoose automatically fetches the user data and embeds it directly into your qu
 }
 ```
 
-### 64. How to find a slow queries in mongodb?
-To find slow queries in MongoDB, you can use the Database Profiler, check the MongoDB server logs, or analyze active requests using the $currentOp aggregation stage. By default, MongoDB logs any query that takes longer than 100 milliseconds to execute.
-
-Here is how to use each method to identify slow operations.
-
-1. The Visual Way: Use MongoDB Atlas Query Profiler<br/>
-If you host your database on MongoDB Atlas (the official cloud service), you do not need to write any code.
-- Log into your Atlas Account.
-- Select your database Cluster.
-- Click on the Query Insights tab.
-- Click Query Profiler to see a visual chart of your slowest queries.
-
-2. The Built-in Way: Use the Database Profiler
-If you are managing MongoDB yourself, you can tell the database to automatically record slow queries into a hidden system list.
-Open your MongoDB shell and follow these steps:
-
-1. Turn on the profiler:<br/>
-Run this command to log any query that takes longer than 100 milliseconds:
-
-```js
-db.setProfilingLevel(1, { slowms: 100 })
-```
-
-2. View the slowest query:<br/>
-Run this to find the single slowest query recorded:
-
-```js
-db.system.profile.find().sort({ millis: -1 }).limit(1)
-```
-
-3. Turn it off when done:<br/>
-Profiling uses server memory, so turn it off when you finish troubleshooting:
-```js
-db.setProfilingLevel(0)
-```
-
-3. The Live Check: See What is Slow Right Now<br/>
-If your database is currently freezing up and you want to see what active query is causing the bottleneck, run this command:
-```js
-db.currentOp({"secs_running": {$gte: 5}})
-```
-
-What to Look for Inside a Slow Query?<br/>
-When you extract a slow query using the methods above, look for these two red flags:
-
-- COLLSCAN: This means MongoDB had to do a "Collection Scan," reading every single document in your database because it couldn't find an index.
-- High docsExamined vs Low nreturned: This means MongoDB had to look through thousands of documents just to give you back 1 or 2 results.
-
-The Fix: In 90% of cases, you can fix a slow query instantly by creating an Index on the fields you are searching by.
-
 ### 54. How to query a document in MongoDB?
 In MongoDB, you can query documents using the find() method. To query all documents in a collection, use db.collection_name.find(). The find method has two input parameters: query and projection. The query parameter is used to filter documents that match a specific condition. 
 
@@ -2476,6 +2426,56 @@ Horizontal Scaling and Architecture<br/>
 - Implement sharding only when a single replica set hits storage limits or CPU/write bottlenecks that vertical scaling cannot solve.
 - Choose a high-cardinality shard key that aligns tightly with your read and write access patterns to avoid data hotspots.
 - Utilize hashed sharding to distribute uniform write traffic evenly across shards, or range sharding if your application relies heavily on bounded range queries.
+
+### 64. How to find a slow queries in mongodb?
+To find slow queries in MongoDB, you can use the Database Profiler, check the MongoDB server logs, or analyze active requests using the $currentOp aggregation stage. By default, MongoDB logs any query that takes longer than 100 milliseconds to execute.
+
+Here is how to use each method to identify slow operations.
+
+1. The Visual Way: Use MongoDB Atlas Query Profiler<br/>
+If you host your database on MongoDB Atlas (the official cloud service), you do not need to write any code.
+- Log into your Atlas Account.
+- Select your database Cluster.
+- Click on the Query Insights tab.
+- Click Query Profiler to see a visual chart of your slowest queries.
+
+2. The Built-in Way: Use the Database Profiler
+If you are managing MongoDB yourself, you can tell the database to automatically record slow queries into a hidden system list.
+Open your MongoDB shell and follow these steps:
+
+1. Turn on the profiler:<br/>
+Run this command to log any query that takes longer than 100 milliseconds:
+
+```js
+db.setProfilingLevel(1, { slowms: 100 })
+```
+
+2. View the slowest query:<br/>
+Run this to find the single slowest query recorded:
+
+```js
+db.system.profile.find().sort({ millis: -1 }).limit(1)
+```
+
+3. Turn it off when done:<br/>
+Profiling uses server memory, so turn it off when you finish troubleshooting:
+```js
+db.setProfilingLevel(0)
+```
+
+3. The Live Check: See What is Slow Right Now<br/>
+If your database is currently freezing up and you want to see what active query is causing the bottleneck, run this command:
+```js
+db.currentOp({"secs_running": {$gte: 5}})
+```
+
+What to Look for Inside a Slow Query?<br/>
+When you extract a slow query using the methods above, look for these two red flags:
+
+- COLLSCAN: This means MongoDB had to do a "Collection Scan," reading every single document in your database because it couldn't find an index.
+- High docsExamined vs Low nreturned: This means MongoDB had to look through thousands of documents just to give you back 1 or 2 results.
+
+The Fix: In 90% of cases, you can fix a slow query instantly by creating an Index on the fields you are searching by.
 
 ### 57. How to optimize MongoDB queries performance?
 To optimize MongoDB queries, you can use the following techniques:
