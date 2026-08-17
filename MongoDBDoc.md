@@ -852,12 +852,29 @@ db.users.deleteMany({ status: "inactive" });
 ```
 
 ### 24. Difference between find() and findOne().
+The primary difference between find() and findOne() in MongoDB is that find() returns a cursor pointing to all matching documents, while findOne() directly returns only the first document that matches the query.
+
+The comparison formatted as clear lists for easy scanning.
+
+db.collection.find()
+- Return Type: A cursor object (iterable array of object).
+- Match Count: Returns all matching documents.
+- If No Match: Returns an empty cursor (evaluates to true).
+- Memory/Execution: Lazy loading; retrieves data as you iterate.
+- Cursor Methods: Supports .limit(), .skip(), and .sort().
 
 `find()` returns a cursor with multiple documents.
 
 ```js
 db.users.find({ city: "Bangalore" });
 ```
+
+db.collection.findOne()
+- Return Type: A single document object.
+- Match Count: Returns only the first matching document.
+- If No Match: Returns null (evaluates to false).
+- Memory/Execution: Immediate execution; stops scanning after 1 match.
+- Cursor Methods: Does not support cursor modifiers.
 
 `findOne()` returns one document or `null`.
 
