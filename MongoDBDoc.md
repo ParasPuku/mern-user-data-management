@@ -1293,7 +1293,7 @@ Why Use a Replica Set?<br/>
 
 
 ### 57. What is Views in MongoDb? How it works with an exmpale?
-A View in MongoDB is a saved query that acts like a virtual table. It does not store physical data. When you call a view, MongoDB runs the underlying aggregation pipeline on a source collection to return live data.
+A View is a saved query that works like a virtual table in the database. It does not store physical data. When you call a view, MongoDB runs the underlying aggregation pipeline on a source collection to return live data.
 
 How Views Work?
 - Virtual Only: A view does not store data on your disk.
