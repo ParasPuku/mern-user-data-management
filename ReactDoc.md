@@ -10451,3 +10451,92 @@ Why Companies Build PWAs (Key Benefits)
 - Lightweight: PWAs typically take up less than 1MB of device storage, compared to native apps that can easily require 50MB to 200MB.
 - Hardware Access: Modern PWAs can access device features like the camera, GPS, microphone, Bluetooth, and biometric login (FaceID/TouchID).
 
+### 121. What is the difference between Axios and Fetch?
+The fundamental difference is that Fetch is a built-in browser API, while Axios is a third-party JavaScript library that needs to be installed.
+
+Neither is globally "better." Fetch is ideal for small, modern applications where keeping the bundle size small is critical. Axios is better for large, enterprise-scale projects that require automated features like request interception, unified error handling, and cross-browser backward compatibility.
+
+Core Structural Differences<br/>
+Installation
+- Fetch: Native to modern browsers. No installation or setup required.
+- Axios: Third-party package. Requires installation via npm or yarn.
+
+Data Transformation
+- Fetch: Requires a manual two-step process. You must call .json() on the response object.
+- Axios: Automatically transforms response data into a JavaScript object.
+
+Error Handling
+- Fetch: Does not reject on HTTP error status codes (like 404 or 500). It only rejects on network failure.
+- Axios: Automatically rejects the promise if the status code falls outside the 2xx range.
+
+Interceptors
+- Fetch: Lacks built-in support. Global request/response modification requires rewriting the global fetch function.
+- Axios: Provides native interceptors to easily inject auth tokens or log traffic globally.
+
+Timeout Support
+- Fetch: Requires configuring an external AbortController instance to cancel hanging requests.
+- Axios: Includes a simple, native timeout configuration property out of the box.
+
+Request Cancellation
+- Fetch: Uses the AbortController API natively.
+- Axios: Supports cancellation via AbortController or its own legacy CancelToken API.
+
+Which One to Choose Where?<br/>
+Choose Fetch if:<br/>
+- You want to minimize bundle size: Serverless functions, performance-critical landing pages, or lightweight applications benefit from zero external dependencies.
+- You are writing a quick script: For basic API calls without a build step, Fetch works instantly in any modern browser console or Node.js environment.
+- You prefer standard web APIs: Using Fetch keeps your codebase closely aligned with evolution in standard browser specifications.
+
+Choose Axios if:<br/>
+- You need global authorization headers: Large enterprise apps that require sending a JWT token with every single request benefit from Axios interceptors.
+- You want robust error handling: Applications with complex error monitoring can catch 4xx and 5xx errors globally in a single catch block.
+- You are tracking download/upload progress: Apps featuring user file uploads require Axios to track progress percentages natively via onUploadProgress.
+- You need older browser compatibility: If your application must support legacy environments, Axios handles cross-browser inconsistencies under the hood.
+
+### 122. What is the difference between GraphQL and RESTFul api?
+The core difference is that REST revolves around fixed resources across multiple URL endpoints, while GraphQL allows clients to request exactly the data they need from a single endpoint.
+
+Neither technology is universally "better"; they serve different architectural goals. REST prioritizes simplicity, standardized caching, and strict separation of concerns, whereas GraphQL prioritizes developer agility, flexible queries, and efficient front-end data fetching.
+
+The primary difference between RESTful and GraphQL APIs is how data is structured and transferred: RESTful APIs revolve around rigid, server-defined endpoints where each resource has its own URL, while GraphQL utilizes a single flexible endpoint that allows the client to request the exact data fields it needs.
+
+The core structural differences between RESTful APIs and GraphQL:
+Data Fetching
+- REST: Server defines fixed data payloads, leading to over-fetching or under-fetching.
+- GraphQL: Client specifies exactly what it needs, eliminating wasted data transfer.
+
+Endpoints
+- REST: Utilizes multiple distinct URLs for different resources (e.g., /users, /posts).
+- GraphQL: Operates entirely through a single endpoint (typically /graphql).
+
+Network Requests
+- REST: Requires multiple roundtrips to the server to gather related resources.
+- GraphQL: Consolidates complex, nested relationships into one single request.
+
+Caching
+- REST: Leverages native, out-of-the-box HTTP caching at the browser and network level.
+- GraphQL: Requires complex, custom client-side setups using libraries like Apollo.
+
+Type Safety
+- REST: Lacks built-in typing, relying on external documentation like OpenAPI/Swagger.
+- GraphQL: Features a strict, strongly-typed schema that acts as a contract.
+
+Versioning
+- REST: Requires explicit version control built directly into the URL path (e.g., /v1/).
+- GraphQL: Evolves seamlessly without versions by deprecating or adding individual fields.
+
+Which One to Choose Where?<br/>
+Choose RESTful APIs if:<br/>
+- You need robust, built-in caching: Apps with heavy, repetitive read operations (like a standard content blog or news site) benefit immensely from native HTTP proxy caching.
+- You are building public APIs: If your API is meant for third-party consumption, developers universally understand REST conventions.
+- Your data is flat and non-relational: If your resources are highly isolated and map strictly to standard CRUD operations, REST keeps the backend simple.
+- File uploading is a core feature: REST handles binary files and multipart form data natively without additional plugins.
+
+Choose GraphQL if:<br/>
+- You are building a complex mobile or web app: Front-end designs change rapidly. GraphQL allows UI teams to modify the data shape without needing a backend engineer to rewrite endpoints.
+- Your network conditions are strictly limited: Mobile apps running on slow networks can aggregate nested data into one single, minimized network request.
+- You are dealing with deeply relational data: If you need to fetch a user, their 10 most recent posts, and the comments on those posts simultaneously, GraphQL prevents the N+1 database problem.
+- You need real-time streaming: GraphQL features native "Subscriptions" via WebSockets to stream automated data updates instantly to the user.
+
+
+
