@@ -10520,7 +10520,7 @@ Caching
 - GraphQL: Requires complex, custom client-side setups using libraries like Apollo.
 
 Type Safety
-- REST: Lacks built-in typing, relying on external documentation like OpenAPI/Swagger.
+- REST: Weakly typed; schema definitions are optional, relying on external documentation like OpenAPI/Swagger.
 - GraphQL: Features a strict, strongly-typed schema that acts as a contract.
 
 Versioning
