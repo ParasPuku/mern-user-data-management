@@ -2710,9 +2710,12 @@ PM2 is a production-grade, open-source Process Manager for Node.js applications.
 
 In production, developers rarely write custom cluster-module code. Instead, they use PM2 to handle clustering automatically via configuration.
 
-1. Automatic Load BalancingPM2 shares the network ports between all workers and uses a round-robin algorithm to distribute incoming HTTP/API requests evenly. Your code does not change at all.
+1. Automatic Load Balancing<br/>
+PM2 shares the network ports between all workers and uses a round-robin algorithm to distribute incoming HTTP/API requests evenly. Your code does not change at all.
 
-2. Self-Healing & Zero DowntimeAuto-Restart: If a worker process crashes due to an unhandled error or a memory leak, PM2 instantly kills it and spawns a new one.Hot Reloading: When you update your code, PM2 reloads workers one by one (pm2 reload). Users experience zero downtime because some workers stay online while others restart.
+2. Self-Healing & Zero Downtime<br/>
+- Auto-Restart: If a worker process crashes due to an unhandled error or a memory leak, PM2 instantly kills it and spawns a new one.
+- Hot Reloading: When you update your code, PM2 reloads workers one by one (pm2 reload). Users experience zero downtime because some workers stay online while others restart.
 
 ### 14. What is load balancing and how it works with an example?
 Load balancing is the process of distributing incoming network traffic evenly across a group of backend servers.
