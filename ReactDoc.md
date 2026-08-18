@@ -10500,7 +10500,7 @@ Neither technology is universally "better"; they serve different architectural g
 
 The primary difference between RESTful and GraphQL APIs is how data is structured and transferred: RESTful APIs revolve around rigid, server-defined endpoints where each resource has its own URL, while GraphQL utilizes a single flexible endpoint that allows the client to request the exact data fields it needs.
 
-The core structural differences between RESTful APIs and GraphQL:
+The core structural differences between RESTful APIs and GraphQL:<br/>
 Data Fetching
 - REST: Server defines fixed data payloads, leading to over-fetching or under-fetching.
 - GraphQL: Client specifies exactly what it needs, eliminating wasted data transfer.
