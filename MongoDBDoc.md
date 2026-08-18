@@ -2115,7 +2115,8 @@ How It Works Without and With an Index<br/>
 
 Key Things to Know<br/>
 - Faster reads: Searching, filtering, and sorting data become much faster.
-- Slower writes: Adding, changing, or deleting data takes a bit more time because MongoDB must update the index too.Uses more space: The database needs extra memory space to store these index lists.
+- Slower writes: Adding, changing, or deleting data takes a bit more time because MongoDB must update the index too.
+- Uses more space: The database needs extra memory space to store these index lists.
 - With an index: MongoDB keeps a small, sorted list of specific fields. It jumps straight to the matching data without checking the rest.
 
 How to Create Core Indexes<br/>
