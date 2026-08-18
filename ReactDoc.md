@@ -10507,6 +10507,10 @@ Endpoints
 - REST: Utilizes multiple distinct URLs for different resources (e.g., /users, /posts).
 - GraphQL: Operates entirely through a single endpoint (typically /graphql).
 
+Operations
+- REST: HTTP Verbs (GET, POST, PUT, DELETE)
+- GraphQL: Query, Mutation, Subscription
+
 Network Requests
 - REST: Requires multiple roundtrips to the server to gather related resources.
 - GraphQL: Consolidates complex, nested relationships into one single request.
