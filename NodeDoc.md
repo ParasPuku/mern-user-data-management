@@ -3302,6 +3302,104 @@ app.listen(PORT, () => {
 });
 ```
 
+Code Explanation - <br/>
+This is a Node.js API Gateway built with Express that sits in front of one or more backend microservices, handling security, rate limiting, authentication, and request routing. Here's a breakdown of each part:
+
+1. Setup and Global Middleware<br/>
+```js
+require('dotenv').config();
+```
+Loads environment variables from a .env file into process.env (things like PORT, JWT_SECRET, service URLs).
+```js
+app.use(helmet());
+app.use(morgan('combined'));
+```
+
+- helmet() sets various HTTP response headers (like X-Content-Type-Options, X-Frame-Options, disabling X-Powered-By, etc.) to guard against common web vulnerabilities such as clickjacking and MIME-sniffing attacks.
+- morgan('combined') logs every incoming HTTP request in the standard Apache "combined" log format — useful for auditing and debugging.
+
+2. Rate Limiting
+```js
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: 'Too many requests, please try again later.' }
+});
+app.use(limiter);
+```
+
+This caps each IP address to 100 requests per 15-minute window. Once exceeded, further requests get a JSON error response instead of reaching any route — a basic defense against abuse or DDoS-style traffic spikes. Since it's applied globally with app.use, it affects every route in the app.
+
+3. JWT Authentication Middleware<br/>
+```js
+const authenticateToken = (req, res, next) => { ... }
+```
+
+This is a reusable middleware function, not applied globally — it's selectively attached to specific routes later. It:
+
+- Reads the Authorization header, expecting the format Bearer <token>.
+- Returns 401 Unauthorized if no token is present.
+- Verifies the token against JWT_SECRET using the jsonwebtoken library.
+- Returns 403 Forbidden if the token is invalid or expired.
+- On success, attaches the decoded payload to req.user and calls next() to proceed to the actual route handler.
+
+4. Route/Proxy Configuration-<br/>
+```js
+const routes = {
+  '/users': { target: process.env.USER_SERVICE_URL, protected: false },
+  '/orders': { target: process.env.ORDER_SERVICE_URL, protected: true }
+};
+```
+
+This defines a simple routing table: incoming paths mapped to backend service URLs, plus whether authentication is required for that route.
+
+5. Dynamic Proxy Registration<br/>
+```js
+Object.entries(routes).forEach(([path, config]) => { ... });
+```
+
+For each entry in the routing table, it builds an http-proxy-middleware instance with:
+
+- target: the backend microservice's base URL.
+- changeOrigin: true: rewrites the Host header to match the target, which many backends require.
+- pathRewrite: strips the gateway prefix, so /users/profile becomes /profile when forwarded to the user service.
+- onError: catches proxy-level failures (e.g., service down) and returns a 502 Bad Gateway JSON error instead of letting the connection hang or crash.
+
+Then it conditionally wires the middleware chain:
+```js
+if (config.protected) {
+  app.use(path, authenticateToken, proxy);
+} else {
+  app.use(path, proxy);
+}
+```
+
+Protected routes run authenticateToken first — if that calls next(), the request proceeds to the proxy; otherwise it's rejected before ever reaching the backend. Public routes skip straight to the proxy.
+
+6. Fallback / 404 Handler<br/>
+```js
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found on Gateway' });
+});
+```
+Any request that doesn't match /users or /orders falls through to this catch-all, returning a JSON 404.
+
+7. Server Start<br/>
+```js
+app.listen(PORT, () => { ... });
+```
+Starts the Express server on the configured port (defaulting to 8000).
+
+Overall architecture
+
+This is a textbook API Gateway pattern: a single entry point that centralizes cross-cutting concerns — logging, security headers, rate limiting, and authentication — before forwarding requests to the appropriate downstream microservice. It decouples clients from knowing about internal service topology, and lets you add/remove backend services just by editing the routes object.
+
+A few things worth noting if you're evaluating or extending this:
+
+- Env var validation: there's no check that USER_SERVICE_URL, ORDER_SERVICE_URL, or JWT_SECRET are actually set before use — if missing, you'd get confusing runtime errors rather than a clear startup failure.
+- Rate limiter scope: it's global rather than per-route, so both public and protected routes share the same 100-req/15-min budget per IP.
+- onError in proxy options: newer versions of http-proxy-middleware (v2+) moved error handling to an on: { error: ... } config shape rather than a top-level onError key — worth double-checking against the installed version, since a mismatch would silently make error handling a no-op.
+
 4. How It Operates <br/>
 - Request Entry: A client sends a request to http://localhost:8000/orders/history.
 - Security & Checking: The Gateway applies Helmet headers, checks the express-rate-limit counter, and validates the client's JWT token.
