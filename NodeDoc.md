@@ -2468,9 +2468,9 @@ The Parts in Detail <br/>
 
 ### 12. What is cluster module in nodejs?
 
-In simple terms, a Node.js cluster is a way to make your application run faster and handle more traffic by duplicating itself across all available cores of your computer's CPU.
-
 The Cluster module is a built-in Node.js feature that allows you to run multiple instances of your application simultaneously to utilize all available CPU cores.
+
+In simple terms, a Node.js cluster is a way to make your application run faster and handle more traffic by duplicating itself across all available cores of your computer's CPU.
 
 Because Node.js runs on a single thread by default, it only uses one CPU core. If your server has 8 cores, 7 of them sit idle. The cluster module solves this limitation.
 
