@@ -2391,6 +2391,26 @@ Worker threads (worker_threads module) allow you to run CPU-intensive tasks on b
 - Communication: Direct or message-based. Communication is much faster because data can be shared directly via shared memory.
 - Best Used For: Heavy CPU-intensive mathematical or data calculations inside Node.js (like image processing, cryptography, or parsing massive JSON objects) without blocking the main event loop.
 
+### 12. is child process derived from worker process or master process?
+A child process is derived from the master process (or main parent process), not from a worker process. In architecture patterns like Node.js clusters, the master process acts as the coordinator that uses methods like fork() to spawn individual worker or child processes.
+
+Process Hierarchy<br/>
+- Master Process: Controls the application, manages resources, and creates child/worker processes.
+- Child/Worker Process: Spawned directly by the master; it runs independently or handles incoming tasks. Workers do not typically spawn subsequent managing master processes.
+
+### 13. is worker thread derived from worker process or master process?
+A worker thread is derived from whichever process initializes it. In most application architectures, it is typically derived from a worker process, though it can legally be spawned by a master process.
+
+How It Works in Practice<br/>
+To understand why it usually comes from the worker process, look at how standard server architectures (like Node.js or Nginx) scale:
+- The Master Process starts up. Its only job is to manage the infrastructure and spawn Worker Processes to utilize multiple CPU cores.
+- The Worker Process accepts incoming network traffic and runs the application logic.
+- The Worker Thread is spawned inside that worker process if a specific, heavy CPU-bound task (like a massive loop or cryptography function) threatens to freeze that specific worker's event loop.
+
+Key Distinction <br/>
+- A Worker Process creates a brand new, isolated environment (new PID, new memory).
+- A Worker Thread is created inside an existing process. It does not create a new process; it simply spins up a new thread of execution that shares the memory of the process that created it.
+
 ### 12. Differrnce between Process Manager, Worker Processes, Child Process, Child Workers. Please explain this in simple terms and with diagram where these comes in the pictures from client side to server side.
 
 - A Process Manager is the main control program on a server. It creates and watches Worker Processes. 
