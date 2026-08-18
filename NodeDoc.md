@@ -2682,7 +2682,11 @@ When NOT to Use It
 To horizontally scale a Node.js application without using the native cluster module, you must look outside a single operating system instance and distribute the workload across multiple individual processes, containers, or servers.
 
 1. Process Managers (PM2)<br/>
-Instead of writing native cluster code, you can use PM2, a production process manager for Node.js.Run your application normally without modifying your source code.Execute the command pm2 start app.js -i max to scale automatically.PM2 handles the creation of instances for every available CPU core behind the scenes.It includes a built-in load balancer to route incoming traffic across those processes.
+Instead of writing native cluster code, you can use PM2, a production process manager for Node.js.
+- Run your application normally without modifying your source code.
+- Execute the command pm2 start app.js -i max to scale automatically.
+- PM2 handles the creation of instances for every available CPU core behind the scenes.
+- It includes a built-in load balancer to route incoming traffic across those processes.
 
 2. Containerization and Orchestration (Docker & Kubernetes)<br/>
 You can scale your application at the infrastructure level by separating your application from the underlying machine hardware.
