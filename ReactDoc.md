@@ -120,7 +120,11 @@ While plain React applications require you to manually choose, install, and conf
 In Next.js, pre-rendering HTML means that the framework automatically generates the HTML for each web page in advance on a server or during a build process, rather than relying on the user's browser to build the page from scratch using client-side JavaScript.
 
 The Core Difference: Next.js vs. Standard React<br/>
-- Standard React (Client-Side Rendering): The server sends a nearly blank HTML file (usually just <div id="root"></div>) and a massive JavaScript file. The user's browser executes the JavaScript to construct the actual text, images, and layout. If a user has slow internet, they see a blank screen or a loading spinner for longer.
+- Standard React (Client-Side Rendering): The server sends a nearly blank HTML file 
+```js
+(usually just <div id="root"></div>) 
+```
+and a massive JavaScript file. The user's browser executes the JavaScript to construct the actual text, images, and layout. If a user has slow internet, they see a blank screen or a loading spinner for longer.
 - Next.js Pre-rendering: The server or build system executes your components beforehand and generates a fully formed HTML file packed with actual text and structure. The browser receives this complete HTML file and displays the visual layout immediately.
 
 The Role of "Hydration" - <br/>
