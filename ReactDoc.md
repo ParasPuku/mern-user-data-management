@@ -116,7 +116,7 @@ We use Next.js instead of plain React because Next.js is a full-stack framework 
 
 While plain React applications require you to manually choose, install, and configure external packages for basic necessities like routing and data fetching, Next.js provides a complete, production-ready environment with minimal setup.
 
-<b>Next.js pre render html means?<b/><br/>
+<b>Next.js pre render html means?</b><br/>
 In Next.js, pre-rendering HTML means that the framework automatically generates the HTML for each web page in advance on a server or during a build process, rather than relying on the user's browser to build the page from scratch using client-side JavaScript.
 
 The Core Difference: Next.js vs. Standard React<br/>
