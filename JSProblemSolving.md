@@ -1255,6 +1255,50 @@ Reverse the string and compare it with the original string.
 
 ---
 
+## 3. Find the longest palindrome word from the given long string.
+```js
+// Find the longest word that is a complete palindrome.
+function findLongestPalindromeWord(str) {
+    let longest = "";
+    const words = str.split(" ");
+    for (const word of words) {
+        const reversed = word.split("").reverse().join("");
+        if (word === reversed && word.length > longest.length) {
+            longest = word;
+        }
+    }
+    return longest;
+}
+const input = "dddds madam aaaaaabaaaaaas mmsd aba";
+console.log(findLongestPalindromeWord(input));
+```
+
+ANOTHER WAY
+
+```js
+function findPalindrome(str) {
+    var longest = "";
+    var newStr = str.split(" ");
+    console.log(newStr)
+    for(var i=0; i<newStr.length; i++) {
+        var result = "";
+        var found = false;
+        for(var j=newStr[i].length-1; j>=0; j--) {
+            result += newStr[i][j];   // build the REVERSED word, char by char
+        }
+        if(newStr[i] === result) {    // compare only AFTER the reverse is fully built
+            console.log("palindrome found:", newStr[i]);
+            found = true;
+        }
+        if(found && newStr[i].length > longest.length) {
+            longest = newStr[i];
+        }
+    }
+    return longest;
+}
+console.log(findPalindrome("dddd madam aaaaaabaaaaaa mmsd"))
+```
+
 ## 3. Count Vowels In A String
 
 ### Question
