@@ -1290,7 +1290,7 @@ function findPalindrome(str) {
             console.log("palindrome found:", newStr[i]);
             found = true;
         }
-        if(found && newStr[i].length > longest.length) {
+        if(found && result.length > longest.length) {
             longest = newStr[i];
         }
     }
