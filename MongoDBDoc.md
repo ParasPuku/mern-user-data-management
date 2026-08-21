@@ -917,6 +917,179 @@ db.collection.findOne()
 db.users.findOne({ email: "paras@example.com" });
 ```
 
+### 25. Explain `$match` vs `$project` vs `$group`.
+`$match` filters documents (like WHERE), `$project` reshapes/selects fields (like SELECT), `$group` aggregates by a key (like GROUP BY).
+
+Core Differences<br/>
+- $match (The Filter): Acts like a WHERE clause in SQL. It passes only matching documents to the next stage. Use this first to speed up your pipeline.
+- $project (The Shaper): Acts like a SELECT clause in SQL. It adds, removes, or renames fields. It changes the look of individual documents.
+- $group (The Aggregator): Acts like a GROUP BY clause in SQL. It combines multiple documents into a single summary document, often computing totals or averages.
+
+The Example<br/>
+Imagine a sales collection with these three documents:
+
+```js
+[
+  { "_id": 1, "product": "Laptop", "category": "Electronics", "price": 1000, "status": "completed" },
+  { "_id": 2, "product": "Phone", "category": "Electronics", "price": 500, "status": "completed" },
+  { "_id": 3, "product": "Desk", "category": "Furniture", "price": 300, "status": "pending" }
+]
+```
+
+The Pipeline<br/>
+We want to find only completed sales, calculate the total revenue for each category, and format the final output.
+
+```js
+db.sales.aggregate([
+  // 1. FILTER: Keep only completed sales
+  { $match: { status: "completed" } },
+
+  // 2. AGGREGATE: Group by category and sum the prices
+  { $group: { _id: "$category", totalRevenue: { $sum: "$price" } } },
+
+  // 3. SHAPE: Clean up the output fields
+  { $project: { _id: 0, category: "$_id", totalRevenue: 1 } }
+])
+```
+
+Step-by-Step Data Transformation<br/>
+1. After $match: The "Desk" document is discarded because its status is pending.
+
+```js
+[
+  { "product": "Laptop", "category": "Electronics", "price": 1000, "status": "completed" },
+  { "product": "Phone", "category": "Electronics", "price": 500, "status": "completed" }
+]
+```
+
+2. After $group: The remaining documents are grouped by category. Their prices are added together (1000 + 500 = 1500).
+
+```js
+[
+  { "_id": "Electronics", "totalRevenue": 1500 }
+]
+```
+
+3. After $project: The default _id field is hidden, and a new category field takes its place for cleaner reading.
+
+```js
+[
+  { "category": "Electronics", "totalRevenue": 1500 }
+]
+```
+
+### 26. What is `$unwind` used for?
+Deconstructs an array field into multiple documents, one per array element.
+
+$unwind is used to deconstruct an array field from an input document to output a separate document for each element in that array. Think of it as flattening or exploding an array so you can work with individual items.
+
+How It Works<br/>
+If a single document contains an array with three items, running $unwind on that array field will split that single document into three separate, identical documents—except the array field is replaced by just one item per document.
+
+The Example<br/>
+Imagine a orders collection with a document containing an array of items:
+
+```js
+{
+  "_id": 101,
+  "customer": "Alice",
+  "items": ["Laptop", "Mouse", "Keyboard"]
+}
+```
+
+The Pipeline<br/>
+We want to separate this single order into three individual rows to analyze each item separately.
+
+```js
+db.orders.aggregate([
+  { $unwind: "$items" }
+])
+```
+
+The Output<br/>
+MongoDB duplicates the parent document data for each element in the array:
+
+```js
+[
+  { "_id": 101, "customer": "Alice", "items": "Laptop" },
+  { "_id": 101, "customer": "Alice", "items": "Mouse" },
+  { "_id": 101, "customer": "Alice", "items": "Keyboard" }
+]
+```
+
+Common Use Cases<br/>
+- Aggregating Array Data: If you want to calculate the total price of all items sold across all orders, you must $unwind the items array first to use $group and $sum on them.
+- Filtering Array Elements: Standard $match filters documents, not array elements. To filter out specific items inside an array, you $unwind the array, run $match on the items, and optionally rebuild the array using $group with $push.
+- Normalization: Preparing embedded data for relational-style reporting or exporting to a CSV.
+
+Pro Tip: Handling Empty Arrays<br/>
+By default, if a document has an empty array, a null array, or is missing the array field entirely, $unwind will discard that document.
+
+To prevent losing those documents, use the preserveNullAndEmptyArrays option:
+```js
+{
+  $unwind: {
+    path: "$items",
+    preserveNullAndEmptyArrays: true
+  }
+}
+```
+
+### 27. How do aggregation pipelines handle large datasets that exceed memory limits?
+MongoDB handles aggregation pipelines that exceed memory limits by enforcing a strict 100 MB RAM limit per stage and providing a mechanism to spill data to temporary disk files. If a stage exceeds this memory threshold without disk fallback enabled, the entire query will fail with an error.
+
+1. The allowDiskUse Option (The Primary Solution)<br/>
+By default, if a single pipeline stage (like $group, $sort, or $setWindowFields) consumes more than 100 MB of memory, MongoDB aborts the operation and returns an error. To prevent this, you must explicitly allow MongoDB to use the server's hard drive as temporary swap space.
+
+How to use it in code:<br/>
+```js
+db.orders.aggregate(
+  [
+    { $group: { _id: "$customer", total: { $sum: "$price" } } },
+    { $sort: { total: -1 } }
+  ],
+  { allowDiskUse: true } // Enables spilling to temporary disk files
+)
+```
+
+The Performance Trade-off<br/>
+While allowDiskUse: true prevents your queries from crashing, spilling data to disk is significantly slower than processing it in RAM. WiredTiger (MongoDB's storage engine) must write temporary blocks to disk and read them back, which introduces heavy I/O latency.
+
+2. Default Server-Side Optimization (Streaming Stages)<br/>
+Not all aggregation stages are bound by the 100 MB limit. MongoDB categorizes stages into two behavioral types:
+- Streaming Stages ($match, $project): These stages process documents one by one and pass them immediately to the next stage. They do not hold large volumes of data in memory, meaning they almost never hit the 100 MB limit, regardless of dataset size.
+- Blocking/Accumulating Stages ($group, $sort, $bucket): These stages must ingest all incoming documents before they can calculate a final result or reorder the data. These are the stages that trigger memory errors and require allowDiskUse.
+
+### 28. How do you optimize an aggregation pipeline?
+Optimizing a MongoDB aggregation pipeline relies on two main goals: reducing the number of documents passing through the pipeline as early as possible, and maximizing index usage
+
+1. The "Filter Early" Rule<br/>
+Always place $match and $limit stages at the very beginning of your pipeline.
+- Reducing the dataset in step one prevents subsequent stages (like $group or $unwind) from processing useless data.
+- Only the initial $match and $sort stages can use collection indexes. Once the data passes into a stage that modifies the document structure (like $project or $group), indexes can no longer be used.
+
+2. Sequence Your Stages Strategically<br/>
+The order of your stages drastically impacts performance. Follow these ordering rules:
+- $match before $sort: This allows MongoDB to use a compound index to handle both the filtering and the sorting without a heavy in-memory sort.
+- $match before $unwind: Unwinding an array duplicates documents and inflates your dataset. Filter out unwanted parent documents before you explode the arrays.
+- $project at the end: While projecting early reduces document size, placing a $project before a $match or $sort prevents MongoDB from using indexes on those fields. Keep $project near the tail end of your pipeline.
+
+3. Leverage Index Cover<br/>
+A query is "covered" when MongoDB can return the results using only the index, without ever reading the actual documents from disk.
+- Create compound indexes that include all fields used in your initial $match, $sort, and the fields passed into the next stage.
+- Use a lean $project right after your initial $match to select only the indexed fields you need.
+
+4. Let MongoDB Auto-Optimize<br/>
+MongoDB has a built-in query optimizer that automatically rearranges certain stages behind the scenes to improve performance.
+- $sort + $limit Coalescence: If you place a $limit immediately after a $sort, MongoDB will optimize the sort operation to only maintain the top n results in memory, preventing a massive full-dataset sort.
+- $match + $project Sequence: If you place a $match after a $project, MongoDB will automatically move the $match before the $project if the filtered fields don't rely on renamed fields.
+
+5. Use $lookup Efficiently<br/>
+Joining collections with $lookup is notoriously expensive. To optimize it:
+- Index the foreign key: Ensure the field you are matching against in the from collection is fully indexed.
+- Filter before lookup: Never run a $lookup on an entire collection. Filter your primary collection down to the absolute minimum rows via $match first.
+- Use correlated subqueries: Use the $lookup let and pipeline options to filter out irrelevant data inside the foreign collection during the join, rather than fetching everything and filtering later.
+
 ### 25. How do projections improve performance?
 
 Projection returns only selected fields.
@@ -1396,7 +1569,58 @@ Why Use a Replica Set?<br/>
 - Data Safety (Redundancy): Your data lives in multiple physical locations, protecting you from hardware failures.
 - Read Scaling: You can configure your app to read heavy reports from the Secondary nodes, freeing up the Primary node to focus strictly on heavy writing.
 
+### 57. What happens during a failover?
+Remaining members detect the primary is down, hold an election, promote a new primary; the driver automatically retries and reroutes writes (may cause brief write unavailability).
 
+### 58. What is the oplog and how does replication work?
+The oplog (operations log) is a special capped collection in MongoDB that records all rolling modifications to your database. It is the core engine that drives replication, which is the process of synchronizing data across multiple servers (a Replica Set) to ensure high availability and fault tolerance.
+
+What is the Oplog?<br/>
+The oplog lives inside the local database (local.oplog.rs).
+
+- It acts like a transaction log: It records every insert, update, and delete. It does not record read operations.
+- It is a capped collection: It has a fixed maximum size. Once it fills up, the oldest entries are overwritten automatically by new entries.
+- It is idempotent: Applying the same oplog entry multiple times results in the same database state. For example, instead of logging an incremental update like {$inc: {age: 1}}, MongoDB translates it into an absolute value like {$set: {age: 26}} before saving it to the oplog. This ensures consistency even if a backup server replays a log entry twice.
+
+How Replication Works (Step-by-Step)<br/>
+MongoDB achieves replication through a Replica Set, which typically consists of one Primary node and multiple Secondary nodes.
+
+```js
+[ Client Application ]
+                 │  (Writes & Reads)
+                 ▼
+          ┌─────────────┐
+          │   PRIMARY   │ ──► Writes to local Oplog
+          └─────────────┘
+             │       │
+  (Async     │       │ (Async
+   Replication)      │  Replication)
+             ▼       ▼
+      ┌───────────┐ ┌───────────┐
+      │ SECONDARY │ │ SECONDARY │ ──► Fetch, apply, & write to local Oplog
+      └───────────┘ └───────────┘
+```
+
+1. The Write Happens on the Primary<br/>
+All write operations from your application go directly to the single Primary node. The Primary applies the write to its data collections and simultaneously writes a record of that operation into its local oplog.
+
+2. Secondaries Poll the Primary (Tail the Oplog)<br/>
+The Secondary nodes continuously poll the Primary node (or another up-to-date Secondary) in an asynchronous loop. They "tail" the oplog just like running a tail -f command on a Linux log file.
+
+3. Secondaries Apply the Changes<br/>
+The Secondary nodes fetch the new oplog entries, apply those operations to their own local datasets in parallel, and then save those entries into their own local oplog. This keeps their data synchronized with the Primary.
+
+4. Heartbeats and Automatic Failover<br/>
+-All nodes in the replica set send a heartbeat ping to each other every 2 seconds.
+- If the Primary node stops responding for more than 10 seconds, the Secondaries automatically detect the failure.The remaining nodes hold an internal election. The Secondary with the most up-to-date oplog is voted in as the new Primary, allowing your application to resume writing with minimal downtime.
+
+The Danger of an "Oplog Window" Breach<br/>
+Because the oplog is a capped collection with a fixed size, it represents a specific window of time (e.g., 24 hours of database changes).
+
+If a Secondary node goes offline for a weekend and the Primary experiences a heavy write volume, the Primary's oplog will roll over, overwriting the data the offline Secondary still needs. When this happens:
+- The Secondary falls out of sync.
+- It can no longer catch up using replication.
+- It must undergo a Full Initial Sync, which means deleting its entire local database and copying all data from the Primary from scratch—a highly resource-intensive process.
 
 ### 57. What is Views in MongoDb? How it works with an exmpale?
 A View is a saved query that works like a virtual table in the database. It does not store physical data. When you call a view, MongoDB runs the underlying aggregation pipeline on a source collection to return live data.
@@ -2213,6 +2437,8 @@ print(newId) // Outputs: ObjectId("65c3a2f...")
 ```
 
 ### 58. what is index in mongodb? how it works? types of indexes?
+A separate data structure (B-tree) that speeds up queries by avoiding full collection scans, at the cost of write overhead and storage.
+
 An index in MongoDB is like the alphabetical index at the back of a large book. Instead of reading every single page to find a specific word or topic, you look at the index first to see the exact page number. This helps MongoDB find data very fast.
 
 How It Works Without and With an Index<br/>
@@ -2226,13 +2452,13 @@ Key Things to Know<br/>
 - With an index: MongoDB keeps a small, sorted list of specific fields. It jumps straight to the matching data without checking the rest.
 
 How to Create Core Indexes<br/>
-- Single Field Index: Run db.collection.createIndex({ fieldName: 1 }). Use 1 for ascending or -1 for descending order.
-- Compound Index: Run db.collection.createIndex({ fieldA: 1, fieldB: -1 }). Order matters here for sorting capabilities.
-- Multikey Index: Run db.collection.createIndex({ arrayField: 1 }). MongoDB creates this automatically if the field holds an array.
-- Text Index: Run db.collection.createIndex({ description: "text" }). You can only have one text index per collection.
-- Geospatial Index: Run db.collection.createIndex({ location: "2dsphere" }) for coordinates stored in GeoJSON format.
-- Hashed Index: Run db.collection.createIndex({ userId: "hashed" }) to support even distribution across shards.
-- Wildcard Index: Run db.collection.createIndex({ "attributes.$**": 1 }) to index all sub-fields under a dynamic object.
+- <b>Single Field Index:</b> Run db.collection.createIndex({ fieldName: 1 }). Use 1 for ascending or -1 for descending order.
+- <b>Compound Index:</b> Run db.collection.createIndex({ fieldA: 1, fieldB: -1 }). Order matters here for sorting capabilities.
+- <b>Multikey Index:</b> Run db.collection.createIndex({ arrayField: 1 }). MongoDB creates this automatically if the field holds an array.
+- <b>Text Index:</b> Run db.collection.createIndex({ description: "text" }). You can only have one text index per collection.
+- <b>Geospatial Index:</b> Run db.collection.createIndex({ location: "2dsphere" }) for coordinates stored in GeoJSON format.
+- <b>Hashed Index:</b> Run db.collection.createIndex({ userId: "hashed" }) to support even distribution across shards.
+- <b>Wildcard Index:</b> Run db.collection.createIndex({ "attributes.$**": 1 }) to index all sub-fields under a dynamic object.
 
 How to Apply Specialized Properties
 - Unique Index: Enforce unique values by running db.collection.createIndex({ email: 1 }, { unique: true }).
@@ -2245,8 +2471,56 @@ How to Check and Verify Usage
 - Verify Index Usage: Append .explain("executionStats") to your query (e.g., db.collection.find({ age: 25 }).explain("executionStats")).
 - Confirming Success: Look for IXSCAN (Index Scan) in the winning plan. Avoid COLLSCAN (Collection Scan), which means MongoDB scanned every document.
 
+### 50. What is ESR rule in index?
+The ESR Rule in MongoDB is a design guideline for ordering fields in a compound index to maximize query performance. ESR stands for Equality, Sort, and Range, which dictates the exact sequence of fields inside the index. It helps structuring indexes this way minimizes memory use and speeds up data retrieval.
+
+The ESR Field Order
+- Equality (E): Place fields that use exact match filters ($eq, strict value matching like status: "active") first.
+- Sort (S): Place fields used to order the results via .sort() second.
+- Range (R): Place fields that use range or comparison operators ($gt, $lt, $gte, $lte, $in) last.
+
+Why the Order Works
+- Left-to-Right Execution: MongoDB reads index data from left to right. Equality matches narrow the dataset instantly.
+- Avoids In-Memory Sorts: Putting the sort field second means the documents retrieved from the equality phase are already pre-sorted in the index, preventing expensive in-memory sort operations.
+- Efficient Range Filtering: Range conditions are less selective and processed last to filter the already-trimmed dataset.
+
+Example of using ESR<br/>
+To see how the ESR rule works, consider an e-commerce tracking system where you need to find orders, sort them by date, and filter by total cost.
+
+The Scenario<br/>
+You run this query against your orders collection:
+```js
+db.orders.find({
+  status: "shipped",                // Equality match
+  total_price: { $gt: 100 }         // Range match
+}).sort({
+  order_date: -1                    // Sort condition
+})
+```
+
+Applying the ESR Rule<br/>
+To create the perfect compound index for this query, apply the letters in order:
+- E (Equality): status
+- S (Sort): order_date
+- R (Range): total_price
+
+The Resulting Index<br/>
+Create the index in your database using this exact field sequence:
+```js
+db.orders.createIndex({ 
+  status: 1,       // E
+  order_date: -1,  // S
+  total_price: 1   // R
+})
+```
+
+Why this specific order is fast<br/>
+- Status first (E): MongoDB instantly jumps to the "shipped" section of the index, discarding all "pending" or "cancelled" rows.
+- Order Date second (S): Within those shipped orders, the index is already physically ordered by date. MongoDB reads them in order without using CPU memory to sort them.
+- Total Price last (R): MongoDB scans down the pre-sorted list and hands you only the items where the price is greater than 100.
+
 ### 59. What is a compound index, and when would you use it?
-A Compound Index is a single index structure that holds references to multiple fields within a collection's documents. MongoDB allows you to combine up to 32 fields in a single compound index. The order of the fields listed in the index is critical.
+An index on multiple fields; A Compound Index is a single index structure that holds references to multiple fields within a collection's documents. MongoDB allows you to combine up to 32 fields in a single compound index. The order of the fields listed in the index is critical.
 
 When to Use It
 - Multi-Field Filters: When your queries frequently filter on more than one field simultaneously (e.g., searching for users by both status and age).
@@ -2391,6 +2665,83 @@ How to Use It<br/>
 // Creates a unique, sparse index on 'phoneNumber'
 db.users.createIndex({ phoneNumber: 1 }, { unique: true, sparse: true })
 ```
+
+### 62. What is the difference between sparse and partial indexes?
+A sparse index only includes documents that actually contain the indexed field. A partial index goes further by letting you write a custom rule (like a filter) to decide which documents to include. A sparse index checks only for existence, while a partial index uses any condition you want.
+
+Sparse Indexes
+- Rule: Includes a document only if the indexed field exists.
+- Missing data: Skips documents completely if they do not have that field.
+- Use case: Best for optional fields (like a cell_phone number that only some users have).
+
+Partial Indexes
+- Rule: Includes a document only if it matches a custom filter expression.
+- Custom logic: Can filter by value, ranges, or multiple fields (e.g., only index users where age >= 18 and status == "active").
+- Use case: Best when you only care about speeding up queries for a specific subset of data.
+
+### 64. What is a covered query in mongodb?
+A covered query in MongoDB is a query that can be answered entirely by looking at an index, without reading any actual documents from the disk or memory.
+
+Think of it like using a book's index. If you only need to know what page "Database" is mentioned on, you can read it directly from the index page. You do not need to flip to the actual chapter to find out.
+
+Why It Matters<br/>
+- Extreme Speed: Indexes are stored in RAM, making data retrieval incredibly fast.
+- Low Resource Usage: MongoDB skips the resource-heavy "fetch" stage of opening full documents.
+
+How a Query Becomes "Covered"<br/>
+For a query to be covered, it must fulfill two main rules:
+- The Search Criteria: All fields you are searching by must be part of the index.
+- The Returned Fields: All fields you ask to display (the projection) must be in that same index. You must also explicitly hide the _id field (unless it is part of your index).
+
+Code Example<br/>
+Imagine you have a users collection with an index on the username and status fields.
+
+```js
+// 1. Create the compound index
+db.users.createIndex({ username: 1, status: 1 })
+```
+
+❌ This query is NOT covered:<br/>
+```js
+db.users.find({ username: "alice" })
+```
+
+Why? By default, MongoDB tries to return the entire document (and the _id field), which are not in the index. It has to go look at the actual document.
+
+This query IS covered:<br/>
+```js
+db.users.find(
+  { username: "alice" }, 
+  { username: 1, status: 1, _id: 0 }
+)
+```
+
+Why? You are searching by an indexed field (username) and only asking to return username and status. By adding _id: 0, you hide the default ID. MongoDB never has to touch the main collection.
+
+When Covered Queries Do Not Work<br/>
+A query will fail to be covered if:
+- You forget to exclude _id: 0 in your projection.
+- You try to query or return a field that is inside an array or a sub-document.
+- Any of the queried fields are equal to null.
+
+### 64. What are the downsides of over-indexing in mongodb?
+Over-indexing in MongoDB slows down write operations, consumes excessive RAM, and inflates disk storage because every insert, update, and delete must modify every relevant index structure. 
+
+Write Performance Degradation<br/>
+- Slower inserts and updates: Every time a document is added or modified, MongoDB must update every index pointing to those fields.
+- Increased CPU overhead: Handling multiple tree modifications per write operation adds heavy latency to write-heavy workloads.
+
+Memory and Storage Bloat<br/>
+- RAM exhaustion: MongoDB and the WiredTiger storage engine attempt to keep active index pages cached in RAM for speed. Too many indexes crowd out working data.
+- Disk footprint expansion: Indexes take up physical space on disk alongside your main data collections, occasionally growing larger than the data itself if arrays or many fields are indexed.
+
+### 65. How many indexes is too many?
+There is no hard limit, but more than 10 to 15 indexes per collection is generally considered too many for most production applications. MongoDB itself allows a maximum of 64 indexes per collection, but you should hit performance bottlenecks long before reaching that limit.
+
+When to Stop Adding Indexes<br/>
+- The "Index vs. Data" Size Rule: If your total index size is larger than your RAM, your database performance will drop drastically. MongoDB must keep indexes in memory to stay fast.
+- The 1:1 Write-to-Read Ratio: If your collection handles as many write operations (inserts/updates) as read operations, keep your indexes under 5 to 8.
+- The Collection Purpose: High-volume logging or IoT ingestion collections should rarely have more than 2 or 3 indexes. Read-heavy catalogs can safely tolerate 15 to 20 indexes.
 
 ### 63. Explain write concern and read concern in MongoDB?
 In MongoDB, write concern controls how securely data is written to the database before the application gets a success acknowledgment, while read concern controls the isolation and freshness level of the data returned by queries. Together, they allow developers to balance application speed against data consistency and durability guarantees.
