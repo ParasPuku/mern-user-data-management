@@ -2630,6 +2630,30 @@ There are three common ways to load a script:
 <script defer src="app.js"></script>
 ```
 
+<script>
+When using the <script> tag without attributes, it fetches and executes the script immediately, pausing HTML parsing.
+
+Use case: Critical scripts needed before page rendering.
+```js
+<script src="main.js"></script>
+```
+
+<script async>
+With async, the script loads in parallel to HTML parsing and executes as soon as it's ready.
+
+Use case: Independent scripts like analytics or ads.
+```js
+<script async src="analytics.js"></script>
+```
+
+<script defer>
+When using defer, the script loads alongside HTML parsing but only executes after the HTML is fully parsed.
+
+Use Case: Scripts that rely on a complete DOM structure.
+```js
+<script defer src="deferred.js"></script>
+```
+
 When loading external script files (<script src="...">), browsers block HTML parsing by default to download and run the script. async and defer prevent this blocking behavior during downloading, but they execute at different times.
 
 - <script async>
