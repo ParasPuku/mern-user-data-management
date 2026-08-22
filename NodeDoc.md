@@ -260,7 +260,8 @@ The server got the request and is working on it.
 The request worked fine.
 - 200 OK: Standard success. The data is coming back.
 - 201 Created: A new item was successfully made (e.g., after a database .save() or POST request).
-- 202 Accepted: Request accepted, but work is still happening in the background.204 No Content: Success, but there is no data to send back (e.g., after a DELETE request).
+- 202 Accepted: Request accepted, but work is still happening in the background.
+- 204 No Content: Success, but there is no data to send back (e.g., after a DELETE request).
 
 3xx: Redirection <br/>
 Extra steps are needed to finish the request.
