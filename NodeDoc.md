@@ -787,6 +787,133 @@ When to Use setImmediate()
 - Chunking CPU-heavy jobs: Use it to yield control back to the event loop so network requests or file reads can be handled between your CPU execution blocks.
 - Queueing after I/O: Use it when you want to guarantee your function executes right after the current I/O polling ends.
 
+### 12. Why setImmediate runs immediately even before the setTimeout in i/o operation in nodejs?
+```js
+const fs = require('fs');
+
+fs.readFile('example.txt', () => {
+    setTimeout(() => console.log('setTimeout'), 0);
+    setImmediate(() => console.log('setImmediate'));
+});
+```
+
+When executed inside an I/O callback, setImmediate() always runs before setTimeout() because the Node.js event loop executes the "check" phase (where setImmediate lives) immediately after the "poll" phase (where I/O callbacks execute), while setTimeout must wait for the loop to cycle entirely back to the "timers" phase.
+
+Step-by-Step Breakdown Inside an I/O Operation<br/>
+Consider this common code scenario:
+
+Here is exactly how the event loop moves when executing that code:<br/>
+
+- Step 1: The Poll Phase. The file reading finishes. The event loop enters the Poll Phase to run your fs.readFile callback.
+
+- Step 2: Scheduling the tasks. Inside the callback, setTimeout(..., 0) registers a timer in the Timers Phase memory, and setImmediate(...) registers a callback in the Check Phase memory.
+
+- Step 3: Moving Forward. Once the I/O callback finishes executing, the event loop must move forward to the very next phase in line.
+
+- Step 4: The Check Phase wins. The very next phase chronologically after the Poll Phase is the Check Phase. The event loop enters this phase and immediately runs your setImmediate callback.
+
+- Step 5: Circling back. The event loop then passes through the Close phase, finishes the current tick, restarts a new tick, and finally enters the Timers Phase where your setTimeout callback is finally executed.
+
+Because the event loop only moves forward, setTimeout loses the race by default when registered inside an I/O context. It is forced to wait for a full loop iteration to complete.
+
+Why is it unpredictable outside of I/O?<br/>
+If you run setTimeout(..., 0) and setImmediate(...) in the main global scope (not inside an I/O callback), the execution order is nondeterministic (unpredictable).
+
+This happens because entering the event loop takes a few fractions of a millisecond. If the machine's initialization process takes longer than the setTimeout threshold (even at 0ms, Node converts it internally to 1ms), the timer will already be expired when the loop hits the Timers Phase, causing setTimeout to run first. If the loop initializes faster than 1ms, it skips the Timers Phase, goes to Poll, hits Check, and setImmediate runs first.
+
+Inside an I/O loop, however, the point of origin is locked to the Poll phase, making setImmediate 100% predictable.
+
+### 12. How process.nextTick() or Microtasks (Promises) change this priority queue even further, or see a practical example of when to favor setImmediate?
+
+The Complete Hierarchy: <br/>
+Microtasks vs. MacrotasksTo understand process.nextTick() and Promises, we have to look at the two overarching types of queues in Node.js:
+- Macrotask Queues (The Event Loop Phases): This includes everything discussed earlier (setTimeout, setImmediate, and I/O). The loop moves from phase to phase sequentially.
+
+- Microtask Queues (The Intermediaries): This consists of two specific queues that sit between the phases of the event loop. They are processed immediately after the current operation finishes, before the loop is allowed to move to the next phase.
+
+The two microtask queues have a strict priority order:
+- process.nextTick() queue: Holds highest priority. Runs before any other asynchronous code.
+- Promise queue: Holds second priority. Runs immediately after process.nextTick().
+
+The Absolute Execution Order<br/>
+Whenever the call stack empties (whether in the global scope or inside an I/O callback), Node.js processes tasks in this exact order:
+```js
+     [ Current Synchronous Code Executes ]
+                 │
+                 ▼
+     [ process.nextTick() Queue ]  (Highest priority microtask)
+                 │
+                 ▼
+     [ Promise Callback Queue ]    (Second priority microtask)
+                 │
+                 ▼
+     [ Move to Next Event Loop Phase ] (Macrotasks: Timers -> I/O -> Check)
+```
+
+Code Example: The Ultimate Race<br/>
+
+If you run all four of these asynchronous tools inside an I/O callback, the execution order is perfectly guaranteed every single time:
+
+```js
+const fs = require('fs');
+
+fs.readFile(__filename, () => {
+    // 1. Macrotasks
+    setTimeout(() => console.log('4. setTimeout (Macrotask - Timers Phase)'), 0);
+    setImmediate(() => console.log('3. setImmediate (Macrotask - Check Phase)'));
+
+    // 2. Microtasks
+    Promise.resolve().then(() => console.log('2. Promise.then (Microtask)'));
+    process.nextTick(() => console.log('1. process.nextTick (Microtask)'));
+});
+```
+
+Why does it print in this exact order?<br/>
+- process.nextTick: The current I/O operation finishes. Node looks at the microtask queues before advancing. process.nextTick is processed first.
+- Promise.then: Once the nextTick queue clears, Node drains the remaining microtask queue, which is the Promise queue.
+- setImmediate: The microtask queues are now empty. Node is free to advance the event loop. Since we are in the Poll phase, the very next phase is the Check Phase, executing setImmediate.
+- setTimeout: The event loop continues its circle and eventually lands on the Timers Phase on the next tick, executing setTimeout.
+
+Practical Use Cases: When to Use Which?<br/>
+1. Use setImmediate() by Default for Heavy CPU Operations<br/>
+
+If you have a function that processes a massive array, running it synchronously will block the event loop (starving I/O and network requests). Breaking it up with setImmediate allows Node to process network requests between chunks of data.
+
+```js
+function processMassiveData(chunk) {
+    // Process chunk of data here...
+    
+    if (hasMoreData) {
+        // Yield control back to Node to handle I/O before doing the next chunk
+        setImmediate(() => processMassiveData(nextChunk));
+    }
+}
+```
+2. Use process.nextTick() to Ensure Event Listeners are Ready<br/>
+Use process.nextTick when you need an operation to run asynchronously, but it must execute before the user has a chance to do anything else, or to ensure constructors finish setting up.
+
+```js
+const EventEmitter = require('events');
+
+class MyEmitter extends EventEmitter {
+    constructor() {
+        super();
+        // If emitted immediately, the user hasn't code `.on('start')` yet!
+        // process.nextTick delays it just enough for the synchronous script to finish.
+        process.nextTick(() => {
+            this.emit('start');
+        });
+    }
+}
+
+const emitter = new MyEmitter();
+emitter.on('start', () => {
+    console.log('Successfully caught the event!');
+});
+```
+
+Warning: Running a recursive loop with process.nextTick() will block the event loop completely and cause an out-of-memory error because it prevents the event loop from ever moving to the next phase.
+
 ### 12. Create a simple route to fetch the users who are greater than the 18 years from the db and apply middleware to check the user is logged in or not and also apply another check is, users should be from the US region.
 
 Here is a complete, runnable example using Node.js and Express. It uses two middleware functions to secure the route and filter the users by age before sending the response.
