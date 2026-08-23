@@ -3760,6 +3760,19 @@ If you do not want to maintain custom middleware logic from scratch, consider us
 - Express Gateway: An open-source, fully configuration-driven API gateway framework built right on top of Express.
 - Fast-Gateway: A minimalist, high-speed routing option specifically optimized for extreme performance requirements.
 
+### 37. What is Reverse Proxy?<br/>
+Reverse Proxy<br/>
+A reverse proxy is a server that sits between web clients (like browsers) and backend web servers. It intercepts incoming user requests, sends them to the correct internal server, and returns the server's response to the user. Clients never see the real backend servers.
+
+Forward Proxy<br/>
+A forward proxy, often called a proxy, proxy server, or web proxy, is a server that sits in front of a group of client machines. When those computers make requests to sites and services on the Internet, the proxy server intercepts those requests and then communicates with web servers on behalf of those clients, like a middleman.
+
+How does a reverse proxy differ from a forward proxy?
+A forward proxy sits in front of clients (users) to forward their requests to the Internet. In contrast, a reverse proxy sits in front of servers to manage incoming traffic from the Internet.
+
+What is the primary function of a reverse proxy?
+A reverse proxy is a server that sits in front of one or more web servers to intercept and forward requests from clients. It acts as an intermediary, ensuring that no client communicates directly with the origin server.
+
 ### 37. How API Gateway understands a common request and routes it to a specific microservice?
 An API Gateway understands a common request and routes it to a specific microservice by acting as a reverse proxy. It intercepts the incoming traffic, reads the HTTP metadata (the path, method, or headers), and matches it against a pre-defined routing table.
 
