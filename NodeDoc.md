@@ -826,7 +826,7 @@ Inside an I/O loop, however, the point of origin is locked to the Poll phase, ma
 ### 12. How process.nextTick() or Microtasks (Promises) change this priority queue even further, or see a practical example of when to favor setImmediate?
 
 The Complete Hierarchy: <br/>
-Microtasks vs. MacrotasksTo understand process.nextTick() and Promises, we have to look at the two overarching types of queues in Node.js:
+Microtasks vs. Macrotasks - To understand process.nextTick() and Promises, we have to look at the two overarching types of queues in Node.js:
 - Macrotask Queues (The Event Loop Phases): This includes everything discussed earlier (setTimeout, setImmediate, and I/O). The loop moves from phase to phase sequentially.
 
 - Microtask Queues (The Intermediaries): This consists of two specific queues that sit between the phases of the event loop. They are processed immediately after the current operation finishes, before the loop is allowed to move to the next phase.
@@ -2204,20 +2204,47 @@ Yes. The Master Process is just a specific role given to the very first Node Pro
 Yes. A Worker Process is simply a Child Process created by the master. It is an exact clone of your application running in its own separate memory space on another CPU core to handle incoming traffic.Summary Cheat SheetMaster Process = The original, parent Node Process (The Manager).Worker Process = A spawned Child Process (The Worker).
 
 ### 12. Are master process and node process same?
-Yes, exactly. You nailed it.
+No, they're related but not the same thing — the distinction matters mainly when you use Node's cluster module.
 
-When you boot up your application, the very first Node Process that is born becomes the Master Process. They are the exact same entity.
+Single Node process (default) <br/>
+When you run node app.js, you get one process running on a single thread (plus libuv's thread pool for some I/O). There's no "master" concept here — it's just the process.
 
-To make it 100% clear, think of it as a job title:<br/>
-What it is physically: A Node.js Process (the program running in your activity monitor/terminal).What its role is: The Master Process (the manager in charge of creating and watching over the child workers).
+Master vs Worker (with cluster)<br/>
+If you use the built-in cluster module to take advantage of multi-core machines, things change:
 
-The Lifecycle Chain
-- You run node server.js in your terminal.
-- The operating system creates a standard Node Process.
-- Inside your code, you use the cluster module. This instantly designates this initial process as the Master Process.
-- This Master Process then boots up clones of itself, which are the Child Processes (also called Worker Processes).
+- Master process: The original process you start (node app.js). It doesn't handle requests itself — its job is to fork worker processes, distribute incoming connections among them, monitor them, and restart them if they crash.
+- Worker process(es): Full Node.js processes forked from the master (using child_process.fork() under the hood). Each worker runs your actual application code and handles requests independently, with its own event loop and memory space.
 
-So, when people talk about the "Node process that handles management" or the "Master process," they are talking about the exact same primary program thread.
+```js
+const cluster = require('cluster');
+const os = require('os');
+
+if (cluster.isMaster) {
+  // This is the master process
+  for (let i = 0; i < os.cpus().length; i++) {
+    cluster.fork(); // spawns worker processes
+  }
+} else {
+  // This code runs in each worker process
+  require('http').createServer((req, res) => {
+    res.end('Handled by worker ' + process.pid);
+  }).listen(3000);
+}
+```
+
+Key differences<br/>
+
+Master Process<br/>
+- Runs app code? No
+- Handles requests? No (delegates)
+- Count: 1
+- Role: Manages/spawns/monitors workers
+
+Worker Processes<br/>
+- Runs app code? Yes
+- Handles requests? Yes
+- Count: Usually multiple (e.g., one per CPU core)
+- Role: Does the actual work
 
 ### 12. What is node.js process or process manager?
 A Node.js process is an active runtime instance of your application executing inside your computer’s operating system (OS).
