@@ -2566,11 +2566,82 @@ Worker threads (worker_threads module) allow you to run CPU-intensive tasks on b
 - Best Used For: Heavy CPU-intensive mathematical or data calculations inside Node.js (like image processing, cryptography, or parsing massive JSON objects) without blocking the main event loop.
 
 ### 12. is child process derived from worker process or master process?
+
+"A worker process is a specialized type of child process — one created by the cluster module specifically to run application code and share server load across CPU cores. All worker processes are child processes, but not all child processes are workers — you could also spawn child processes to run shell commands, other scripts, or non-Node programs entirely."
+
+Note ---- Not exactly "same" — worker process is a child process, but not all child processes are worker processes.
+
+The relationship
+
+Think of it like squares and rectangles:
+
+- Every square is a rectangle, but not every rectangle is a square.
+- Every worker process is a child process, but not every child process is a worker process.
+Why the distinction matters
+
+child_process is a general-purpose module — you can use it to spawn any kind of process, not just Node.js code:
+
+```js
+const { spawn, fork } = require('child_process');
+
+// Spawning a non-Node program — this is a child process, NOT a worker
+spawn('ls', ['-la']);
+
+// Spawning another Node.js script — also just a child process
+fork('./someScript.js');
+
+// This is NOT a worker process — it's just a plain child process
+```
+
+A worker process is specifically:
+
+- Created only via the cluster module (cluster.fork())
+- Always runs your Node.js app code
+- Always has a specific purpose — load balancing / sharing a server port across CPU cores
+- Internally, yes, cluster.fork() does call child_process.fork() — so mechanically it is a child process — but it comes with extra cluster-specific behavior (like automatic port-sharing via the master) that a plain child process doesn't have.
+
 A child process is derived from the master process (or main parent process), not from a worker process. In architecture patterns like Node.js clusters, the master process acts as the coordinator that uses methods like fork() to spawn individual worker or child processes.
 
 Process Hierarchy<br/>
 - Master Process: Controls the application, manages resources, and creates child/worker processes.
 - Child/Worker Process: Spawned directly by the master; it runs independently or handles incoming tasks. Workers do not typically spawn subsequent managing master processes.
+
+
+### 12. Does worker process run on different OS and takes separate memory?
+Yes. Each worker is a genuine, independent operating system process — not a thread, not a simulation. If you check your Task Manager (Windows) or ps aux (Linux/Mac) while running a clustered app, you'll literally see multiple separate node entries, each with its own PID (process ID).
+
+(If by "different OS" you meant "different operating system" — no, that's not it. All workers run on the same OS, on the same machine, at the same time. They're just separate processes on that one OS.)
+
+Does it have separate memory?<br/>
+Yes, completely separate. This is one of the most important things to know:
+
+Each worker gets its own memory space — its own heap, its own V8 instance, its own everything.
+Workers cannot directly share variables, objects, or memory with each other or with the master.
+If you set a global variable in one worker, other workers (and the master) won't see it.
+
+```js
+// Worker 1
+let counter = 0;
+counter++; // Only visible inside Worker 1
+
+// Worker 2 has its own separate `counter` — totally independent
+```
+
+How do they communicate then?<br/>
+Since they don't share memory, workers talk to the master (and vice versa) via IPC (Inter-Process Communication) — basically message-passing:
+
+```js
+// In master
+worker.send({ msg: 'hello worker' });
+
+// In worker
+process.on('message', (msg) => {
+  console.log(msg); // { msg: 'hello worker' }
+});
+```
+
+"Each worker process is a fully independent OS process with its own memory space and its own V8 instance — nothing is shared by default. Since they can't access each other's memory directly, they communicate through IPC (message passing) rather than shared variables. This is different from Node's worker_threads module, where threads can share memory using SharedArrayBuffer."
+
 
 ### 13. is worker thread derived from worker process or master process?
 A worker thread is derived from whichever process initializes it. In most application architectures, it is typically derived from a worker process, though it can legally be spawned by a master process.
