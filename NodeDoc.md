@@ -2246,6 +2246,12 @@ Worker Processes<br/>
 - Count: Usually multiple (e.g., one per CPU core)
 - Role: Does the actual work
 
+Bottom line<br/>
+- If you're not using cluster (or a tool built on it, like PM2 in cluster mode), there's just one Node process — no master/worker split.
+- If you are using clustering, the "master" is a coordinator process, and the actual Node.js application logic runs inside separate "worker" processes — each a full Node process in its own right, just spawned and managed by the master.
+
+Newer Node versions also alias cluster.isMaster as cluster.isPrimary (and cluster.worker stays the same) to move away from master/slave terminology, but the concept is identical.
+
 ### 12. What is node.js process or process manager?
 A Node.js process is an active runtime instance of your application executing inside your computer’s operating system (OS).
 
