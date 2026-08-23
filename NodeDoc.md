@@ -3458,6 +3458,16 @@ async function getUserFromService(id) {
 }
 ```
 
+Benefits of Circuit Breaker<br/>
+A circuit breaker implementation in Node.js prevents an app from repeatedly calling a failing external service or database. It stops connection timeouts, protects the single-threaded event loop from resource exhaustion, and stops cascading failures by failing fast and allowing downstream systems time to recover.
+
+Key Benefits<br/>
+- Prevents Event Loop Saturation: Stops slow outgoing requests from stacking up promises and holding open client sockets that starve your Node.js server.
+- Stops Cascading Failures: Keeps a minor issue in one third-party API or microservice from dragging down your entire application.
+- Reduces Latency: Fails fast instead of making users wait for long, doomed timeout intervals to expire.
+- Aids Recovery: Relieves traffic load on an unhealthy downstream system so it can heal faster.
+- Enables Graceful Degradation: Allows you to supply fallback data or safe default responses when a dependency trips.
+
 ### 35. What is api gateway? How api gateway works? Why is an API Gateway Needed?
 An API Gateway is a centralized server that acts as the single entry point for all client requests into a backend system. It sits directly between the clients (such as mobile apps or web browsers) and a collection of internal backend services or microservices.
 
