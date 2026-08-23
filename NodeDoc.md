@@ -2203,6 +2203,19 @@ Yes. The Master Process is just a specific role given to the very first Node Pro
 2. Is worker process the same as a child process?<br/>
 Yes. A Worker Process is simply a Child Process created by the master. It is an exact clone of your application running in its own separate memory space on another CPU core to handle incoming traffic.Summary Cheat SheetMaster Process = The original, parent Node Process (The Manager).Worker Process = A spawned Child Process (The Worker).
 
+### 12. What is Node Process in Node js?
+A Node process is simply the running instance of your Node.js application — created when you run node app.js.
+
+"A Node process is an instance of the Node.js runtime executing your JavaScript code. When you run node app.js, the OS starts one process that runs your entire application — it has its own memory, its own single-threaded event loop (for JS execution), and a process ID (process.pid). All your code, variables, and the event loop live inside this one process, unless you explicitly create more (like with cluster or child_process)."
+
+Key points to mention if they probe further:
+- It's single-threaded by default (one event loop for JS), though Node uses a background thread pool (libuv) for things like file I/O.
+- You can access process info via the global process object — e.g., process.pid, process.env, process.argv.
+- One process = one instance of your app running independently, with its own memory space, isolated from other processes.
+- To use multiple CPU cores, you spawn multiple Node processes (via cluster or child_process), since a single process can't use more than one core for JS execution.
+
+That last point is usually what leads into the master/worker discussion, since that's the mechanism Node uses to scale across cores.
+
 ### 12. Are master process and node process same?
 No, they're related but not the same thing — the distinction matters mainly when you use Node's cluster module.
 
