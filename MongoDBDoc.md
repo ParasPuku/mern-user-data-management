@@ -996,179 +996,6 @@ db.collection.findOne()
 db.users.findOne({ email: "paras@example.com" });
 ```
 
-### 25. Explain `$match` vs `$project` vs `$group`.
-`$match` filters documents (like WHERE), `$project` reshapes/selects fields (like SELECT), `$group` aggregates by a key (like GROUP BY).
-
-Core Differences<br/>
-- $match (The Filter): Acts like a WHERE clause in SQL. It passes only matching documents to the next stage. Use this first to speed up your pipeline.
-- $project (The Shaper): Acts like a SELECT clause in SQL. It adds, removes, or renames fields. It changes the look of individual documents.
-- $group (The Aggregator): Acts like a GROUP BY clause in SQL. It combines multiple documents into a single summary document, often computing totals or averages.
-
-The Example<br/>
-Imagine a sales collection with these three documents:
-
-```js
-[
-  { "_id": 1, "product": "Laptop", "category": "Electronics", "price": 1000, "status": "completed" },
-  { "_id": 2, "product": "Phone", "category": "Electronics", "price": 500, "status": "completed" },
-  { "_id": 3, "product": "Desk", "category": "Furniture", "price": 300, "status": "pending" }
-]
-```
-
-The Pipeline<br/>
-We want to find only completed sales, calculate the total revenue for each category, and format the final output.
-
-```js
-db.sales.aggregate([
-  // 1. FILTER: Keep only completed sales
-  { $match: { status: "completed" } },
-
-  // 2. AGGREGATE: Group by category and sum the prices
-  { $group: { _id: "$category", totalRevenue: { $sum: "$price" } } },
-
-  // 3. SHAPE: Clean up the output fields
-  { $project: { _id: 0, category: "$_id", totalRevenue: 1 } }
-])
-```
-
-Step-by-Step Data Transformation<br/>
-1. After $match: The "Desk" document is discarded because its status is pending.
-
-```js
-[
-  { "product": "Laptop", "category": "Electronics", "price": 1000, "status": "completed" },
-  { "product": "Phone", "category": "Electronics", "price": 500, "status": "completed" }
-]
-```
-
-2. After $group: The remaining documents are grouped by category. Their prices are added together (1000 + 500 = 1500).
-
-```js
-[
-  { "_id": "Electronics", "totalRevenue": 1500 }
-]
-```
-
-3. After $project: The default _id field is hidden, and a new category field takes its place for cleaner reading.
-
-```js
-[
-  { "category": "Electronics", "totalRevenue": 1500 }
-]
-```
-
-### 26. What is `$unwind` used for?
-Deconstructs an array field into multiple documents, one per array element.
-
-$unwind is used to deconstruct an array field from an input document to output a separate document for each element in that array. Think of it as flattening or exploding an array so you can work with individual items.
-
-How It Works<br/>
-If a single document contains an array with three items, running $unwind on that array field will split that single document into three separate, identical documents—except the array field is replaced by just one item per document.
-
-The Example<br/>
-Imagine a orders collection with a document containing an array of items:
-
-```js
-{
-  "_id": 101,
-  "customer": "Alice",
-  "items": ["Laptop", "Mouse", "Keyboard"]
-}
-```
-
-The Pipeline<br/>
-We want to separate this single order into three individual rows to analyze each item separately.
-
-```js
-db.orders.aggregate([
-  { $unwind: "$items" }
-])
-```
-
-The Output<br/>
-MongoDB duplicates the parent document data for each element in the array:
-
-```js
-[
-  { "_id": 101, "customer": "Alice", "items": "Laptop" },
-  { "_id": 101, "customer": "Alice", "items": "Mouse" },
-  { "_id": 101, "customer": "Alice", "items": "Keyboard" }
-]
-```
-
-Common Use Cases<br/>
-- Aggregating Array Data: If you want to calculate the total price of all items sold across all orders, you must $unwind the items array first to use $group and $sum on them.
-- Filtering Array Elements: Standard $match filters documents, not array elements. To filter out specific items inside an array, you $unwind the array, run $match on the items, and optionally rebuild the array using $group with $push.
-- Normalization: Preparing embedded data for relational-style reporting or exporting to a CSV.
-
-Pro Tip: Handling Empty Arrays<br/>
-By default, if a document has an empty array, a null array, or is missing the array field entirely, $unwind will discard that document.
-
-To prevent losing those documents, use the preserveNullAndEmptyArrays option:
-```js
-{
-  $unwind: {
-    path: "$items",
-    preserveNullAndEmptyArrays: true
-  }
-}
-```
-
-### 27. How do aggregation pipelines handle large datasets that exceed memory limits?
-MongoDB handles aggregation pipelines that exceed memory limits by enforcing a strict 100 MB RAM limit per stage and providing a mechanism to spill data to temporary disk files. If a stage exceeds this memory threshold without disk fallback enabled, the entire query will fail with an error.
-
-1. The allowDiskUse Option (The Primary Solution)<br/>
-By default, if a single pipeline stage (like $group, $sort, or $setWindowFields) consumes more than 100 MB of memory, MongoDB aborts the operation and returns an error. To prevent this, you must explicitly allow MongoDB to use the server's hard drive as temporary swap space.
-
-How to use it in code:<br/>
-```js
-db.orders.aggregate(
-  [
-    { $group: { _id: "$customer", total: { $sum: "$price" } } },
-    { $sort: { total: -1 } }
-  ],
-  { allowDiskUse: true } // Enables spilling to temporary disk files
-)
-```
-
-The Performance Trade-off<br/>
-While allowDiskUse: true prevents your queries from crashing, spilling data to disk is significantly slower than processing it in RAM. WiredTiger (MongoDB's storage engine) must write temporary blocks to disk and read them back, which introduces heavy I/O latency.
-
-2. Default Server-Side Optimization (Streaming Stages)<br/>
-Not all aggregation stages are bound by the 100 MB limit. MongoDB categorizes stages into two behavioral types:
-- Streaming Stages ($match, $project): These stages process documents one by one and pass them immediately to the next stage. They do not hold large volumes of data in memory, meaning they almost never hit the 100 MB limit, regardless of dataset size.
-- Blocking/Accumulating Stages ($group, $sort, $bucket): These stages must ingest all incoming documents before they can calculate a final result or reorder the data. These are the stages that trigger memory errors and require allowDiskUse.
-
-### 28. How do you optimize an aggregation pipeline?
-Optimizing a MongoDB aggregation pipeline relies on two main goals: reducing the number of documents passing through the pipeline as early as possible, and maximizing index usage
-
-1. The "Filter Early" Rule<br/>
-Always place $match and $limit stages at the very beginning of your pipeline.
-- Reducing the dataset in step one prevents subsequent stages (like $group or $unwind) from processing useless data.
-- Only the initial $match and $sort stages can use collection indexes. Once the data passes into a stage that modifies the document structure (like $project or $group), indexes can no longer be used.
-
-2. Sequence Your Stages Strategically<br/>
-The order of your stages drastically impacts performance. Follow these ordering rules:
-- $match before $sort: This allows MongoDB to use a compound index to handle both the filtering and the sorting without a heavy in-memory sort.
-- $match before $unwind: Unwinding an array duplicates documents and inflates your dataset. Filter out unwanted parent documents before you explode the arrays.
-- $project at the end: While projecting early reduces document size, placing a $project before a $match or $sort prevents MongoDB from using indexes on those fields. Keep $project near the tail end of your pipeline.
-
-3. Leverage Index Cover<br/>
-A query is "covered" when MongoDB can return the results using only the index, without ever reading the actual documents from disk.
-- Create compound indexes that include all fields used in your initial $match, $sort, and the fields passed into the next stage.
-- Use a lean $project right after your initial $match to select only the indexed fields you need.
-
-4. Let MongoDB Auto-Optimize<br/>
-MongoDB has a built-in query optimizer that automatically rearranges certain stages behind the scenes to improve performance.
-- $sort + $limit Coalescence: If you place a $limit immediately after a $sort, MongoDB will optimize the sort operation to only maintain the top n results in memory, preventing a massive full-dataset sort.
-- $match + $project Sequence: If you place a $match after a $project, MongoDB will automatically move the $match before the $project if the filtered fields don't rely on renamed fields.
-
-5. Use $lookup Efficiently<br/>
-Joining collections with $lookup is notoriously expensive. To optimize it:
-- Index the foreign key: Ensure the field you are matching against in the from collection is fully indexed.
-- Filter before lookup: Never run a $lookup on an entire collection. Filter your primary collection down to the absolute minimum rows via $match first.
-- Use correlated subqueries: Use the $lookup let and pipeline options to filter out irrelevant data inside the foreign collection during the join, rather than fetching everything and filtering later.
-
 ### 25. How do projections improve performance?
 
 Projection returns only selected fields.
@@ -1453,6 +1280,179 @@ The Final Output:
   { "_id": "A123", "totalSpent": 50 }
 ]
 ```
+
+### 25. Explain `$match` vs `$project` vs `$group`.
+`$match` filters documents (like WHERE), `$project` reshapes/selects fields (like SELECT), `$group` aggregates by a key (like GROUP BY).
+
+Core Differences<br/>
+- $match (The Filter): Acts like a WHERE clause in SQL. It passes only matching documents to the next stage. Use this first to speed up your pipeline.
+- $project (The Shaper): Acts like a SELECT clause in SQL. It adds, removes, or renames fields. It changes the look of individual documents.
+- $group (The Aggregator): Acts like a GROUP BY clause in SQL. It combines multiple documents into a single summary document, often computing totals or averages.
+
+The Example<br/>
+Imagine a sales collection with these three documents:
+
+```js
+[
+  { "_id": 1, "product": "Laptop", "category": "Electronics", "price": 1000, "status": "completed" },
+  { "_id": 2, "product": "Phone", "category": "Electronics", "price": 500, "status": "completed" },
+  { "_id": 3, "product": "Desk", "category": "Furniture", "price": 300, "status": "pending" }
+]
+```
+
+The Pipeline<br/>
+We want to find only completed sales, calculate the total revenue for each category, and format the final output.
+
+```js
+db.sales.aggregate([
+  // 1. FILTER: Keep only completed sales
+  { $match: { status: "completed" } },
+
+  // 2. AGGREGATE: Group by category and sum the prices
+  { $group: { _id: "$category", totalRevenue: { $sum: "$price" } } },
+
+  // 3. SHAPE: Clean up the output fields
+  { $project: { _id: 0, category: "$_id", totalRevenue: 1 } }
+])
+```
+
+Step-by-Step Data Transformation<br/>
+1. After $match: The "Desk" document is discarded because its status is pending.
+
+```js
+[
+  { "product": "Laptop", "category": "Electronics", "price": 1000, "status": "completed" },
+  { "product": "Phone", "category": "Electronics", "price": 500, "status": "completed" }
+]
+```
+
+2. After $group: The remaining documents are grouped by category. Their prices are added together (1000 + 500 = 1500).
+
+```js
+[
+  { "_id": "Electronics", "totalRevenue": 1500 }
+]
+```
+
+3. After $project: The default _id field is hidden, and a new category field takes its place for cleaner reading.
+
+```js
+[
+  { "category": "Electronics", "totalRevenue": 1500 }
+]
+```
+
+### 26. What is `$unwind` used for?
+Deconstructs an array field into multiple documents, one per array element.
+
+$unwind is used to deconstruct an array field from an input document to output a separate document for each element in that array. Think of it as flattening or exploding an array so you can work with individual items.
+
+How It Works<br/>
+If a single document contains an array with three items, running $unwind on that array field will split that single document into three separate, identical documents—except the array field is replaced by just one item per document.
+
+The Example<br/>
+Imagine a orders collection with a document containing an array of items:
+
+```js
+{
+  "_id": 101,
+  "customer": "Alice",
+  "items": ["Laptop", "Mouse", "Keyboard"]
+}
+```
+
+The Pipeline<br/>
+We want to separate this single order into three individual rows to analyze each item separately.
+
+```js
+db.orders.aggregate([
+  { $unwind: "$items" }
+])
+```
+
+The Output<br/>
+MongoDB duplicates the parent document data for each element in the array:
+
+```js
+[
+  { "_id": 101, "customer": "Alice", "items": "Laptop" },
+  { "_id": 101, "customer": "Alice", "items": "Mouse" },
+  { "_id": 101, "customer": "Alice", "items": "Keyboard" }
+]
+```
+
+Common Use Cases<br/>
+- Aggregating Array Data: If you want to calculate the total price of all items sold across all orders, you must $unwind the items array first to use $group and $sum on them.
+- Filtering Array Elements: Standard $match filters documents, not array elements. To filter out specific items inside an array, you $unwind the array, run $match on the items, and optionally rebuild the array using $group with $push.
+- Normalization: Preparing embedded data for relational-style reporting or exporting to a CSV.
+
+Pro Tip: Handling Empty Arrays<br/>
+By default, if a document has an empty array, a null array, or is missing the array field entirely, $unwind will discard that document.
+
+To prevent losing those documents, use the preserveNullAndEmptyArrays option:
+```js
+{
+  $unwind: {
+    path: "$items",
+    preserveNullAndEmptyArrays: true
+  }
+}
+```
+
+### 27. How do aggregation pipelines handle large datasets that exceed memory limits?
+MongoDB handles aggregation pipelines that exceed memory limits by enforcing a strict 100 MB RAM limit per stage and providing a mechanism to spill data to temporary disk files. If a stage exceeds this memory threshold without disk fallback enabled, the entire query will fail with an error.
+
+1. The allowDiskUse Option (The Primary Solution)<br/>
+By default, if a single pipeline stage (like $group, $sort, or $setWindowFields) consumes more than 100 MB of memory, MongoDB aborts the operation and returns an error. To prevent this, you must explicitly allow MongoDB to use the server's hard drive as temporary swap space.
+
+How to use it in code:<br/>
+```js
+db.orders.aggregate(
+  [
+    { $group: { _id: "$customer", total: { $sum: "$price" } } },
+    { $sort: { total: -1 } }
+  ],
+  { allowDiskUse: true } // Enables spilling to temporary disk files
+)
+```
+
+The Performance Trade-off<br/>
+While allowDiskUse: true prevents your queries from crashing, spilling data to disk is significantly slower than processing it in RAM. WiredTiger (MongoDB's storage engine) must write temporary blocks to disk and read them back, which introduces heavy I/O latency.
+
+2. Default Server-Side Optimization (Streaming Stages)<br/>
+Not all aggregation stages are bound by the 100 MB limit. MongoDB categorizes stages into two behavioral types:
+- Streaming Stages ($match, $project): These stages process documents one by one and pass them immediately to the next stage. They do not hold large volumes of data in memory, meaning they almost never hit the 100 MB limit, regardless of dataset size.
+- Blocking/Accumulating Stages ($group, $sort, $bucket): These stages must ingest all incoming documents before they can calculate a final result or reorder the data. These are the stages that trigger memory errors and require allowDiskUse.
+
+### 28. How do you optimize an aggregation pipeline?
+Optimizing a MongoDB aggregation pipeline relies on two main goals: reducing the number of documents passing through the pipeline as early as possible, and maximizing index usage
+
+1. The "Filter Early" Rule<br/>
+Always place $match and $limit stages at the very beginning of your pipeline.
+- Reducing the dataset in step one prevents subsequent stages (like $group or $unwind) from processing useless data.
+- Only the initial $match and $sort stages can use collection indexes. Once the data passes into a stage that modifies the document structure (like $project or $group), indexes can no longer be used.
+
+2. Sequence Your Stages Strategically<br/>
+The order of your stages drastically impacts performance. Follow these ordering rules:
+- $match before $sort: This allows MongoDB to use a compound index to handle both the filtering and the sorting without a heavy in-memory sort.
+- $match before $unwind: Unwinding an array duplicates documents and inflates your dataset. Filter out unwanted parent documents before you explode the arrays.
+- $project at the end: While projecting early reduces document size, placing a $project before a $match or $sort prevents MongoDB from using indexes on those fields. Keep $project near the tail end of your pipeline.
+
+3. Leverage Index Cover<br/>
+A query is "covered" when MongoDB can return the results using only the index, without ever reading the actual documents from disk.
+- Create compound indexes that include all fields used in your initial $match, $sort, and the fields passed into the next stage.
+- Use a lean $project right after your initial $match to select only the indexed fields you need.
+
+4. Let MongoDB Auto-Optimize<br/>
+MongoDB has a built-in query optimizer that automatically rearranges certain stages behind the scenes to improve performance.
+- $sort + $limit Coalescence: If you place a $limit immediately after a $sort, MongoDB will optimize the sort operation to only maintain the top n results in memory, preventing a massive full-dataset sort.
+- $match + $project Sequence: If you place a $match after a $project, MongoDB will automatically move the $match before the $project if the filtered fields don't rely on renamed fields.
+
+5. Use $lookup Efficiently<br/>
+Joining collections with $lookup is notoriously expensive. To optimize it:
+- Index the foreign key: Ensure the field you are matching against in the from collection is fully indexed.
+- Filter before lookup: Never run a $lookup on an entire collection. Filter your primary collection down to the absolute minimum rows via $match first.
+- Use correlated subqueries: Use the $lookup let and pipeline options to filter out irrelevant data inside the foreign collection during the join, rather than fetching everything and filtering later.
 
 ### 54. What is Sharding? How it works? is MongoDb automatically handled Sharding or do we need to configure it?
 MongoDB sharding is a method for horizontal scaling that splits large datasets across multiple independent servers or replica sets. It works using a query router (mongos), config servers for metadata, and shards to store data subsets, distributing read and write loads evenly via a chosen shard key.
