@@ -1107,6 +1107,8 @@ db.users.updateOne(
 ### 52. What is Elastic Search? How it works?
 Elasticsearch is a distributed, fast search and analytics engine built on Apache Lucene. It stores data as JSON documents and lets you search, analyze, and process large amounts of data in real time.
 
+Elasticsearch stores its physical data on the local filesystem of your machine or server in a directory named data.The exact physical location depends entirely on how you installed it. You can easily customize this directory path in your configuration files.
+
 The typical flow involves saving data in MongoDB, syncing that data to Elasticsearch, and querying Elasticsearch whenever a user searches for something.
 
 Yes, you can absolutely implement and use Elasticsearch alongside MongoDB in a Node.js application. It is a highly popular architecture where MongoDB serves as the primary datastore (for reliable transactional data) and Elasticsearch serves as the search engine (for fast fuzzy matching, full-text search, and auto-suggestions).
@@ -1209,6 +1211,18 @@ When to Stick to Just MongoDB<br/>
 - You have a low data volume: Your dataset is small enough that MongoDB's native $text index can handle it efficiently without performance hits.
 - You cannot afford data sync delays: Your application demands absolute consistency, meaning a newly saved item must appear in search results instantly without waiting for a sync pipeline.
 - You want to avoid architectural complexity: You have a limited development or DevOps budget and prefer not to manage, pay for, and secure two separate database clusters.
+
+Elasticsearch is an independent database, so it does not rely on MongoDB or the cloud unless you explicitly configure it to do so.Here is exactly why it stores data on the local machine and how it relates to other systems.
+
+Why It Stores Data on the Local Machine<br/>
+
+- It is a standalone database: Elasticsearch is its own database engine. Like MongoDB, MySQL, or PostgreSQL, it saves data directly to the server where it is running.
+- Speed and performance: It needs ultra-fast read and write access to the hard drive. Storing files locally on solid-state drives (SSDs) allows it to search millions of records in milliseconds.
+- Default behavior: When you run Elasticsearch on your laptop or a private server, "local" means that specific machine's hard drive.
+
+Why Not MongoDB?<br/>
+- Different use cases: MongoDB is a general-purpose document database. Elasticsearch is a specialized search engine built on Apache Lucene.
+- No dependency: Elasticsearch does not need MongoDB to function. However, many developers use them together: they store primary data in MongoDB and sync a copy to Elasticsearch just for high-speed searching.
 
 ### 53. What is Aggregation? How it works? Methods of Aggregation? How to implement it?
 MongoDB aggregation is a way to process multiple documents in a collection, group them together, perform operations on them, and return a single combined or computed result. Think of it as an assembly line where raw data goes in, gets filtered, sorted, and rebuilt at different stations, and a finished report comes out the other side.
