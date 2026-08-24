@@ -2259,6 +2259,115 @@ Navigation<br/>
 - Offset-Based: Allows jumping directly to any arbitrary page.
 - Cursor-Based: Limited to sequential movement like Next or Previous.
 
+### 64. how cursor based pagination works in mongodb?
+Cursor-based pagination in MongoDB works by using a specific document's unique field value as a pointer (or "bookmark") to fetch the next batch of data. Instead of utilizing skip(), which forces MongoDB to scan and discard all preceding documents, this technique replaces offsets with range-based queries ($gt or $lt). This allows MongoDB to leverage an index to jump directly to the exact starting point of the next page.
+
+Cursor-based pagination in MongoDB (also called "keyset pagination") avoids the performance problems of skip()/limit() by using a value from the last document you saw as a bookmark for the next query, instead of counting through documents.
+
+Why not skip()?<br/>
+```js
+db.posts.find().sort({ _id: 1 }).skip(10000).limit(20)
+```
+
+This still has to walk through and discard the first 10,000 documents internally, so it gets slower as the page number grows. Cursor pagination instead does an indexed range query, which stays fast regardless of how deep you paginate.
+
+Basic idea<br/>
+- Pick a sort field (or fields) that is unique and indexed — often _id, or createdAt combined with _id as a tiebreaker.
+- On the first page, just query normally and remember the sort value of the last document returned.
+- On the next page, query for documents "after" that value instead of skipping.
+
+Simple example (sorting by _id)<br/>
+First page:
+
+```js
+db.posts.find()
+  .sort({ _id: 1 })
+  .limit(20)
+```
+
+Take the _id of the last document in the results — call it lastId.
+
+Next page:
+```js
+db.posts.find({ _id: { $gt: lastId } })
+  .sort({ _id: 1 })
+  .limit(20)
+```
+
+Because _id is already indexed, this is a fast index range scan no matter how far you've paginated.
+
+Sorting by a non-unique field
+
+If you sort by something like createdAt, ties are possible, so use a compound cursor (field + _id) to keep ordering stable:
+
+```js
+// First page
+db.posts.find()
+  .sort({ createdAt: -1, _id: -1 })
+  .limit(20)
+
+// Remember lastCreatedAt and lastId from final doc, then:
+db.posts.find({
+  $or: [
+    { createdAt: { $lt: lastCreatedAt } },
+    { createdAt: lastCreatedAt, _id: { $lt: lastId } }
+  ]
+})
+.sort({ createdAt: -1, _id: -1 })
+.limit(20)
+```
+
+Make sure there's a compound index matching the sort:
+
+```js
+db.posts.createIndex({ createdAt: -1, _id: -1 })
+```
+
+Encoding the cursor
+
+In an API, you typically base64-encode the last document's sort values into an opaque "cursor" string returned to the client, e.g.:
+
+```js
+const cursor = Buffer.from(JSON.stringify({ createdAt: lastCreatedAt, _id: lastId })).toString('base64');
+```
+
+The client sends that cursor back on the next request, you decode it, and plug the values into the $lt/$gt query.
+
+Trade-offs<br/>
+- Pros: consistent performance at any depth, stable results even if documents are inserted/deleted between page loads (no skipped/duplicated items like with skip()).
+- Cons: you can't jump to an arbitrary page number (e.g. "go to page 47") — only forward/backward from a known point. That's usually fine for infinite-scroll or "next/prev" UIs, but not for numbered pagination.
+
+<b>db.posts.find().sort({ _id: 1 }) --->>>>> will _id have the last doc _id always?</b>
+
+Yes — with .sort({ _id: 1 }) (ascending), documents come back in increasing _id order, so the last document in that page's result set has the largest _id among that batch (not necessarily the largest in the whole collection, just within that page).
+
+That's exactly why it works as a cursor: since everything in the next page must have an _id greater than anything you've already seen, you just ask for _id: { $gt: lastId }.
+
+To make it concrete:
+
+```js
+// Page 1
+db.posts.find().sort({ _id: 1 }).limit(3)
+// → docs with _id: 1, 2, 3
+// lastId = 3 (the _id of the *last* doc returned)
+
+// Page 2
+db.posts.find({ _id: { $gt: 3 } }).sort({ _id: 1 }).limit(3)
+// → docs with _id: 4, 5, 6
+// lastId = 6
+
+// Page 3
+db.posts.find({ _id: { $gt: 6 } }).sort({ _id: 1 }).limit(3)
+// → docs with _id: 7, 8, 9
+
+```
+
+A few things worth noting:
+
+- Direction matters. If you sort descending (_id: -1), the last doc has the smallest _id in that page, and your next query would use $lt instead of $gt.
+- _id from an ObjectId is monotonically increasing (it embeds a timestamp + counter), so sorting by it also roughly gives you insertion order — handy if you want pagination that doubles as "oldest/newest first."
+- If documents are ever deleted or your sort field isn't strictly unique, always keep _id as a tiebreaker in the sort so the "last doc" is unambiguous, as in the compound example from before.
+
 
 ### 63. Difference between $lookup and Embedding?
 Embedding decides how your data is stored on the disk beforehand, whereas $lookup is used to combine separate collections on the fly when you run a query.
