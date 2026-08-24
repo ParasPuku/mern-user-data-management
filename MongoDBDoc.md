@@ -2181,6 +2181,83 @@ Choose Referencing (Separate Linked Collections) If:
 - High-Frequency Writes: The sub-documents are constantly being added or updated, which would otherwise trigger heavy document resizing in an embedded structure.
 - Data Duplication Concerns: You want to avoid updating identical information in hundreds of different places when a single shared detail changes.
 
+### 64. What is difference between cursor based pagination vs offset based pagination in mongodb?
+The primary difference is that offset-based pagination uses numeric skipping to reach a page, while cursor-based pagination uses a pointer to a specific document to fetch the next set of data.
+
+In MongoDB, offset pagination scales poorly because the database must scan through all skipped documents before returning results. Cursor pagination scales linearly because it uses indexed range queries to jump directly to the target document.
+
+Offset-Based Pagination: How It Works & Caveats<br/>
+Offset pagination utilizes the skip() method to bypass a specific number of matching documents and limit() to cap the results.
+
+```js
+// Example: Requesting Page 5 with 20 items per page
+db.posts.find()
+  .sort({ createdAt: -1 })
+  .skip(80) // Skips the first 4 pages of data
+  .limit(20);
+```
+
+Why it fails at scale in MongoDB<br/>
+MongoDB does not inherently know where record #81 resides. To execute a skip, MongoDB's storage engine must read and traverse every single record from the index up to the offset value, only to discard them. At high page numbers, this process causes linear performance degradation and high CPU usage.
+
+Additionally, if a user views page 1 and a new document is inserted, all existing records shift down. Navigating to page 2 will result in a duplicate document appearing on the UI.
+
+Cursor-Based Pagination: How It Works & Benefits<br/>
+Cursor pagination works by requesting data relative to a specific identifier (like an ObjectId or timestamp) from the last element of the previous page. The client passes this pointer back to the server in subsequent requests.
+
+```js
+// Example: Fetching the next page using the last seen ObjectId
+db.posts.find({ 
+    _id: { $lt: ObjectId("65dfca...") } 
+  })
+  .sort({ _id: -1 })
+  .limit(20);
+```
+
+Why it scales perfectly<br/>
+Because _id is automatically indexed by MongoDB, this query leverages an index seek. MongoDB jumps directly to the location of that specific ObjectId and reads the next 20 documents. Performance remains uniform whether you are fetching the 2nd page or the 10,000th page.
+
+Handling Compound Fields (Sorting by Date)<br/>
+When sorting by fields like createdAt, multiple entries might share the identical timestamp. To guarantee a stable sequence, you must pass a compound cursor linking your sort attribute and the _id.
+
+```js
+// Querying documents with a compound cursor
+db.posts.find({
+  $or: [
+    { createdAt: { $lt: lastSeenTimestamp } },
+    { createdAt: lastSeenTimestamp, _id: { $lt: lastSeenObjectId } }
+  ]
+})
+.sort({ createdAt: -1, _id: -1 })
+.limit(20);
+```
+
+(Note: To keep this fast, ensure a compound index exists on { createdAt: -1, _id: -1 }).
+
+Use Case Recommendations<br/>
+- Choose Offset Pagination if: You are building an internal admin dashboard with a limited number of records where a clear page number display is required and arbitrary page jumping is crucial.
+- Choose Cursor Pagination if: You are building a public-facing API, real-time activity feed, or an application with infinite scroll features containing large volumes of write activity.
+
+Comprehensive Comparison<br/>
+MongoDB MethodsComprehensive Comparison<br/>
+- Offset-Based: Uses skip() and limit().
+- Cursor-Based: Uses find() with comparison queries like $gt or $lt.
+
+Performance<br/>
+- Offset-Based: Degrading over time with O(N) time complexity.
+- Cursor-Based: Constant performance with \(O(\log N)\) when using proper indexes.
+
+UI Compatibility<br/>
+- Offset-Based: Best for traditional page numbers like 1 2 3 4 ... 10.
+- Cursor-Based: Best for infinite scroll or "Load More" buttons.
+
+Data Drift Stability<br/>
+- Offset-Based: Vulnerable to skipped or duplicate items during data changes.
+- Cursor-Based: Completely stable against concurrent writes and deletions.
+
+Navigation<br/>
+- Offset-Based: Allows jumping directly to any arbitrary page.
+- Cursor-Based: Limited to sequential movement like Next or Previous.
 
 
 ### 63. Difference between $lookup and Embedding?
