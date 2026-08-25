@@ -10553,6 +10553,147 @@ Choose Axios if:<br/>
 - You are tracking download/upload progress: Apps featuring user file uploads require Axios to track progress percentages natively via onUploadProgress.
 - You need older browser compatibility: If your application must support legacy environments, Axios handles cross-browser inconsistencies under the hood.
 
+### 122. What is GraphQL.?How it works?
+GraphQL is an open-source query language for APIs and a server-side runtime that allows clients to request the exact data they need, and nothing more. Developed by Facebook in 2012 and open-sourced in 2015, it was created to solve the common inefficiencies of traditional REST APIs, which often return too much data (overfetching) or require multiple requests to get related data (underfetching).
+
+Core Concepts of GraphQL<br/>
+Unlike REST APIs, which use multiple URLs (endpoints) to fetch different resources, GraphQL typically uses a single endpoint (usually /graphql). It relies on three primary components to manage data:
+
+- Schema: A strongly-typed blueprint written in Schema Definition Language (SDL) that defines the data structure, available fields, and relationships.
+- Queries and Mutations: The operations requested by the client. Queries read data, mutations modify data (create, update, delete), and subscriptions listen for real-time streaming updates.
+- Resolvers: Functions on the server side that tell GraphQL how to fetch the data for each specific field from your databases, microservices, or external APIs.
+
+How GraphQL Works (Step-by-Step)<br/>
+The interaction between a client and a GraphQL server follows a precise workflow:
+```js
+[ Client ] --( 1. Sends Custom Query )--> [ GraphQL Server ] --> [ 2. Parses & Validates ]
+                                                 │
+                                                 ├──> [ 3. Executes Resolvers ] 
+                                                 │        (Fetches from DB/API)
+                                                 │
+[ Client ] <--( 4. Receives Tailored JSON )<─────┘
+```
+
+- The Client Defines the Request: The client writes a query specifying the exact fields it wants.
+- The Server Parses and Validates: The GraphQL engine takes the query, converts it into an Abstract Syntax Tree (AST), and validates it against the schema to ensure the requested fields exist.
+- The Server Executes Resolvers: The server calls the resolver functions for the requested fields. These functions gather data from any underlying data source (e.g., SQL database, MongoDB, or a legacy REST API).
+- The Server Returns Tailored JSON: The server packages the data into a single JSON response that mirrors the exact hierarchical shape of the client's query.
+
+A Concrete Example <br/>
+If you want to display a blog post along with its author's name, you can retrieve both in a single round-trip:
+
+1. Project Initialization<br/>
+Run these commands in your terminal to set up your project folder and install the necessary dependencies:
+
+```js
+# Create and enter project directory
+mkdir graphql-backend && cd graphql-backend
+
+# Initialize Node.js project
+npm init -y
+
+# Install Apollo Server and GraphQL
+npm install @apollo/server graphql
+
+# Install TypeScript and development tools
+npm install typescript @types/node tsx --save-dev
+
+# Initialize TypeScript configuration
+npx tsc --init
+```
+
+2. The Application Code<br/>
+Create a file named server.ts and add the following code. This single file contains the three pillars of a GraphQL backend: the Schema (Type Definitions), the Mock Data Sources, and the Resolvers.
+
+```js
+import { ApolloServer } from '@apollo/server';
+import { startStandaloneServer } from '@apollo/server/standalone';
+
+// 1. The Schema (Type Definitions)
+const typeDefs = `#graphql
+  type Author {
+    id: ID!
+    name: String!
+  }
+
+  type Post {
+    id: ID!
+    title: String!
+    content: String!
+    author: Author!
+  }
+
+  type Query {
+    post(id: ID!): Post
+  }
+`;
+
+// 2. Mock Data (Simulating a database)
+const authors = [
+  { id: "101", name: "Jane Doe" },
+  { id: "102", name: "John Smith" }
+];
+
+const posts = [
+  { id: "45", title: "Introduction to GraphQL", content: "GraphQL is a query language...", authorId: "101" },
+  { id: "46", title: "TypeScript Tips", content: "Use strict mode...", authorId: "102" }
+];
+
+// 3. The Resolvers
+const resolvers = {
+  Query: {
+    // Fetches a single post by its ID
+    post: (_parent: any, args: { id: string }) => {
+      return posts.find(post => post.id === args.id);
+    },
+  },
+  Post: {
+    // Resolves the nested 'author' field for a Post
+    author: (parent: { authorId: string }) => {
+      return authors.find(author => author.id === parent.authorId);
+    },
+  },
+};
+
+// 4. Server Initialization
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+});
+
+async function startServer() {
+  const { url } = await startStandaloneServer(server, {
+    listen: { port: 4000 },
+  });
+  console.log(`🚀 Server ready at: ${url}`);
+}
+
+startServer();
+```
+
+3. Running and Testing the ServerTo start your server, run the following command in your terminal:
+
+```js
+npx tsx server.ts
+```
+
+You will see 🚀 Server ready at: http://localhost:4000/ in your console.
+- Open your web browser and navigate to http://localhost:4000/.
+- This opens Apollo Sandbox, a built-in visual tool to test your API.
+- Paste the following query into the operations panel and click Run:
+
+```js
+query GetPostDetails {
+  post(id: "45") {
+    title
+    content
+    author {
+      name
+    }
+  }
+}
+```
+
 ### 122. What is the difference between GraphQL and RESTFul api?
 The core difference is that REST revolves around fixed resources across multiple URL endpoints, while GraphQL allows clients to request exactly the data they need from a single endpoint.
 
