@@ -5658,6 +5658,27 @@ Interview answer:
 Micro-frontend architecture splits a large frontend into smaller independently owned and deployable applications. A shell/container app usually handles layout, routing, authentication, and loads domain-specific micro-apps like dashboard, billing, or users. Communication should happen through URL state, browser events, shared APIs, or external stores. It is useful for large teams and large products, but it adds complexity, so I would not use it for small apps.
 ```
 
+### 92. Will have separate code base for each micro frontend apps?
+Not necessarily. While each micro frontend app will have logical isolation, they do not require entirely separate code repositories. You can organize your codebases using two main strategies depending on your team's workflow and DevOps preferences:
+
+1. Monorepo (Single Repository) <br/>
+All micro frontend apps live inside a single code repository but are divided into distinct folders.
+- How it works: You use tools like Turborepo, Nx, or Lerna to manage them.
+- Best for: Small to medium teams that want easy code sharing, unified version control, and simplified dependency management.
+
+2. Polyrepo (Separate Repositories)<br/>
+Each micro frontend app lives in its own completely separate code repository.
+
+- How it works: Every application has its own independent source control, build setup, and CI/CD pipeline.
+- Best for: Large, cross-functional enterprise teams requiring strict boundaries, total autonomy, and isolated deployment cycles.
+
+Core Architecture Requirements
+Regardless of whether you choose a single or separate repository, every micro frontend app must maintain:
+- Independent build and deployment cycles
+- Autonomous business logic boundaries
+- Isolated testing pipelines
+- Individual deployment endpoints at runtime
+
 ### 92. What is Suspense and what is the use of Suspense?
 
 `Suspense` is a React component that helps to show fallback UI while part of the UI is not ready yet.
