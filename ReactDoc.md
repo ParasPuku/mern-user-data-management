@@ -451,13 +451,16 @@ React Fragment lets us group multiple elements without adding an extra DOM node.
 
 Reasons:
 
-- reusable components
-- declarative UI
-- efficient updates
-- strong ecosystem
-- easier state-driven UI
-- works well with TypeScript
-- good for SPAs and complex UIs
+- Reusable components
+- Declarative UI
+- Just a library not a framework
+- Virtual DOM
+- React Native
+- Huge ecosystem
+- Efficient updates
+- Easier state-driven UI
+- Works well with TypeScript
+- Good for SPAs and complex UIs
 
 Interview answer:
 
@@ -3895,6 +3898,13 @@ Final interview shortcut:
 useDeferredValue is useful when a fast-changing value causes expensive rendering and we want React to keep urgent UI responsive by showing the previous UI until the new UI is ready.
 ```
 
+#### 52. What is the difference between the useTransition and useDeferredValue in React?
+The primary difference is that -
+- useTransition wraps the state-updating function to mark the update as low priority, whereas 
+- useDeferredValue wraps the resulting state value itself to delay its propagation. 
+
+Both hooks leverage React's concurrent rendering to keep the user interface responsive during heavy computational tasks.
+
 ### 52. useMemo vs useCallback?
 
 `useMemo` memoizes a value.
@@ -4869,6 +4879,10 @@ Use Saga when:
 - you need background polling
 - you need race handling
 - many async actions depend on each other
+
+The core difference between takeEvery and takeLatest in Redux Saga lies in concurrency control: - 
+- takeEvery allows multiple instances of a task to run simultaneously, whereas 
+- takeLatest automatically cancels any previous unfinished task when a new action of the same type is dispatched.
 
 #### Thunk vs Saga comparison
 
