@@ -5066,10 +5066,11 @@ This issue happened in this app in the skills selector and was fixed by using a 
 ### 82. How to secure the React APP?
 Securing a React app requires layers of protection at both the client level and the server level. The most critical step is preventing Cross-Site Scripting (XSS) by allowing React to auto-escape data, avoiding dangerouslySetInnerHTML, and sanitizing user inputs. Always treat the frontend as untrusted.
 
+- Use Rate limit
+- Implement Robust Authentication[JWT]
+- Protect Environment Variables & Secrets
 - Prevent Cross-Site Scripting (XSS)
 - Avoiding dangerouslySetInnerHTML
-- Protect Environment Variables & Secrets
-- Implement Robust Authentication[JWT]
 - Rely on the Backend for Security
 - Keep Dependencies Updated [Vulnerability]
 - Avoid direct DOM Access
