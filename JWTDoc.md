@@ -6,6 +6,104 @@ Reference - https://medium.com/@aggarwalapurva89/jwt-questions-a2246ce1ae1b
 Reference - https://medium.com/@sanjeevanibhandari3/top-5-jwt-interview-questions-most-developers-get-wrong-part-1-easy-a376c06974f5
 
 
+1. Access Token vs Refresh Token — Simple Terms
+"Access tokens are short-lived and stateless for performance; refresh tokens are longer-lived but stored server-side so they can be revoked. If a token is stolen, we can't kill a JWT instantly without breaking statelessness, so we mitigate via short expiry + refresh token rotation with reuse detection + server-side revocation of refresh tokens, and blacklist critical access tokens if needed."
+
+How the flow works
+- Login: User sends credentials → Server verifies → Server issues Access Token (JWT) + Refresh Token.
+- Using the app: Client sends Access Token in Authorization: Bearer <token> header on every API call. Server verifies signature + expiry — no DB lookup needed (that's the point of JWT — stateless).
+- Access Token expires (say after 15 min): API starts returning 401 Unauthorized.
+- Client silently calls /refresh endpoint, sending the Refresh Token.
+- Server validates Refresh Token (checks it's not expired/revoked, usually against a DB or whitelist), and issues a new Access Token (and often a new Refresh Token — called rotation).
+- This repeats until the Refresh Token itself expires → then user must log in again.
+
+Why two tokens instead of one?
+- If only one long-lived token existed, stealing it = permanent compromise.
+- Short-lived access token = smaller attack window.
+- Refresh token is used rarely, so it's easier to protect (e.g., store in httpOnly cookie, send only to /refresh endpoint) and easier to revoke server-side.
+
+Key design point for interviews
+- Access token: stateless, not stored in DB, server just verifies signature — fast, scalable.
+- Refresh token: usually stored server-side (DB/Redis) so it can be revoked/blacklisted. This is what makes logout and "kill session" possible in an otherwise stateless JWT system.
+
+2. What if someone steals your JWT? (Interview gold)
+Immediate mitigations (design-time, before theft even happens)
+- Short access token expiry (5–15 min) — limits the damage window automatically.
+- Store tokens securely on client: httpOnly, Secure, SameSite cookies — NOT localStorage (localStorage is readable by JS → vulnerable to XSS).
+- HTTPS only — prevents man-in-the-middle sniffing.
+- Refresh token rotation: every time a refresh token is used, issue a new one and invalidate the old. If a stolen refresh token is reused after the legitimate user already used theirs, the server detects reuse → treat as breach → revoke entire token family (all sessions for that user).
+
+If theft is detected/suspected — response steps
+- Revoke the refresh token server-side (delete/blacklist it in DB). This kills the ability to mint new access tokens.
+- Short-lived access token naturally expires soon — so the stolen access token becomes useless quickly even if you can't revoke it directly (that's the tradeoff of stateless JWTs — no instant kill switch).
+- For critical instant revocation of access tokens themselves, some systems maintain a token blacklist/deny-list (Redis, checked on each request) — sacrifices some statelessness for security.
+- Force re-authentication: invalidate all sessions for that user, require login again (and password reset if credential compromise suspected).
+- Rotate signing keys (kid in JWT header) in extreme cases — invalidates all tokens system-wide, forces everyone to re-login. Nuclear option.
+- Bind tokens to context: some systems tie tokens to IP/device fingerprint/user-agent — if the token is used from a wildly different context, reject it and flag for review.
+
+## What is xss vulnerability in simple terms?
+"XSS happens when untrusted input gets rendered as executable code in the browser. The fix is defense-in-depth: escape/encode output by default, sanitize any HTML you must allow, enforce CSP to restrict script sources, and store sensitive data like auth tokens in httpOnly cookies so even a successful XSS can't exfiltrate them."
+
+XSS (Cross-Site Scripting) — Simple Terms<br/>
+XSS happens when an attacker manages to inject their own JavaScript code into a webpage that other users view, and the browser runs it as if it were legitimate code from that site.
+
+Simple analogy: 
+- Imagine a comment box on a blog. Instead of typing a comment, someone types <script>steal_your_cookies()</script>. If the website just displays whatever was typed without cleaning it up, that script actually runs in every visitor's browser — with full access to that page (cookies, session, DOM, etc.), because the browser trusts it as "part of the site."
+
+Why it's dangerous
+
+Since the malicious script runs inside the trusted origin, it can:
+
+- Steal cookies / tokens (including your JWT if stored in localStorage!) → session hijacking
+- Log keystrokes
+- Redirect users to phishing pages
+- Make API calls on the user's behalf (as if the user did it)
+- Deface the page
+
+This is exactly why, in the earlier JWT discussion, storing tokens in localStorage is risky — any XSS on the page can just do localStorage.getItem('token') and send it to the attacker's server.
+
+Types of XSS (quick interview list)<br/>
+Type	How it happens
+- Stored XSS->	Malicious script is saved on the server (e.g., in a DB via a comment/profile field) and served to every user who views that page. Most dangerous — affects everyone.
+- Reflected XSS -> 	Script is part of the request (e.g., URL query param) and gets echoed back immediately in the response, unescaped. Usually delivered via a malicious link.
+- DOM-based XSS -> 	The vulnerability is purely client-side — JS code takes some input (URL, hash) and inserts it into the DOM (e.g., innerHTML) without sanitizing, never touching the server at all.
+
+How to Fix / Prevent XSS
+1. Output encoding / escaping (the #1 fix)
+
+Never insert user input directly into HTML. Escape special characters so <script> becomes literal text &lt;script&gt;, not executable code.
+
+- Most modern frameworks (React, Angular, Vue) auto-escape content by default. XSS mostly happens when devs bypass this — e.g., React's dangerouslySetInnerHTML, Angular's [innerHTML], or raw document.write/innerHTML in vanilla JS.
+
+2. Content Security Policy (CSP)
+
+An HTTP header that tells the browser: "only run scripts from these trusted sources." Even if an attacker injects a <script> tag, CSP blocks it from executing if it's not from an allowed origin.
+
+```js
+Content-Security-Policy: script-src 'self' https://trusted-cdn.com
+```
+3. Sanitize input (server-side AND client-side)
+
+If you must allow some HTML (e.g., rich text comments), use a proven sanitization library (like DOMPurify) to strip dangerous tags/attributes (<script>, onerror=, javascript: URLs) while keeping safe formatting.
+
+4. HttpOnly cookies for sensitive tokens
+
+This ties back to JWT storage: store tokens in httpOnly cookies instead of localStorage. httpOnly means JavaScript cannot read the cookie at all — so even if XSS exists, the attacker's injected script can't steal the token.
+
+5. Validate input on the server too
+
+Never trust client-side validation alone — attackers can bypass the browser entirely and hit your API directly.
+
+6. Use SameSite cookie attribute
+
+Helps mitigate related attacks (like CSRF) that often get chained with XSS.
+
+7. Avoid dangerous sinks
+
+Don't use eval(), innerHTML, document.write() with untrusted data. Prefer textContent, createElement, or framework-safe binding.
+
+
+
 ## What Is JWT
 
 JWT stands for JSON Web Token.
