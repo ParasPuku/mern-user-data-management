@@ -127,6 +127,24 @@ Best Practices
 - Keep individual values small (ideally under 100 KB) to prevent network blocking and latency spikes during reads and writes.
 - If you need to store objects larger than 512 MB, chunk the data into multiple keys or separate fields.
 
+### redis store data in which format?
+Redis stores data as a NoSQL key-value store primarily in computer memory (RAM). Every piece of data is mapped to a unique key, and while the keys are always strings, the values can be stored in many different data formats and structural types.
+
+Core Data Formats (In-Memory)<br/>
+Depending on your use case, Redis allows you to map a key to any of the following formats:
+- Strings: The most basic format, which is binary-safe and can hold text, integers, or raw binary data (up to 512MB).
+- Hashes: A map of field-value pairs, perfect for representing basic structured objects (like a user profile).
+- Lists: Sequences of string elements sorted by the order they were inserted (implemented as linked lists).
+- Sets: Unordered collections of unique strings that allow for quick membership testing.
+- Sorted Sets: Unique strings where every member is associated with a numeric score used to keep the elements ordered.
+- JSON: Native, structured hierarchical documents that you can query and manipulate directly.
+- Advanced Types: Includes Streams (append-only message logs), Bitmaps, HyperLogLogs (probabilistic counters), and Geospatial indexes.
+
+Physical Storage Formats (On Disk)<br/>
+If you turn on data persistence to protect against data loss during a reboot, Redis writes the in-memory data to your physical drive using two distinct file formats:
+- RDB (Redis Database File): A highly compressed, point-in-time binary snapshot of your entire dataset.
+- AOF (Append Only File): A log file that records a history of every raw write command received by the server.
+
 ## What Redis Is?
 
 Redis is an in-memory key-value data store.
