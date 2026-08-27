@@ -112,6 +112,21 @@ Key Concepts Summary:
 Real-world tip: this pattern works great for read-heavy data (user profiles, product listings) that doesn't change every second. For rapidly changing data, either use very short TTLs, or a write-through strategy (update Redis and MongoDB together on every write) instead of cache-aside.
 
 
+### what is the limit size to store the data in redis?
+
+- The maximum size for any single key or string value in Redis is 512 MB.
+- Its also depend upon the RAM size.
+
+Key and Value Limits
+- Maximum Key Size: 512 MB (though keys this large degrade performance; short, descriptive keys are best).
+- Maximum String Value Size: 512 MB.
+- Aggregate Data Types (Hashes, Lists, Sets, Sorted Sets): Can contain up to 2³² - 1 (over 4 billion) elements per structure, and each individual element inside these structures can also be up to 512 MB.
+- Total Dataset Limit: Limited only by the total system RAM or the maxmemory configuration limit set on your Redis instance.
+
+Best Practices
+- Keep individual values small (ideally under 100 KB) to prevent network blocking and latency spikes during reads and writes.
+- If you need to store objects larger than 512 MB, chunk the data into multiple keys or separate fields.
+
 ## What Redis Is?
 
 Redis is an in-memory key-value data store.
