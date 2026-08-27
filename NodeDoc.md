@@ -2203,6 +2203,19 @@ Yes. The Master Process is just a specific role given to the very first Node Pro
 2. Is worker process the same as a child process?<br/>
 Yes. A Worker Process is simply a Child Process created by the master. It is an exact clone of your application running in its own separate memory space on another CPU core to handle incoming traffic.Summary Cheat SheetMaster Process = The original, parent Node Process (The Manager).Worker Process = A spawned Child Process (The Worker).
 
+### 12. what is process.exit() in node js?
+In Node.js, process.exit(0) is a built-in method that immediately terminates the running process and signals to the operating system that the script executed successfully without any errors.
+
+Breakdown of the Code
+- process: A global object in Node.js that provides information and control over the current running application.
+- .exit(): A method that forces the Node.js event loop to stop and shuts down the application synchronously.
+- 0: The exit status code. In command-line environments and operating systems, a code of 0 means "Success". Any non-zero code (most commonly 1) tells the system that the program stopped due to a failure or an unhandled exception.
+
+Key Behaviors
+- Synchronous Termination: Once this line is reached, Node.js will abruptly stop executing any remaining code in your script.
+- Aborts Pending Tasks: It forces the process to stop even if there are asynchronous operations (like active database queries or timeouts) still waiting to finish.
+- Default Value: If you call process.exit() without passing a number, it will automatically default to 0.
+
 ### 12. What is Node Process in Node js?
 A Node process is simply the running instance of your Node.js application — created when you run node app.js.
 
