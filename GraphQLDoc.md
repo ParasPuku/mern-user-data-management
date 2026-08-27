@@ -49,6 +49,142 @@ GraphQL is a typed query language + runtime. One endpoint, client-driven payload
 
 ---
 
+### 1.1 How does GraphQL send ONLY the fields you asked for?
+
+This is the #1 thing people misunderstand. GraphQL does **not** magically change your MongoDB document. The **GraphQL execution engine** builds the response JSON field-by-field from the client's **selection set** — so unrequested fields never appear in the HTTP response.
+
+#### Example
+
+Schema / DB user has many fields:
+
+```graphql
+type User {
+  id: ID!
+  name: String!
+  age: Int
+  address: String
+  mobile: String
+  country: String
+}
+
+type Query {
+  user(id: ID!): User
+}
+```
+
+Client asks for **only** `name` and `country`:
+
+```graphql
+query {
+  user(id: "1") {
+    name
+    country
+  }
+}
+```
+
+Response — **only those two fields** (plus nesting under `user`):
+
+```json
+{
+  "data": {
+    "user": {
+      "name": "Paras",
+      "country": "India"
+    }
+  }
+}
+```
+
+`age`, `address`, `mobile` are **not** in the response — even if the resolver loaded the full user from MongoDB.
+
+#### What actually happens step-by-step
+
+```text
+1. Client sends selection set: user { name, country }
+
+2. Server validates: name & country exist on type User ✓
+
+3. Execute Query.user resolver
+   → returns a full JS object from DB, e.g.
+     { id, name, age, address, mobile, country }
+
+4. GraphQL runtime looks at the selection set again
+   → for EACH requested field, call that field's resolver:
+        User.name    → parent.name     → "Paras"
+        User.country → parent.country  → "India"
+   → age / address / mobile were NEVER requested
+     → their resolvers are NEVER called
+     → they are NEVER written into the response JSON
+
+5. Final JSON mirrors the query shape exactly
+```
+
+So the “filter” happens in the **GraphQL response builder**, not because your resolver manually picked two fields.
+
+#### Code view (resolvers)
+
+```js
+const resolvers = {
+  Query: {
+    // Parent resolver — often returns the WHOLE user document
+    user: async (_parent, { id }) => {
+      return User.findById(id); // may contain age, address, mobile too
+    },
+  },
+
+  // Field resolvers — GraphQL only calls these if the client asked for them
+  User: {
+    name: (parent) => parent.name,       // called ✔ (requested)
+    country: (parent) => parent.country, // called ✔ (requested)
+    age: (parent) => parent.age,         // NOT called ✖ (not in query)
+    address: (parent) => parent.address, // NOT called ✖
+    mobile: (parent) => parent.mobile,   // NOT called ✖
+  },
+};
+```
+
+If you omit `User.name` / `User.country`, GraphQL’s **default field resolver** does the same thing: `parent[fieldName]` — still only for fields in the query.
+
+#### REST vs GraphQL (same example)
+
+| | REST `GET /users/1` | GraphQL query above |
+|--|---------------------|---------------------|
+| Response | Usually whole resource: name, age, address, mobile, country | Only `name` + `country` |
+| Who decides shape? | Server (fixed DTO) | Client (selection set) |
+| Extra fields on wire? | Yes (overfetch) | No |
+
+#### Important interview nuance (DB vs response)
+
+| Layer | What happens with `name` + `country` query? |
+|-------|-----------------------------------------------|
+| **HTTP response** | Guaranteed: only requested fields |
+| **MongoDB `findById`** | By default may still load the **full document** |
+| **Network to client** | Small — only selected fields serialized |
+
+So:
+
+- **Overfetching on the wire (client)** → solved by GraphQL selection sets automatically.
+- **Overfetching from the database** → optional extra optimization (projection):
+
+```js
+user: async (_parent, { id }, _ctx, info) => {
+  // Advanced: read info to know which fields were requested,
+  // then project only those columns in Mongo:
+  return User.findById(id).select('name country');
+}
+```
+
+Most apps rely on GraphQL’s response filtering first; DB projection / DataLoader optimizations come later.
+
+#### One-liner for interviews
+
+```text
+The client’s query is a selection set. GraphQL executes only those field resolvers and builds JSON that mirrors the query. Unrequested fields are never resolved and never sent — even if the parent object from the DB had more data.
+```
+
+---
+
 ### 2. GraphQL vs REST
 
 | Topic | REST | GraphQL |
@@ -568,6 +704,10 @@ export default mongoose.model('Post', postSchema);
 ---
 
 ### 15. What is a Resolver? Full signature and examples
+
+In GraphQL, a resolver is a function responsible for fetching or computing the data for a single field in your API schema.
+
+Think of the schema as a blueprint that defines what data a client can ask for, while resolvers act as the actual engine room that determines how to fetch that data at runtime. When a client submits a query, the GraphQL server passes the request to the corresponding resolver functions to construct the final response.
 
 Resolver signature:
 
@@ -1417,6 +1557,7 @@ React → Apollo Client → POST /graphql { query, variables }
 - [x] Scalars, Objects, Inputs, Enums, Interfaces, Unions
 - [x] Non-null & Lists
 - [x] Query / Mutation / Subscription
+- [x] Selection set → response only includes requested fields (see §1.1)
 - [x] Arguments, Variables, Aliases
 - [x] Fragments
 - [x] Directives (`@include`, `@skip`, `@deprecated`)
