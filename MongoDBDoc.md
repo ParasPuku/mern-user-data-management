@@ -2817,6 +2817,174 @@ How to Check and Verify Usage
 - Verify Index Usage: Append .explain("executionStats") to your query (e.g., db.collection.find({ age: 25 }).explain("executionStats")).
 - Confirming Success: Look for IXSCAN (Index Scan) in the winning plan. Avoid COLLSCAN (Collection Scan), which means MongoDB scanned every document.
 
+How it works? <br/>
+So creating an index, then using it in a query, with explain() to prove it's working.
+
+1. Sample data<br/>
+```js
+db.orders.insertMany([
+  { userId: 101, status: "shipped", createdAt: new Date("2025-01-01"), amount: 250 },
+  { userId: 102, status: "pending", createdAt: new Date("2025-02-15"), amount: 80 },
+  { userId: 101, status: "delivered", createdAt: new Date("2025-03-10"), amount: 120 },
+  { userId: 103, status: "shipped", createdAt: new Date("2025-04-05"), amount: 300 },
+  // ...imagine millions of these
+]);
+```
+
+Without an index, a query like find({ userId: 101 }) does a collection scan — checks every document one by one.
+
+2. Create a single-field index
+```js
+db.orders.createIndex({ userId: 1 }); // 1 = ascending, -1 = descending
+```
+
+Now this query uses the index instead of scanning everything:
+
+```js
+db.orders.find({ userId: 101 });
+```
+
+3. Verify it's actually used
+
+```js
+db.orders.find({ userId: 101 }).explain("executionStats");
+```
+
+Look for "stage": "IXSCAN" (index scan) instead of "COLLSCAN" (collection scan) in the output. That confirms the index is being hit.
+
+4. Compound index (for queries filtering on multiple fields)
+
+If you commonly query by userId and status together:
+
+```js
+db.orders.createIndex({ userId: 1, status: 1 });
+```
+
+This speeds up:
+
+```js
+db.orders.find({ userId: 101, status: "shipped" });
+```
+
+It also speeds up queries on just userId alone (leftmost prefix rule), but not on status alone — the field order matters. MongoDB can only use a compound index efficiently starting from its leftmost field.
+
+5. Index for sorting
+
+```js
+db.orders.createIndex({ createdAt: -1 });
+```
+
+Speeds up:
+
+```js
+db.orders.find().sort({ createdAt: -1 }).limit(10);
+```
+
+Useful for feeds, "latest orders", pagination, etc. — avoids an in-memory sort.
+
+6. Unique index (enforces no duplicates)
+
+```js
+db.orders.createIndex({ orderId: 1 }, { unique: true });
+```
+
+Insert attempts with a duplicate orderId will throw an error.
+
+7. Check existing indexes
+
+```js
+db.orders.getIndexes();
+```
+
+8. Drop an index (if it's unused or hurting write performance)
+
+```js
+db.orders.dropIndex({ userId: 1 });
+```
+
+Quick rules of thumb
+- Index fields you filter (find), sort, or join ($lookup) on frequently.
+- Every index speeds up reads but slows down writes (insert/update must update the index too) and uses disk/RAM — don't over-index.
+- For compound indexes, order fields by: equality filters first, then sort fields, then range filters (the "ESR rule": Equality, Sort, Range).
+
+### 50. What is database connection pooling in mongodb?
+In MongoDB, connection pooling is built directly into the official drivers (Node.js, Python, Java, etc.) — you don't need a separate pooling library like you might with SQL databases. When you create a MongoClient, it automatically manages a pool of open TCP connections to the MongoDB server(s) and reuses them across queries.
+
+How it works in MongoDB specifically
+
+```js
+const { MongoClient } = require("mongodb");
+
+const client = new MongoClient(uri, {
+  maxPoolSize: 100,  // max connections in the pool (default: 100)
+  minPoolSize: 0,    // min connections kept alive (default: 0)
+  maxIdleTimeMS: 30000, // close idle connections after this long
+});
+
+await client.connect();
+```
+
+- One MongoClient = one connection pool. You create it once when your app starts, not per-request.
+- Every operation (find, insertOne, updateOne, etc.) automatically borrows a connection from this pool, runs the operation, and returns it — you never manually open/close connections per query.
+- If a replica set or sharded cluster is used, the driver maintains a separate pool per server (each mongos/replica member gets its own pool), not just one global pool.
+
+Example — correct usage
+
+```js
+// db.js — create ONCE, reuse everywhere
+const { MongoClient } = require("mongodb");
+const client = new MongoClient(process.env.MONGO_URI, { maxPoolSize: 50 });
+let db;
+
+async function connectDB() {
+  await client.connect();
+  db = client.db("myapp");
+  console.log("Pool ready");
+}
+
+module.exports = { connectDB, getDB: () => db };
+```
+
+```js
+// userRoutes.js — reuse the same pooled client
+const { getDB } = require("./db");
+
+async function getUser(req, res) {
+  const db = getDB();
+  const user = await db.collection("users").findOne({ _id: req.params.id });
+  res.json(user);
+}
+```
+
+Common mistake ❌
+
+```js
+// DON'T do this — creates a new pool on every request
+app.get("/user/:id", async (req, res) => {
+  const client = new MongoClient(uri); // wrong!
+  await client.connect();
+  const user = await client.db("myapp").collection("users").findOne({ _id: req.params.id });
+  res.json(user);
+  await client.close();
+});
+```
+
+This defeats pooling entirely — you're paying the connection-setup cost on every single request, and can quickly exhaust MongoDB's maxIncomingConnections limit under load.
+
+Key options to know<br/>
+```js
+Option                Purpose
+- maxPoolSize	        - Max connections per server (default 100)
+- minPoolSize	        - Min connections kept open even when idle (default 0)
+- maxIdleTimeMS	      - Closes connections idle longer than this
+- waitQueueTimeoutMS	- How long a request waits for a free connection before erroring
+```
+
+Bottom line
+
+In MongoDB, pooling is automatic and tied to the MongoClient instance — the golden rule is: instantiate the client once, share it across your whole app, and let the driver handle connection reuse internally.
+
+
 ### 50. What is ESR rule in index?
 The ESR Rule in MongoDB is a design guideline for ordering fields in a compound index to maximize query performance. ESR stands for Equality, Sort, and Range, which dictates the exact sequence of fields inside the index. It helps structuring indexes this way minimizes memory use and speeds up data retrieval.
 

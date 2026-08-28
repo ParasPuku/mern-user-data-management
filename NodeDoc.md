@@ -44,6 +44,8 @@ Node.js is not a programming language. It is a runtime that executes JavaScript 
 Reasons:
 
 - JavaScript on backend and frontend
+- Event-driven architecture
+- Asynchronous
 - fast V8 engine
 - non-blocking I/O
 - good for API servers
