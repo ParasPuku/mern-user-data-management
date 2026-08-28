@@ -2564,6 +2564,20 @@ console.log("⚡ Main: I am completely free to handle other user clicks right no
 ### 12. Child process vs worker thread?
 The primary difference is that Child Processes run in completely separate operating system processes with isolated memory, while Worker Threads run inside the same process and share memory.
 
+Is Child processes spin up entirely new instances of the Node.js runtime environment?<br/>
+
+NOTEE --- Not quite — it depends on which method you're using.
+
+Where it's true: child_process.fork() specifically spawns a new Node.js process — a fresh instance of the V8 engine plus the Node.js runtime, with its own memory space and event loop. This is the one method dedicated to launching Node.js scripts as children.
+
+Where it's not true: The other child_process methods — spawn(), exec(), execFile() — don't necessarily start a Node.js runtime at all. They can launch any executable on the system: a shell command, ls, python3 script.py, ffmpeg, etc. In those cases, the child process is whatever program you pointed it at, not a Node.js instance.
+
+So a more accurate sentence would be something like:
+
+"child_process.fork() spins up a new instance of the Node.js runtime; other child_process methods can launch any external program, which may or may not be Node.js."
+
+If your context is specifically about fork(), then the original sentence is basically correct — every forked child does get its own full Node.js process (separate memory, no shared state, communicates via IPC/message passing). But as a blanket statement about "child processes" in general, it overstates things.
+
 Child Processes<br/>
 Child processes spin up entirely new instances of the Node.js runtime environment.
 - Memory: Isolated. Processes cannot directly access each other's variables.
