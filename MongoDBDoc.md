@@ -189,17 +189,26 @@ The default size limit is 16MB per document.
 
 ### 5. Explain ObjectId. How is it generated?
 
-`ObjectId` is the default value for `_id`. ObjectId is a unique identifier automatically generated for each document. It includes a timestamp, machine ID, process ID, and counter.
+`ObjectId` is the default value for `_id`. ObjectId is a unique identifier automatically generated for each document. 
+
+It includes - 
+- timestamp 
+- machine ID 
+- process ID
+- counter
+
+In MongoDB, the primary purpose of an ObjectId is to act as a globally unique primary key for documents within a collection. By default, if you do not specify an _id field when inserting a new document, the MongoDB driver automatically generates an ObjectId to uniquely identify that document across distributed systems without needing a central coordinating server.
+
+Core Purposes and Benefits
+- Guaranteed Uniqueness: It ensures every document within a database collection can be uniquely identified, preventing duplicate entries.
+- Automatic Generation: Database drivers or the server generate it automatically, meaning developers do not have to write custom logic to create unique IDs.
+- Built-in Timestamp: Because it embeds the exact creation time, you can extract the timestamp directly from the ID without storing a separate createdAt field.
+- Natural Sorting: It is "k-sortable" (roughly time-ordered). Sorting documents by their ObjectId naturally organizes them by creation time.
+- Performance Optimization: At 12 bytes, it is smaller than standard 16-byte UUIDs. This creates smaller database indexes, saving RAM and speeding up lookups.
 
 Every MongoDB document needs an `_id`.
 
 ObjectId is usually 12 bytes. 
-
-It contains:
-
-- timestamp
-- machine/process information
-- counter
 
 Example:
 
