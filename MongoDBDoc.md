@@ -969,6 +969,61 @@ When to use which?
 - Use db.collection.updateOne() when you only want to tweak a few values or add a new field without breaking anything else.
 - Use db.collection.replaceOne() when you are reshaping the entire data structure or matching a completely new payload from a web form.
 
+### 26. What are update operators like $set, $push, $pull, $inc, $unset?
+
+Common update operators:
+
+```text
+$set   -> set/update field
+$unset -> remove field
+$inc   -> increase/decrease number
+$push  -> add item to array
+$pull  -> remove item from array
+```
+
+Examples:
+
+```js
+db.users.updateOne(
+  { email: "paras@example.com" },
+  { $set: { city: "Bangalore" } }
+);
+
+db.products.updateOne(
+  { _id: productId },
+  { $inc: { stock: -1 } }
+);
+
+db.posts.updateOne(
+  { _id: postId },
+  { $push: { tags: "mongodb" } }
+);
+
+db.posts.updateOne(
+  { _id: postId },
+  { $pull: { tags: "old" } }
+);
+```
+
+### 27. What is an upsert?
+
+Upsert means:
+
+```text
+update if document exists
+insert if document does not exist
+```
+
+Example:
+
+```js
+db.users.updateOne(
+  { email: "paras@example.com" },
+  { $set: { name: "Paras" } },
+  { upsert: true }
+);
+```
+
 ### 23. Difference between deleteOne() and deleteMany().
 
 `deleteOne()` deletes first matching document.
@@ -1066,61 +1121,6 @@ Why useful:
 - less memory used
 - faster response
 - avoids exposing sensitive fields
-
-### 26. What are update operators like $set, $push, $pull, $inc, $unset?
-
-Common update operators:
-
-```text
-$set   -> set/update field
-$unset -> remove field
-$inc   -> increase/decrease number
-$push  -> add item to array
-$pull  -> remove item from array
-```
-
-Examples:
-
-```js
-db.users.updateOne(
-  { email: "paras@example.com" },
-  { $set: { city: "Bangalore" } }
-);
-
-db.products.updateOne(
-  { _id: productId },
-  { $inc: { stock: -1 } }
-);
-
-db.posts.updateOne(
-  { _id: postId },
-  { $push: { tags: "mongodb" } }
-);
-
-db.posts.updateOne(
-  { _id: postId },
-  { $pull: { tags: "old" } }
-);
-```
-
-### 27. What is an upsert?
-
-Upsert means:
-
-```text
-update if document exists
-insert if document does not exist
-```
-
-Example:
-
-```js
-db.users.updateOne(
-  { email: "paras@example.com" },
-  { $set: { name: "Paras" } },
-  { upsert: true }
-);
-```
 
 ### 52. What is Elastic Search? How it works?
 Elasticsearch is a distributed, fast search and analytics engine built on Apache Lucene. It stores data as JSON documents and lets you search, analyze, and process large amounts of data in real time.
@@ -1974,6 +1974,8 @@ How $lookup Works<br/>
 - Foreign Field: This is the matching field in the second collection.
 - As: This is the name of the new field that holds the joined data.
 
+To join two collections in MongoDB, you use the $lookup operator inside an aggregation pipeline. This performs a left outer join between a primary collection and another collection in the same database.
+
 Example: Orders and Customers<br/>
 Imagine you have two collections in your database.
 
@@ -1990,6 +1992,7 @@ Imagine you have two collections in your database.
 3. The Query<br/>
 You want to attach customer details to each order. You run this aggregation:
 ```js
+db.orders.aggregate([
 {
   "$lookup": {
     "from": "customers",
@@ -1997,7 +2000,7 @@ You want to attach customer details to each order. You run this aggregation:
     "foreignField": "_id",
     "as": "customerDetails"
   }
-}
+}])
 ```
 
 4. The Result<br/>
