@@ -230,6 +230,15 @@ Interview answer:
 ObjectId is MongoDB's default unique id for documents. It contains timestamp and uniqueness information, so MongoDB can generate unique document ids automatically.
 ```
 
+The anatomy of a MongoDB ObjectId structured as a clear list:<br/>
+- 12-byte BSON data type: Represented as a 24-character hexadecimal string.
+- 4-byte Timestamp: Stores the creation time in seconds since the Unix epoch.- 5-byte Random Value: Generated once per process/machine to prevent server collisions.
+- 3-byte Counter: Increments automatically to ensure uniqueness within the same second.
+
+Key Behavioral Rules - 
+- Immutability: Once a document is saved with an ObjectId, its _id value is permanent and cannot be modified or updated.
+- Automatic Indexing: MongoDB automatically builds a unique index on the _id field, making queries targeting a specific ObjectId exceptionally fast.
+
 ### 6. What data types does MongoDB support?
 
 Common types:
