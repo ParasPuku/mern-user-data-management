@@ -1299,6 +1299,52 @@ function findPalindrome(str) {
 console.log(findPalindrome("dddd madam aaaaaabaaaaaa mmsd"))
 ```
 
+### 3. Find all the palindrome numbers between given range.
+```js
+function palindromeInaRange(range1, range2){
+    if(range1 < 10) return "Range should start from 10 or more";
+    var allPalindrome = [];
+   
+    for(var i=10; i<range2; i++) {
+        var newStr = String(i);
+        var result = "";
+        for(var j=newStr.length-1; j>=0; j--) {
+            result = result + newStr[j];
+        }
+        if(i === Number(result)) {
+            allPalindrome.push(i);
+        }
+    }
+    return allPalindrome;
+}
+console.log("The Palindromes are: ", palindromeInaRange(10, 115));
+
+// Output - The Palindromes are: [11, 22, 33, 44,  55, 66, 77, 88, 99, 101, 111]
+
+``
+
+### 3. What stopping to become a palindrome number?
+```js
+function palindrome(str){
+    var result = "";
+    for(var i=str.length-1; i>=0; i--) {
+        result = result + str[i];
+    }
+
+    var causedValue = "";
+    for(var i=0; i<result.length; i++) {
+        if(!(result[i] === str[i])) {
+            causedValue = str[i];
+            break;
+        }
+    }
+    return causedValue;
+}
+
+console.log("The result is: ", palindrome("mazxam"));
+// Output: The result is: z
+``
+
 ## 3. Count Vowels In A String
 
 ### Question
