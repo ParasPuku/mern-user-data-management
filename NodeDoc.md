@@ -3076,6 +3076,8 @@ Instead of scaling the entire monolithic codebase, break your application down i
 ### 12. What is PM2 and how do we manage clusters automatically using a tool like PM2?
 PM2 is a production-grade, open-source Process Manager for Node.js applications. It keeps your application alive forever, reloads it with zero downtime, balances network traffic across CPU cores, and simplifies logging and monitoring.
 
+PM2 (Process Manager 2) is a production-grade, open-source daemon process manager specifically designed for Node.js applications. It runs quietly in the background to ensure your application stays online 24/7, automatically restarting it if it crashes or if the server reboots.
+
 In production, developers rarely write custom cluster-module code. Instead, they use PM2 to handle clustering automatically via configuration.
 
 1. Automatic Load Balancing<br/>

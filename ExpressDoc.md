@@ -575,6 +575,76 @@ export const errorHandler = (error, req, res, next) => {
 };
 ```
 
+The key thing to understand is that you don't call errorHandler directly from your routes. Express recognizes it automatically because it has 4 parameters, and routes trigger it indirectly by calling next(err).
+
+How it actually works
+
+1. Register it last, after all routes
+
+```js
+app.use('/users', userRoutes);
+app.use('/products', productRoutes);
+
+// Must be registered AFTER all other app.use()/routes
+app.use(errorHandler);
+```
+
+Express inspects the function's arity (parameter count). A 4-arg function is treated as error-handling middleware and is skipped during normal request processing — it only gets invoked when something calls next(err).
+
+2. In your routes, pass errors to next()
+```js
+app.get('/users/:id', async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      const err = new Error('User not found');
+      err.statusCode = 404;
+      throw err;
+    }
+    res.json(user);
+  } catch (err) {
+    next(err); // <-- this is what triggers errorHandler
+  }
+});
+```
+
+When you call next(err) with an argument, Express skips all remaining regular middleware/routes and jumps straight to the nearest error-handling middleware — your errorHandler.
+
+3. Async routes need explicit try/catch (or a wrapper)
+
+Express doesn't automatically catch rejected promises in older versions (Express 5 fixes this natively). A common pattern is a wrapper to avoid repeating try/catch everywhere:
+
+```js
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+app.get('/users/:id', asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    const err = new Error('User not found');
+    err.statusCode = 404;
+    throw err;
+  }
+  res.json(user);
+}));
+```
+
+Here, any thrown error (or rejected promise) inside the async function gets caught by .catch(next) and forwarded to errorHandler automatically.
+
+4. Synchronous errors are caught automatically
+
+If your route handler is synchronous and throws, Express (even v4) catches it and routes it to the error handler without you needing next(err):
+
+```js
+app.get('/sync-error', (req, res) => {
+  throw new Error('Something broke'); // Express catches this automatically
+});
+```
+
+So the "calling" isn't explicit — it's Express's routing mechanism that funnels any error passed to next() (or thrown synchronously, or via the async wrapper) into your error-handling middleware, as long as it's registered after your routes.
+
+
 ### 20. Built-in Express middleware?
 
 Examples:
