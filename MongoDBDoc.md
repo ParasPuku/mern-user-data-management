@@ -2235,6 +2235,52 @@ db.posts.find({
   .limit(20);
 ```
 
+From the client side flow - <br/>
+In cursor-based pagination, the client still sends a limit — that part doesn't go away. What cursor pagination eliminates is skip/offset. So the client sends two things each request:
+
+- cursor – the last item's sort value (usually _id or a timestamp) from the previous page
+- limit – how many items to fetch (page size)
+
+If a client genuinely sends no limit, the server should apply a default/max limit itself — never trust the client to bound the query, or someone could request the entire collection in one shot.
+
+How it looks in practice
+
+First request (no cursor yet):
+```js
+GET /items?limit=10
+```
+
+Server query:
+```js
+db.items.find({})
+  .sort({ _id: 1 })
+  .limit(10);
+```
+
+Client gets back 10 items, takes the _id of the last one, say 64fa2b8799s8s09
+
+Next request:
+
+GET /items?cursor=64fa2b8799s8s09&limit=10
+
+Server query:
+
+```js
+db.items.find({ _id: { $gt: ObjectId("64fa2b...") } })
+  .sort({ _id: 1 })
+  .limit(10);
+```
+
+If the client omits limit<br/>
+Handle it server-side with a fallback:
+```js
+const limit = Math.min(parseInt(req.query.limit) || 20, 100); // default 20, cap 100
+```
+
+This way, even if the client forgets or intentionally omits it, you're protected from unbounded queries.
+
+Cursor pagination replaces skip(n) (which gets slower on large offsets) with a $gt/$lt filter on the sort field. limit is orthogonal to that — it's always required, either from the client or enforced by the server default.
+
 Why it scales perfectly<br/>
 Because _id is automatically indexed by MongoDB, this query leverages an index seek. MongoDB jumps directly to the location of that specific ObjectId and reads the next 20 documents. Performance remains uniform whether you are fetching the 2nd page or the 10,000th page.
 
