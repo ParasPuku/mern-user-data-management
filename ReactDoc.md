@@ -10553,3 +10553,55 @@ Choose Axios if:<br/>
 - You are tracking download/upload progress: Apps featuring user file uploads require Axios to track progress percentages natively via onUploadProgress.
 - You need older browser compatibility: If your application must support legacy environments, Axios handles cross-browser inconsistencies under the hood.
 
+### 122. How to implement SEO in React app?
+Noteeeee - To implement SEO in React successfully, you must solve the "Client-Side Rendering (CSR)" problem—by default, React serves a blank HTML file and relies on browser JavaScript to generate content, which makes it incredibly difficult for search engine crawlers to read your site.
+
+The most complete way to solve this is to handle rendering strategies, managing dynamic metadata, and utilizing semantic HTML.
+
+1. Adopt an SEO-Friendly Rendering Strategy<br/>
+Standard React Single Page Applications (SPAs) are rendered entirely in the browser. To ensure search engine crawlers instantly see your content, transition to one of these rendering methods:
+
+- Server-Side Rendering (SSR): The server generates the full HTML on every page request. Use frameworks like Next.js or Remix to achieve this seamlessly.
+-Static Site Generation (SSG): Pages are compiled into static HTML files at build-time. Ideal for blogs, portfolios, and landing pages.
+- Pre-rendering: If you have an existing client-side React app and cannot rebuild it using a framework, use tools like react-snap or third-party services like Prerender.io to generate static HTML specifically for search bots.
+
+2. Manage Dynamic Head Metadata<br/>
+Every page needs an individual title tag, meta description, and social media graph tags.For Next.js / Remix: Use their built-in native Metadata APIs.For standard React: Install the library react-helmet-async (a modern, thread-safe version of React Helmet) to dynamically update your page heads.
+
+React Helmet Async is a thread-safe package used to manage document head metadata dynamically in React applications, especially during server-side rendering (SSR).
+
+Why Use React Helmet Async?<br/>
+The original react-helmet library relies on react-side-effect, which is not thread-safe and can leak data across concurrent requests during asynchronous server-side rendering. react-helmet-async fixes this by introducing a <HelmetProvider> component that encapsulates state and isolates data per request.
+
+Basic Usage<br/>
+To use the package, wrap your root component with HelmetProvider and use Helmet anywhere in your component tree to manage titles, meta tags, and other head elements.
+
+```js
+import React from 'react';
+import { Helmet, HelmetProvider } from 'react-helmet-async';
+
+function App() {
+  return (
+    <HelmetProvider>
+      <div>
+        <Helmet>
+          <title>My Page Title</title>
+          <meta name="description" content="A description of my page." />
+        </Helmet>
+        <h1>Hello World</h1>
+      </div>
+    </HelmetProvider>
+  );
+}
+```
+
+Achieving search engine optimisation is an aggregation of different functions. Here are a list of some of the important tags for SEO:
+
+- Title tags
+- Meta description tags
+- Heading tags (H1 — H6)
+- Image alt text
+- Schema markup
+- HTML5 semantic markup
+- Meta robots tag
+- Canonical tag
