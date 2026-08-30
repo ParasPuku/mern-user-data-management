@@ -1309,7 +1309,47 @@ To reduce:
 
 ### 65. What is morgan?
 
-Morgan logs HTTP requests.
+Morgan logs HTTP requests. Morgan is a specialized HTTP request logging middleware for Node.js and Express. Morgan automatically tracks every single incoming HTTP request to your server and logs the details right when the server responds.
+
+What is the Main Use of Morgan?<br/>
+Morgan automatically intercepts the network traffic lifecycle to capture critical debugging telemetry without requiring manual code inside your routes. It tracks:
+
+- HTTP Method (e.g., GET, POST, PUT)
+- Target URL/Endpoint (e.g., /api/v1/users)
+- HTTP Status Code (e.g., 200, 404, 500)
+- Response Time (Exactly how many milliseconds the server took to respond)
+- Content Length (Size of the payload sent back to the client)
+
+Where and When Do We Use It in Node.js?<br/>
+You inject Morgan as a global application-level middleware near the very top of your main entry file (usually server.js or app.js) so it acts as a gateway for all incoming API routes.
+
+1. Quick Development Setup - During local development, you use it with the "dev" preset for clean, colorized terminal logs.
+
+```js
+const express = require('express');
+const morgan = require('morgan'); // 1. Import Morgan
+
+const app = express();
+
+app.use(morgan('dev')); // 2. Enable colored developer logs globally
+
+app.get('/api/items', (req, res) => {
+  res.json({ success: true });
+});
+
+app.listen(3000);
+```
+
+Terminal Output Example on a Request:GET /api/items 200 4.123 ms - 16 (Colorized: Green for 200, yellow/red for errors)
+
+2. Detailed Production Access Logs <br/>
+In live staging or production, you typically change the format to "combined" to match standard Apache/Nginx web server access logs—capturing system specs, IP addresses, and user-agents.
+
+```js
+// Captures full production telemetry context
+app.use(morgan('combined')); 
+```
+
 
 In this app:
 
@@ -1324,6 +1364,89 @@ debugging API requests
 observability
 request monitoring
 ```
+
+### 66. What is Winston?
+Winston is the most popular, versatile, and production-ready logging library for Node.js and Express.js applications. Instead of relying on basic console.log() statements—which lack flexibility and block the single-threaded Node.js event loop in production—Winston allows you to create highly configurable loggers that route structured application events to multiple destinations simultaneously.
+
+Core Concepts of Winston
+
+Winston's flexibility relies on three major building blocks:
+- Transports: Storage mechanisms for your logs. You can send the same log entry to the Console during development, append it to a local File for storage, or stream it to cloud-based monitoring services (like Datadog or BetterStack).
+- Log Levels: Severity filters based on the standard npm priorities (error, warn, info, http, verbose, debug, silly). You can filter out low-severity text from cluttering production logs.
+- Formats: Structural configurations for the data. You can easily attach automated timestamps, colorize console logs for readability, or pipe text into structured JSON format for external parsing utilities.
+
+Implementation Example in Express.js<br/>
+To set up a custom Winston module to replace default console logging, configure a separate utility file:
+
+```js
+// logger.js
+const { createLogger, format, transports } = require('winston');
+
+const logger = createLogger({
+  level: 'info', // Minimum severity level to log
+  format: format.combine(
+    format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    format.errors({ stack: true }), // Captures stack traces automatically
+    format.json() // Ideal structure for log collectors
+  ),
+  transports: [
+    new transports.Console({
+      format: format.combine(format.colorize(), format.simple()) // Cleaner logs for terminal
+    }),
+    new transports.File({ filename: 'logs/error.log', level: 'error' }), // Error triage only
+    new transports.File({ filename: 'logs/combined.log' }) // Full data repository
+  ]
+});
+
+module.exports = logger;
+```
+
+You can then import this tailored logger directly inside your Express endpoints:
+
+```js
+// server.js
+const express = require('express');
+const logger = require('./logger'); // Import the utility config above
+const app = express();
+
+app.get('/api/users', (req, res) => {
+  logger.info('Fetching user database records.'); // Standard tracking tracking
+  
+  try {
+    // Database query here...
+    res.send({ status: 'Success' });
+  } catch (error) {
+    logger.error('Database connection failed', error); // Routes stack trace to error.log
+    res.status(500).send({ error: 'Internal Error' });
+  }
+});
+
+app.listen(3000, () => {
+  logger.info('Server running on port 3000');
+});
+```
+
+Winston's default npm levels, in priority order (lower number = higher priority = more severe):
+
+error: 0
+warn: 1
+info: 2
+http: 3
+verbose: 4
+debug: 5
+silly: 6
+
+When you set level: 'info', you're telling Winston: "log this level and everything more severe than it (lower number)." It does not mean "only log info."
+
+So with level: 'info':
+
+logger.error() → ✅ logged (0 ≤ 2)
+logger.warn() → ✅ logged (1 ≤ 2)
+logger.info() → ✅ logged (2 ≤ 2)
+logger.http() → ❌ not logged (3 > 2)
+logger.debug() → ❌ not logged (5 > 2)
+
+That's why logger.error('Something went wrong') still works and shows up — error is more severe than info, so it always passes the threshold when the level is set to info.
 
 ## Body Parsing and Static Files
 
