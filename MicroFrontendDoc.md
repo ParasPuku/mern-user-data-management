@@ -21,7 +21,7 @@ Why Companies Use It
 - No Code Merging Nightmares: Because teams work in completely separate code repositories, they don't step on each other's toes or deal with massive Git merge conflicts.
 - Smaller Codebases: Developers only work on a small, hyper-focused piece of the application, making the code much easier to understand and maintain.
 
-### 1. What is a micro frontend, and how is it different from just splitting a monolith into components?
+### 2. What is a micro frontend, and how is it different from just splitting a monolith into components?
 
 A micro frontend is when you split a big frontend application into smaller pieces that are built, tested, and deployed independently by different teams — and then stitched together into one app that the user experiences as a single website.
 
@@ -52,7 +52,7 @@ Think of a shopping mall.
 
 Splitting into components organizes your code. Micro frontends split your deployment and ownership — that's the actual difference. Components can live inside a micro frontend too; the two ideas aren't opposites, they're at different levels (code organization vs. how the app ships).
 
-### 1. What problem are micro frontends actually solving? (Hint: it's mostly organizational — team autonomy — not a purely technical win.)
+### 3. What problem are micro frontends actually solving? (Hint: it's mostly organizational — team autonomy — not a purely technical win.)
 
 The real problem micro frontends solve
 
@@ -91,7 +91,7 @@ This is also why the earlier answer — "when would you not use micro frontends"
 
 This is essentially Conway's Law in action: "organizations design systems that mirror their own communication structure." Micro frontends are a deliberate application of that law — you shape the architecture to match how your teams are actually organized, instead of fighting against it inside one shared codebase.
 
-### 1. What are the main ways to compose micro frontends together (build-time, run-time, server-side, iframe)?
+### 4. What are the main ways to compose micro frontends together (build-time, run-time, server-side, iframe)?
 
 Here's each composition approach broken down simply — what it is, how it works, and when it makes sense.
 
@@ -159,7 +159,7 @@ Trade-off:
 
 When to use it: When isolation matters more than a seamless UX — embedding a third-party widget, wrapping a legacy system you don't want to touch, or strict security/compliance boundaries (e.g., embedding a payment provider's own hosted UI).
 
-### 1. What's the difference between a "shell/host" app and a "remote" app?
+### 5. What's the difference between a "shell/host" app and a "remote" app?
 
 Shell/Host vs. Remote — in simple terms
 
@@ -208,7 +208,7 @@ Interview-ready line
 
 "The shell is the composition root — it owns routing, layout, and decides which MFEs to mount. Remotes are the independently built, independently deployed feature modules that get loaded into the shell. The shell controls when and where a remote renders; the remote just renders its own UI when asked — it never controls navigation or knows about its siblings."
 
-### 1. How does routing work across micro frontends? Who owns the browser URL?
+### 6. How does routing work across micro frontends? Who owns the browser URL?
 
 Who owns the browser URL?
 
@@ -255,7 +255,7 @@ Interview-ready line
 
 "Only the shell owns the browser's URL and history — it's the single router instance for the whole app. Remotes get handed their slice of the path and can do nested routing internally, but they never touch window.history directly. If a remote needs to navigate outside its own section, it calls a shared navigate function the shell exposes, rather than manipulating history itself. For non-React or fully decoupled setups, this same idea gets implemented via a framework-agnostic orchestrator like single-spa, or handled entirely at the edge with a reverse proxy."
 
-### 1. Can different MFEs use different frameworks (React, Vue, Angular) in the same page? What are the trade-offs of doing that?
+### 7. Can different MFEs use different frameworks (React, Vue, Angular) in the same page? What are the trade-offs of doing that?
 
 Can you mix frameworks? Yes — but should you?
 
@@ -288,7 +288,7 @@ Interview-ready line
 
 "Technically yes — since each MFE is independently built, nothing stops teams from using different frameworks, and tools like single-spa exist specifically to orchestrate that. But in practice, most orgs pick one framework across all MFEs and just use micro frontends for independent deployment — not framework diversity. Mixing frameworks is usually a deliberate, temporary choice during a legacy migration, because the cost — duplicated framework bundles, inconsistent UX, harder hiring and debugging — usually isn't worth paying permanently."
 
-### 1. What is Webpack Module Federation, and how is it different from just publishing an npm package?
+### 8. What is Webpack Module Federation, and how is it different from just publishing an npm package?
 
 What Webpack Module Federation is
 
@@ -361,9 +361,9 @@ Interview-ready line
 
 "An npm package is build-time sharing — the consuming app installs it into its own build, so it has to rebuild and redeploy to pick up a new version. Module Federation is run-time sharing — the shell's build never contains the remote's code at all, just a reference to where to fetch it; the browser pulls in the actual code live, when a user visits that route. That's the difference that actually delivers independent deployability, which is the whole point of micro frontends — Checkout can ship a new version and the shell picks it up automatically on the next page load, with zero rebuild on the shell's side. The trade-off is that failure modes move from build time to run time — a version mismatch or a down remote is now something you discover in production, not in CI, which is why things like shared singleton config, contract testing, and runtime error boundaries matter so much more in this model."
 
-### 1. What's the difference between eager and lazy-loaded shared dependencies?
+### 9. What's the difference between eager and lazy-loaded shared dependencies?
 
-### 1. If two MFEs need to talk to each other (e.g., "add to cart" updates a header cart icon), how do you do that without tightly coupling them?
+### 10. If two MFEs need to talk to each other (e.g., "add to cart" updates a header cart icon), how do you do that without tightly coupling them?
 
 The core principle
 
@@ -440,7 +440,7 @@ Interview-ready line
 
 "I'd never let MFEs import each other directly — that recreates monolith-style coupling with extra deployment steps. Instead, I'd use a neutral shared channel: custom browser events or a thin shared event-bus package for one-off notifications like 'item added to cart,' and a small, deliberately minimal shared state slice — owned by the shell — for genuinely cross-cutting values like cart count or auth state. The discipline that matters is treating the event/data shape as a versioned contract between teams, the same way you'd treat a public API, so a payload change doesn't silently break a sibling MFE that never touched the code that changed."
 
-### 1. Should MFEs share a global state store (like one big Redux store)? Why or why not?
+### 11. Should MFEs share a global state store (like one big Redux store)? Why or why not?
 
 Short answer: No — not as a rule, and it's one of the most common MFE anti-patterns
 
@@ -479,7 +479,7 @@ Interview-ready line
 "No — a single shared store re-creates monolith-style coupling across teams that are supposed to be independently deployable, except now there's no compiler or shared repo to catch a breaking change when one team alters the shape of their slice. I'd keep state local to each MFE by default, and only share a small, deliberately minimal set of truly cross-cutting values — like cart count or auth — ideally owned by the shell. For everything else, I'd favor events over shared mutable state: a sender announces something happened, and each MFE updates its own local state in response, instead of every team reading and writing the same object."
 
 
-### 1. How do you handle authentication/session across MFEs owned by different teams?
+### 12. How do you handle authentication/session across MFEs owned by different teams?
 
 The core principle
 
@@ -566,7 +566,7 @@ Interview-ready line
 
 "Auth is a cross-cutting concern, so I'd centralize it in the shell — one login flow, one place tokens are stored and refreshed — and have remotes simply consume the session rather than manage their own. Depending on the setup, that's either a cookie scoped to the parent domain so the browser handles propagation automatically, or a shared auth context/SDK if remotes need programmatic access. Logout gets broadcast as an event so every MFE reacts and clears its own state immediately, rather than each one independently polling or guessing session status. The thing I'd actively avoid is any remote implementing its own login or token-refresh logic — that's exactly the kind of duplicated, inconsistent behavior that centralizing auth is meant to prevent."
 
-### 1. What happens if a remote MFE fails to load or is slow — how do you prevent it from breaking the whole page?
+### 13. What happens if a remote MFE fails to load or is slow — how do you prevent it from breaking the whole page?
 
 Why this matters more in MFEs than a normal app
 
@@ -641,7 +641,7 @@ Interview-ready line
 "I treat every remote as something that can fail independently, at runtime, for reasons outside my control — so the shell needs to defend against that at multiple layers: an error boundary around each remote so a crash stays contained, a timeout on the load itself so a slow remote doesn't hang the page indefinitely, a short retry for transient network blips, and a meaningful fallback UI rather than blank space. For a remote that's failing repeatedly, I'd add a circuit breaker to stop retrying and just show the fallback for a cooldown period. And I'd back all of that with monitoring specifically on remote-load failures, so a bad deploy gets caught and rolled back fast instead of silently degrading the experience for users."
 
 
-### 1. How do you test a system made of independently deployed MFEs?
+### 14. How do you test a system made of independently deployed MFEs?
 
 The core challenge
 
@@ -692,7 +692,7 @@ Interview-ready line
 
 "I'd layer it: unit and component tests inside each MFE in isolation, like any normal app — that catches most bugs cheaply. Then contract testing between shell and remotes, so a breaking change to the interface gets caught in a team's own CI without needing the whole system running together. Full cross-MFE E2E tests I'd keep narrow — just the critical user journeys — run against a staging environment where everything's composed, not gating every single team's deploy. And I'd back all of that with production synthetic monitoring and gradual/canary rollouts, since you genuinely can't pre-test every possible combination of independently-shipped versions — some of that risk has to be caught by fast detection in production instead of prevented entirely upfront."
 
-### 1. How do you roll back just ONE MFE without redeploying everything else?
+### 15. How do you roll back just ONE MFE without redeploying everything else?
 
 Why this is possible at all
 
@@ -743,7 +743,7 @@ Interview-ready line
 
 
 
-### 1. How do you keep performance (bundle size, load time) under control when every team ships independently?
+### 16. How do you keep performance (bundle size, load time) under control when every team ships independently?
 
 The core tension
 
@@ -809,7 +809,7 @@ Interview-ready line
 "The main risk is that independence means no one owns total page weight by default. I'd mitigate that with shared singleton dependencies so frameworks aren't duplicated, lazy-loading remotes so users only pay for what they visit, and a hard bundle-size budget enforced in each MFE's CI so regressions get caught before merge, not in production. On top of that, I'd monitor Core Web Vitals broken down per MFE so a regression is traceable to a specific team's deploy, and make sure a platform team owns the aggregate page performance number — because per-team budgets alone don't guarantee the whole page stays fast."
 
 
-### 1. How do we implement Micro-Frontend Architecture in React?
+### 17. How do we implement Micro-Frontend Architecture in React?
 
 Micro-frontend architecture means splitting a frontend application into smaller independently owned and independently deployable frontend apps.
 
@@ -949,7 +949,7 @@ Interview answer:
 Micro-frontend architecture splits a large frontend into smaller independently owned and deployable applications. A shell/container app usually handles layout, routing, authentication, and loads domain-specific micro-apps like dashboard, billing, or users. Communication should happen through URL state, browser events, shared APIs, or external stores. It is useful for large teams and large products, but it adds complexity, so I would not use it for small apps.
 ```
 
-### 92. Will have separate code base for each micro frontend apps?
+### 18. Will have separate code base for each micro frontend apps?
 Not necessarily. While each micro frontend app will have logical isolation, they do not require entirely separate code repositories. You can organize your codebases using two main strategies depending on your team's workflow and DevOps preferences:
 
 1. Monorepo (Single Repository) <br/>
@@ -971,7 +971,7 @@ Regardless of whether you choose a single or separate repository, every micro fr
 - Individual deployment endpoints at runtime
 
 
-### 2. How to set up Webpack Module Federation for a React app?
+### 19. How to set up Webpack Module Federation for a React app?
 To set up Webpack Module Federation for a React app, you need a Host (the main shell app) and a Remote (the mini-app being shared).
 
 Here is the simplest step-by-step setup using Webpack 5.
@@ -1078,7 +1078,7 @@ export default App;
 - Start the Host app (npm start on port 3000).
 - Open http://localhost:3000. You will see your host app running with the button served dynamically from the remote app.
 
-### 3. What strategies do you use for cross-micro-frontend communication? How do you prevent tight coupling?
+### 20. What strategies do you use for cross-micro-frontend communication? How do you prevent tight coupling?
 To maintain loose coupling, avoid direct imports or sharing a single global state (like a massive Redux store) across different micro-frontends. Instead, use these decoupled patterns:
 
 - Custom Browser Events (Pub/Sub): Use standard DOM CustomEvent dispatched on the window object. This keeps apps completely framework-agnostic.
@@ -1086,7 +1086,7 @@ To maintain loose coupling, avoid direct imports or sharing a single global stat
 - Route/URL Parameters: The cleanest state passing mechanism for navigation. If Micro-frontend A needs to tell Micro-frontend B which user is active, pass userId via the URL query string.
 - Web Storage (SessionStorage/LocalStorage): Ideal for persistent, non-reactive data like authentication tokens or user profile baselines.
 
-### 4. Explain Webpack Module Federation. How does it handle shared dependencies and version mismatches (e.g., Host uses React 17, Remote uses React 18)?
+### 21. Explain Webpack Module Federation. How does it handle shared dependencies and version mismatches (e.g., Host uses React 17, Remote uses React 18)?
 
 - Mechanism: Module Federation allows a JavaScript application to dynamically load code from another application at runtime. It distinguishes between a Host (consumes remotes) and a Remote (exposes modules).
 - Dependency Sharing: You configure a shared object in the Webpack configuration.
@@ -1095,7 +1095,7 @@ To maintain loose coupling, avoid direct imports or sharing a single global stat
 - Singleton Requirement: For libraries maintaining global state (like React or Vue), you must explicitly set singleton: true.
 - Resolution: If Host has React 17 and Remote requires React 18 with singleton: true, Webpack will throw a runtime warning/error or fallback depending on configuration (strictVersion: true). As an architect, you must enforce a unified baseline for singleton core libraries across teams or use standard Web Component wrappers to isolate the frameworks entirely.
 
-### 5. How do you choose between Build-time (npm packages) and Run-time (Module Federation) integration? What are the architectural trade-offs?
+### 22. How do you choose between Build-time (npm packages) and Run-time (Module Federation) integration? What are the architectural trade-offs?
 
 1. Build-time Integration: Micro-frontends are published as npm packages and compiled into a single monolith package at build time.
 - Pros: Highly predictable, easy dependency resolution, strict version control, and strong type safety across boundaries.
@@ -1107,7 +1107,7 @@ To maintain loose coupling, avoid direct imports or sharing a single global stat
 
 Verdict for 9+ YoE: For true micro-frontend autonomy, Run-time integration via Module Federation or Native ESM is the industry standard. Build-time is generally reserved for shared, highly stable design system component libraries.
 
-### 6. How Routing works in Micro Frontend app in React?
+### 23. How Routing works in Micro Frontend app in React?
 Routing in a React micro frontend (MFE) setup works differently depending on your architecture, but the core idea is: one app owns the browser URL, and everyone else reacts to it. Here's how it plays out in practice.
 
 The Core Concept: Shell/Host Owns the Router
@@ -1239,7 +1239,7 @@ So the rule is:
 - Shell → has BrowserRouter (controls the URL)
 - MFEs → only have Routes/Route (just read the current URL and decide what to show)
 
-### 7. When would you not use micro frontends?
+### 24. When would you not use micro frontends?
 It's one of the best signals of seniority in an interview. Here's when micro frontends are the wrong call:
 
 1. Small team, single codebase,<br/>
