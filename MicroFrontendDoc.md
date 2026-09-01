@@ -36,6 +36,65 @@ Challenges of Micro-Frontends<br/>
 - 2. Performance Overheads: Loading multiple micro-frontends can introduce performance overheads, such as increased initial load times.
 - 3. Integration: Ensuring seamless integration and communication between micro-frontends can be challenging.
 
+### What is the role of Webpack Module Federation and Nx in micro frontend?
+Good question — these operate at completely different layers, and conflating them is a common mistake. Let me separate them cleanly.
+
+Webpack Module Federation — the runtime/loading layer
+
+Module Federation is a Webpack (5+) plugin that solves one specific problem: how does one independently-built-and-deployed JavaScript bundle load and run code from another independently-built-and-deployed bundle, at runtime, in the browser?
+
+Without it, your only options for combining separately-deployed apps are crude ones — iframes, or server-side composition. Module Federation lets a "host" fetch and execute a "remote's" code on demand, as if it were a normal dynamic import().
+
+What it actually does:
+
+Each MFE builds a remoteEntry.js manifest that lists what it exposes (specific modules/components).
+The host (shell) declares which remotes it wants to consume and where to fetch them from (a URL — which can be resolved at runtime, not just build time).
+It manages shared dependencies (react, react-dom, design-system) so you don't ship five copies of React to the browser — singleton: true ensures one shared instance across host and all remotes.
+
+```js
+// catalogue-mfe exposes a component
+exposes: { './CatalogueApp': './src/bootstrap' }
+
+// shell consumes it, resolved at runtime
+remotes: { catalogue: 'catalogue@https://cdn.site.com/catalogue/remoteEntry.js' }
+```
+
+Its job stops at: loading and executing code across bundle boundaries at runtime. It doesn't care where the source lived, how it was built, whether tests ran, or how CI is organized.
+
+Nx — the build/repo/tooling layer
+
+Nx is a monorepo build system and dev-tooling framework. It has nothing to do with runtime module loading — its job is making a repo containing many apps/packages (like your catalogue, orders, payments, coupons MFEs) fast and disciplined to develop in.
+
+What it actually does:
+
+- Dependency graph awareness: nx graph shows which apps depend on which shared packages, so you can see "orders-mfe depends on api-client and design-system."
+- Affected-only builds/tests: nx affected --target=build — if you only touched payments-mfe, Nx knows not to rebuild/redeploy catalogue-mfe too. This is huge for CI time in a large monorepo.
+- Caching: local and remote (Nx Cloud) build caching — if nothing changed, reuse the last build artifact instead of rebuilding.
+- Enforced module boundaries: lint rules (@nx/enforce-module-boundaries) that stop orders-mfe from directly importing payments-mfe/src/internal/... — forces communication through shared packages/, or through Module Federation's exposed remotes only. This is how you prevent a monorepo from silently turning back into a tangled monolith.
+- Generators/scaffolding: nx g @nx/react:app catalogue scaffolds a new MFE app with consistent config.
+- First-class Module Federation support: @nx/react has generators specifically for nx g @nx/react:host shell and nx g @nx/react:remote catalogue --host=shell — Nx actually generates and wires up the Module Federation webpack config for you, and understands the host/remote relationship in its dependency graph (so nx serve shell can auto-start all the remotes it depends on in dev mode).
+
+How they relate
+
+They're complementary, not competing — Nx orchestrates the monorepo (what gets built, tested, cached, and how boundaries are enforced), and Module Federation is the actual runtime mechanism inside that setup that stitches the built bundles together in the browser.
+
+```js
+Nx  → manages the repo: which apps exist, what depends on what,
+      what to rebuild, enforces boundaries, generates MF config
+                    │
+                    ▼
+Module Federation → actually loads catalogue's remoteEntry.js
+                     into the shell's browser runtime
+```
+
+You could use Module Federation without Nx (plain Webpack config, separate repos, manual coordination) — plenty of production setups do exactly that. And you could use Nx without Module Federation, if your "microfrontends" were composed some other way (e.g., server-side includes, or just separate SPAs behind different routes with no shared runtime at all).
+
+What to say in the interview
+
+"They operate at different layers. Module Federation is the runtime mechanism — it's what lets the shell dynamically load and execute JavaScript from independently-deployed remotes in the browser, and it handles sharing singletons like React so you don't duplicate them. Nx is the monorepo tooling layer — it manages the dependency graph across all the MFE apps and shared packages, only rebuilds/retests what actually changed via affected commands, caches builds, and enforces module boundaries so teams can't bypass the intended contracts. In practice I'd use Nx's @nx/react host/remote generators, which scaffold and wire up the Module Federation config automatically and make nx serve shell spin up all its remotes in dev — so you get the benefits of both without hand-maintaining the Webpack federation config yourself."
+
+That answer shows you know Module Federation solves runtime composition and Nx solves repo-scale developer/CI ergonomics — two different problems that happen to pair very well together.
+
 ### 2. What is a micro frontend, and how is it different from just splitting a monolith into components?
 
 A micro frontend is when you split a big frontend application into smaller pieces that are built, tested, and deployed independently by different teams — and then stitched together into one app that the user experiences as a single website.
