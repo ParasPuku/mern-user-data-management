@@ -1343,7 +1343,37 @@ function palindrome(str){
 
 console.log("The result is: ", palindrome("mazxam"));
 // Output: The result is: z
-``
+```
+
+### 4. Find uncommon words from the given two strings - 
+```js
+// this apple is sweet this apple is sour
+function findUncommonWords(str1, str2) {
+    var joinedWords = `${str1} ${str2}`.toLowerCase().split(" ");
+    var frequency = {};
+    for (const word of joinedWords) {
+        if(frequency[word]) {
+            frequency[word] =frequency[word] + 1;
+        } else {
+            frequency[word] = 1;
+        }
+    }
+    return joinedWords.filter((word) => frequency[word] === 1);
+}   
+
+console.log(findUncommonWords("This apple is sweet", "This apple is sour"));
+console.log(findUncommonWords("apple apple", "banana"));
+
+//Output
+// [ 'sweet', 'sour' ]
+// [ 'banana' ]
+
+```
+
+
+### 5. Find the highest benefit of the day of my sold product which is purchased -
+[2,5,6,1,7,9,8,1] 
+
 
 ## 3. Count Vowels In A String
 
