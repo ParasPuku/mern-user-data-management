@@ -165,6 +165,14 @@ This is also why the earlier answer — "when would you not use micro frontends"
 
 This is essentially Conway's Law in action: "organizations design systems that mirror their own communication structure." Micro frontends are a deliberate application of that law — you shape the architecture to match how your teams are actually organized, instead of fighting against it inside one shared codebase.
 
+### 20. What strategies do you use for cross-micro-frontend communication? How do you prevent tight coupling?
+To maintain loose coupling, avoid direct imports or sharing a single global state (like a massive Redux store) across different micro-frontends. Instead, use these decoupled patterns:
+
+- Custom Browser Events (Pub/Sub): Use standard DOM CustomEvent dispatched on the window object. This keeps apps completely framework-agnostic.
+- Custom Event Bus: A tiny, isolated utility layer (RxJS or a simple emitter) shared at runtime.
+- Route/URL Parameters: The cleanest state passing mechanism for navigation. If Micro-frontend A needs to tell Micro-frontend B which user is active, pass userId via the URL query string.
+- Web Storage (SessionStorage/LocalStorage): Ideal for persistent, non-reactive data like authentication tokens or user profile baselines.
+
 ### 4. What are the main ways to compose micro frontends together (build-time, run-time, server-side, iframe)?
 
 Here's each composition approach broken down simply — what it is, how it works, and when it makes sense.
@@ -366,7 +374,7 @@ Interview-ready line
 
 What Webpack Module Federation is
 
-Module Federation is a Webpack feature (Webpack 5+) that lets separately built and separately deployed JavaScript applications load code from each other at runtime, in the browser — without any of them being compiled together at build time.
+Module Federation is a Webpack feature (Webpack 5+) that allow us to separately built and separately deployed JavaScript applications load code from each other at runtime, in the browser — without any of them being compiled together at build time.
 
 ```js
 // Checkout's webpack config exposes a module
@@ -1151,14 +1159,6 @@ export default App;
 - Start the Remote app (npm start on port 3001).
 - Start the Host app (npm start on port 3000).
 - Open http://localhost:3000. You will see your host app running with the button served dynamically from the remote app.
-
-### 20. What strategies do you use for cross-micro-frontend communication? How do you prevent tight coupling?
-To maintain loose coupling, avoid direct imports or sharing a single global state (like a massive Redux store) across different micro-frontends. Instead, use these decoupled patterns:
-
-- Custom Browser Events (Pub/Sub): Use standard DOM CustomEvent dispatched on the window object. This keeps apps completely framework-agnostic.
-- Custom Event Bus: A tiny, isolated utility layer (RxJS or a simple emitter) shared at runtime.
-- Route/URL Parameters: The cleanest state passing mechanism for navigation. If Micro-frontend A needs to tell Micro-frontend B which user is active, pass userId via the URL query string.
-- Web Storage (SessionStorage/LocalStorage): Ideal for persistent, non-reactive data like authentication tokens or user profile baselines.
 
 ### 21. Explain Webpack Module Federation. How does it handle shared dependencies and version mismatches (e.g., Host uses React 17, Remote uses React 18)?
 
