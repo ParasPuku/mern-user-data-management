@@ -1373,6 +1373,44 @@ console.log(findUncommonWords("apple apple", "banana"));
 ### 5. Please count the number of words of the string.
 "Hello my name is paras kr mahto and I am from Ranchi. I am a Software Engineer"
 
+```js
+function countNumberOfWords(str) {
+    var frequency = {};
+    var newStr = str.toLowerCase().split(" ");
+    for(var i=0; i<newStr.length; i++) {
+        var item = newStr[i];
+        if(frequency[item]) {
+            frequency[item] = frequency[item] + 1; 
+        } else {
+            frequency[item] = 1;
+        }
+    }
+    return frequency;
+}
+
+console.log(countNumberOfWords("Hey my name is paras kr mahto and I am from Ranchi. Hey I am a Software Engineer"))
+```
+
+```js
+{
+  hey: 2,
+  my: 1,
+  name: 1,
+  is: 1,
+  paras: 1,
+  kr: 1,
+  mahto: 1,
+  and: 1,
+  i: 2,
+  am: 2,
+  from: 1,
+  'ranchi.': 1,
+  a: 1,
+  software: 1,
+  engineer: 1
+}
+```
+
 ### 5. Find the highest benefit of the day of my sold product which is purchased -
 [2,5,6,1,7,9,8,1] 
 
