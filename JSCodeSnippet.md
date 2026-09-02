@@ -17,6 +17,10 @@ new Promise((resolve, reject) => {
 setTimeout(() => {
   console.log("Timeout 2");
 }, 0);
+
+queueMicrotask(() => {
+    console.log("queueMicrotask");
+})
  
 new Promise((resolve, reject) => {
   console.log("Promise 2");
@@ -33,6 +37,7 @@ Promise 1
 Promise 2
 End
 Promise 1 Resolved
+queueMicrotask
 Promise 2 Resolved
 Timeout 1
 Timeout 2
