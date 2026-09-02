@@ -1,5 +1,74 @@
 # JavaScript Interview Code Snippets
 
+
+## 0. What is the below output - 
+```js
+console.log("Start");
+ 
+setTimeout(() => {
+  console.log("Timeout 1");
+}, 0);
+ 
+new Promise((resolve, reject) => {
+  console.log("Promise 1");
+  resolve("Promise 1 Resolved");
+}).then(res => console.log(res));
+ 
+setTimeout(() => {
+  console.log("Timeout 2");
+}, 0);
+ 
+new Promise((resolve, reject) => {
+  console.log("Promise 2");
+  resolve("Promise 2 Resolved");
+}).then(res => console.log(res));
+ 
+console.log("End");
+```
+
+Output
+```js
+Start
+Promise 1
+Promise 2
+End
+Promise 1 Resolved
+Promise 2 Resolved
+Timeout 1
+Timeout 2
+```
+
+## 1. What is the below output -
+```js
+console.log('Start');
+ 
+async function async1() {
+    console.log('Async1 Start');
+    await async2();
+    console.log('Async1 End');
+}
+ 
+async function async2() {
+    console.log('Async2');
+}
+ 
+async1();
+ 
+setTimeout(() => console.log('Timeout'), 0);
+ 
+console.log('End');
+```
+
+Output - 
+```js
+Start
+Async1 Start
+Async2
+End
+Async1 End
+Timeout
+```
+
 ## 1. What is the difference between `var`, `let`, and `const`?
 
 ```js

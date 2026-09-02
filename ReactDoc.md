@@ -601,6 +601,214 @@ When state changes:
 3. React compares old and new UI.
 4. React updates only changed DOM parts.
 
+### 14. What is the correct execution order of these React lifecycle phases and hooks is:
+```js
+useEffect
+return
+uselayouteffect
+usecallback
+render
+```
+
+The correct execution order of these React lifecycle phases and hooks is:
+- useCallback (during render)
+- render (JSX evaluation)
+- useLayoutEffect (before screen paint)
+- return / Cleanup functions (from previous render effects)
+- useEffect (after screen paint)
+
+Here is a breakdown of how they execute chronologically during a component's lifecycle.
+
+🎬 Mounting Phase (First Render)
+During the very first render, React executes code in this exact order:
+- useCallback: Memoizes the function definition immediately during the evaluation of the component body.
+- render: Evaluates the JSX and builds the virtual DOM.
+- useLayoutEffect: Fires synchronously before the browser paints the pixels to the screen.
+- useEffect: Fires asynchronously after the browser paints the pixels to the screen.
+
+(Note: There is no return cleanup phase on the first render).
+
+🔄 Updating Phase (Subsequent Renders)
+When a state change triggers a re-render, the sequence changes to handle cleanups:
+- useCallback: Re-evaluates its dependencies to see if it should return a new function reference.
+- render: Re-evaluates the JSX to find changes.
+- useLayoutEffect Cleanup (return): Cleans up the previous render's layout effect before the new layout effect runs.
+- useLayoutEffect: Fires the new layout effect before the browser paints.
+- useEffect Cleanup (return): Cleans up the previous render's effect after the browser paints, but before the new effect runs.
+- useEffect: Fires the new effect.
+
+🛑 Unmounting Phase (Component Destruction)
+When the component is removed from the DOM, only the cleanup functions run:
+- useLayoutEffect Cleanup (return): Fires synchronously.
+- useEffect Cleanup (return): Fires asynchronously.
+
+### 16. What is correct execution order of these React lifecycle phases and hook is:
+The absolute chronological execution order of all these React hooks and lifecycle events depends heavily on the phase.
+
+Here is the exact sequence broken down by Mounting, Updating, and Unmounting phases.
+
+🎬 1. Mounting Phase (First Render)<br/>
+During the initial mount, hooks in the component body execute sequentially from top to bottom, followed by DOM commits, layout layouts, and final screen paints.
+
+- useState / useReducer (Initializes state and dispatch references)
+- useContext (Reads current context value)
+- useTransition (Initializes transition state and the startTransition function)
+- useDeferredValue (Saves the initial value; no deferring happens on mount)
+- useMemo / useCallback (Computes factory values and memoizes functions)
+- render (Evaluates JSX and generates the Virtual DOM)
+- useLayoutEffect (Runs synchronously before browser paint)
+- useEffect (Runs asynchronously after browser paint)
+
+(Note: There are no return cleanups on mount).
+
+🔄 2. Updating Phase (Subsequent Renders)<br/>
+When state changes, React schedules a re-render. Cleanups from the previous render must run before new effects trigger.
+- useState / useReducer (Processes the state update)
+- useTransition (Schedules low-priority state updates if triggered)
+- useDeferredValue (Compares value; if changed, forks a low-priority render)
+- useContext (Reads the newly updated context value)
+- useMemo / useCallback (Checks dependency arrays to re-compute or reuse)
+- render (Re-evaluates JSX to find DOM changes)
+- useLayoutEffect Cleanup (return) (Fires synchronously for the old props/state)
+- useLayoutEffect (Fires synchronously for the new layout changes)
+- useEffect Cleanup (return) (Fires asynchronously to clean up the old effect)
+- useEffect (Fires asynchronously for the new effect)
+
+🛑 3. Unmounting Phase (Component Removal)<br/>
+When a component leaves the screen, only the cleanup functions run to prevent memory leaks. No hooks are evaluated.
+- useLayoutEffect Cleanup (return): Fires synchronously.
+- useEffect Cleanup (return): Fires asynchronously.
+
+💡 Key Takeaway: The 3 Operational Groups<br/>
+To remember this easily, group them into three execution buckets:
+- The Render Block (Synchronous): useState, useReducer, useContext, useTransition, useDeferredValue, useMemo, useCallback. These always run top-to-bottom inside the component function definition.
+- The Pre-Paint Block (Synchronous): useLayoutEffect cleanups and effects.
+- The Post-Paint Block (Asynchronous): useEffect cleanups and effects.
+
+### 15. How to access the previous props value in react?
+In React functional components, you can access the previous props value by creating a custom hook using useRef and useEffect. This pattern works because useEffect runs after the component renders, allowing you to return the stored value before updating it with the new one.
+
+1. Create a Custom Hook<br/>
+Define a reusable usePrevious hook to track your properties:
+
+```js
+import { useEffect, useRef } from 'react';
+
+function usePrevious(value) {
+  const ref = useRef();
+  
+  // This runs AFTER the render, updating the ref for the next cycle
+  useEffect(() => {
+    ref.current = value;
+  }, [value]); 
+  
+  // This returns the value from the PREVIOUS render cycle
+  return ref.current;
+}
+```
+
+2. Implement the Hook in Your Component<br/>
+Pass the specific prop you want to track into the custom hook:
+
+```js
+import React from 'react';
+import usePrevious from './usePrevious'; // Import your hook
+
+function UserProfile({ username }) {
+  const prevUsername = usePrevious(username);
+
+  return (
+    <div>
+      <p>Current User: {username}</p>
+      <p>Previous User: {prevUsername}</p>
+    </div>
+  );
+}
+```
+
+Why This Works
+- Render phase: React runs UserProfile. The ref.current initially holds the old value, which is assigned to prevUsername and returned.
+- Screen updates: The DOM updates with the current username and the old prevUsername.
+- Effects phase: useEffect fires after the DOM updates, changing ref.current to the new username so it is ready for the next prop change.
+
+Alternative: Class Components<br/>
+If you are working in an older codebase with class components, you do not need hooks. You can access past properties directly inside the componentDidUpdate lifecycle method:
+
+```js
+componentDidUpdate(prevProps, prevState) {
+  if (prevProps.username !== this.props.username) {
+    console.log(`Changed from ${prevProps.username} to ${this.props.username}`);
+  }
+}
+```
+
+### 16. How to access the previous state value in react?
+In React, the best way to access the previous state depends entirely on whether you want to update state based on its previous value or read the previous value during rendering/effects.
+
+1. Updating State Based on the Previous Value<br/>
+If you need to calculate a new state value using the previous one, pass an updater function to your state setter instead of a raw value. React automatically provides the pending or previous state as the first argument to this callback.
+
+```js
+import { useState } from 'react';
+
+function Counter() {
+  const [count, setCount] = useState(0);
+
+  const increment = () => {
+    // 'prevCount' is guaranteed to be the most recent state
+    setCount((prevCount) => prevCount + 1); 
+  };
+
+  return <button onClick={increment}>Count: {count}</button>;
+}
+```
+
+Why use this: React batches state updates. Calling setCount(count + 1) multiple times in a single event will fail to increment sequentially, whereas the updater function approach guarantees accuracy.
+
+2. Reading or Comparing the Previous Value<br/>
+React's useState hook does not natively store previous values for rendering. If you need to view the old value (e.g., to compare a chat ID change and clear a cache), track it manually using a useRef and a useEffect hook.
+
+```js
+import { useState, useEffect, useRef } from 'react';
+
+function TrackChanges() {
+  const [value, setValue] = useState('');
+  const prevValueRef = useRef('');
+
+  useEffect(() => {
+    // Runs AFTER the render, storing the value for the NEXT render cycle
+    prevValueRef.current = value;
+  }, [value]);
+
+  return (
+    <div>
+      <input value={value} onChange={(e) => setValue(e.target.value)} />
+      <p>Current Value: {value}</p>
+      <p>Previous Value: {prevValueRef.current}</p>
+    </div>
+  );
+}
+```
+
+Why use this: Modifying a useRef's .current property does not trigger a re-render, making it perfect for silently remembering a snapshot of past data.
+
+3. Creating a Custom Reusable Hook<br/>
+If you frequently need to check previous values across your application, wrap the useRef logic into a custom hook:
+
+```js
+import { useEffect, useRef } from 'react';
+
+function usePrevious(value) {
+  const ref = useRef();
+  
+  useEffect(() => {
+    ref.current = value;
+  }, [value]); // Updates only when value changes
+  
+  return ref.current; // Returns the value from the *previous* render
+}
+```
+
 ### 14. Is react unidirectional or bidirectional?
 React uses a strict unidirectional (one-way) data flow. This design choice means data moves in a single direction throughout your application, specifically from parent components down to child components.
 
