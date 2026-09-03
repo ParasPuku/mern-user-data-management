@@ -24,6 +24,46 @@ You can run these examples in:
 
 ## Array Problem Solving Questions
 
+## 0. Remove the duplicates from the array items
+```js
+function removeDuplicates(arr) {
+    var clean = [];
+    for(var i=0; i<arr.length; i++) {
+        var isDuplicate = false;
+        for(var j=i+1; j<arr.length; j++) {
+            if(arr[i] === arr[j]) {
+                isDuplicate = true;
+                break;
+            }
+        }
+        if(!isDuplicate) {
+            clean.push(arr[i]);
+        }
+    }
+    return clean
+}
+console.log(removeDuplicates([1,3,6,2,7,7,8,9,5,6,3,2,1,10]))
+```
+<!-- Output - [7,8,9,5,6,3,2,1,10] -->
+
+## 0. Find the duplicates from the array
+```js
+function findDuplicate(arr) {
+    var duplicate = [];
+    for(var i=0; i<arr.length; i++) {
+        for(var j=i+1; j<arr.length; j++) {
+            if((arr[i] === arr[j])) {
+                duplicate.push(arr[i]);
+                break;
+            } 
+        }
+    }
+    return {duplicate}
+}   
+console.log(findDuplicate([1,4,6,2,4,5,2,6,7,8,1,6,7,9]));
+```
+<!-- Output - { duplicate: [ 1, 4, 6, 2, 6, 7 ] } -->
+
 ## 0. Find Missing Numbers Without Using Built-In Method
 
 ### Question
@@ -233,7 +273,7 @@ function removeDuplicate(arr) {
         var isDuplicate = false;
         for(var j=0; i<arr.length; j++) {
             if(result[j] === arr[j]) {
-                isDuplicate = tru;
+                isDuplicate = true;
                 break;
             }
         }
