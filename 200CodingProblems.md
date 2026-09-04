@@ -18,7 +18,9 @@ function reverseString(str) {
   return str.split('').reverse().join('');
 }
 ```
+
 **Explanation:** Split into characters, reverse the array, join back together.
+
 **Example:** `reverseString('hello')` → `'olleh'`
 
 ### 2. Check for Palindrome
@@ -28,7 +30,9 @@ function isPalindrome(str) {
   return s === s.split('').reverse().join('');
 }
 ```
+
 **Explanation:** Normalize the string (strip non-alphanumerics, lowercase), then compare to its reverse.
+
 **Example:** `isPalindrome('A man, a plan, a canal: Panama')` → `true`
 
 ### 3. Check for Anagram
@@ -38,7 +42,9 @@ function isAnagram(a, b) {
   return norm(a) === norm(b);
 }
 ```
+
 **Explanation:** Sort the letters of both strings and compare.
+
 **Example:** `isAnagram('listen', 'silent')` → `true`
 
 ### 4. Count Vowels in a String
@@ -47,6 +53,7 @@ function countVowels(str) {
   return (str.match(/[aeiou]/gi) || []).length;
 }
 ```
+
 **Example:** `countVowels('Hello World')` → `3`
 
 ### 5. Capitalize First Letter of Each Word
@@ -55,6 +62,7 @@ function capitalizeWords(str) {
   return str.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
 }
 ```
+
 **Example:** `capitalizeWords('hello world')` → `'Hello World'`
 
 ### 6. Find the First Non-Repeating Character
@@ -66,6 +74,7 @@ function firstUniqueChar(str) {
   return null;
 }
 ```
+
 **Example:** `firstUniqueChar('swiss')` → `'w'`
 
 ### 7. Count Character Frequency
@@ -76,6 +85,7 @@ function charFrequency(str) {
   return freq;
 }
 ```
+
 **Example:** `charFrequency('hello')` → `{h:1, e:1, l:2, o:1}`
 
 ### 8. Word Frequency Counter
@@ -88,6 +98,7 @@ function wordFrequency(str) {
   }, {});
 }
 ```
+
 **Example:** `wordFrequency('the cat and the dog')` → `{the:2, cat:1, and:1, dog:1}`
 
 ### 9. Reverse Words in a Sentence
@@ -96,6 +107,7 @@ function reverseWords(str) {
   return str.trim().split(/\s+/).reverse().join(' ');
 }
 ```
+
 **Example:** `reverseWords('Hello World Again')` → `'Again World Hello'`
 
 ### 10. Check if Two Strings are Rotations of Each Other
@@ -104,6 +116,7 @@ function isRotation(a, b) {
   return a.length === b.length && (a + a).includes(b);
 }
 ```
+
 **Example:** `isRotation('waterbottle', 'erbottlewat')` → `true`
 
 ### 11. String Compression (Run-Length Encoding)
@@ -122,6 +135,7 @@ function compress(str) {
   return result.length < str.length ? result : str;
 }
 ```
+
 **Example:** `compress('aaabbc')` → `'a3b2c1'`
 
 ### 12. Remove Duplicate Characters from a String
@@ -130,6 +144,7 @@ function removeDuplicateChars(str) {
   return [...new Set(str)].join('');
 }
 ```
+
 **Example:** `removeDuplicateChars('mississippi')` → `'misp'`
 
 ### 13. Longest Common Prefix
@@ -146,6 +161,7 @@ function longestCommonPrefix(strs) {
   return prefix;
 }
 ```
+
 **Example:** `longestCommonPrefix(['flower','flow','flight'])` → `'fl'`
 
 ### 14. Longest Palindromic Substring
@@ -165,6 +181,7 @@ function longestPalindrome(s) {
   return result;
 }
 ```
+
 **Example:** `longestPalindrome('babad')` → `'bab'` (or `'aba'`)
 
 ### 15. Longest Substring Without Repeating Characters
@@ -180,6 +197,7 @@ function longestUniqueSubstring(s) {
   return max;
 }
 ```
+
 **Example:** `longestUniqueSubstring('abcabcbb')` → `3` (`'abc'`)
 
 ### 16. Group Anagrams
@@ -194,6 +212,7 @@ function groupAnagrams(words) {
   return [...map.values()];
 }
 ```
+
 **Example:** `groupAnagrams(['eat','tea','tan','ate','nat','bat'])` → `[['eat','tea','ate'],['tan','nat'],['bat']]`
 
 ### 17. Find All Permutations of a String
@@ -208,6 +227,7 @@ function permutations(str) {
   return result;
 }
 ```
+
 **Example:** `permutations('abc')` → `['abc','acb','bac','bca','cab','cba']`
 
 ### 18. Check if a String is a Subsequence of Another
@@ -220,6 +240,7 @@ function isSubsequence(sub, str) {
   return i === sub.length;
 }
 ```
+
 **Example:** `isSubsequence('ace', 'abcde')` → `true`
 
 ### 19. Check if a String Has All Unique Characters
@@ -228,6 +249,7 @@ function hasAllUniqueChars(str) {
   return new Set(str).size === str.length;
 }
 ```
+
 **Example:** `hasAllUniqueChars('abcdef')` → `true`
 
 ### 20. Convert String to camelCase
@@ -238,6 +260,7 @@ function toCamelCase(str) {
     .replace(/[-_\s]+(.)?/g, (_, ch) => (ch ? ch.toUpperCase() : ''));
 }
 ```
+
 **Example:** `toCamelCase('background-color')` → `'backgroundColor'`
 
 ### 21. Convert String to snake_case
@@ -249,6 +272,7 @@ function toSnakeCase(str) {
     .toLowerCase();
 }
 ```
+
 **Example:** `toSnakeCase('backgroundColor')` → `'background_color'`
 
 ### 22. Convert String to kebab-case
@@ -260,6 +284,7 @@ function toKebabCase(str) {
     .toLowerCase();
 }
 ```
+
 **Example:** `toKebabCase('backgroundColor')` → `'background-color'`
 
 ### 23. Find the Longest Word in a Sentence
@@ -268,6 +293,7 @@ function longestWord(sentence) {
   return sentence.split(' ').reduce((a, b) => (b.length > a.length ? b : a), '');
 }
 ```
+
 **Example:** `longestWord('The quick brown fox')` → `'quick'`
 
 ### 24. Reverse Only the Vowels in a String
@@ -285,6 +311,7 @@ function reverseVowels(str) {
   return arr.join('');
 }
 ```
+
 **Example:** `reverseVowels('hello')` → `'holle'`
 
 ### 25. Reverse Each Word's Letters (Keep Word Order)
@@ -293,6 +320,7 @@ function reverseLettersInWords(str) {
   return str.split(' ').map(w => w.split('').reverse().join('')).join(' ');
 }
 ```
+
 **Example:** `reverseLettersInWords('Hello World')` → `'olleH dlroW'`
 
 ### 26. Convert Integer to Roman Numeral
@@ -307,6 +335,7 @@ function intToRoman(num) {
   return result;
 }
 ```
+
 **Example:** `intToRoman(1994)` → `'MCMXCIV'`
 
 ### 27. Convert Roman Numeral to Integer
@@ -321,6 +350,7 @@ function romanToInt(s) {
   return total;
 }
 ```
+
 **Example:** `romanToInt('MCMXCIV')` → `1994`
 
 ### 28. Count Occurrences of a Substring
@@ -332,6 +362,7 @@ function countOccurrences(str, sub) {
   return count;
 }
 ```
+
 **Example:** `countOccurrences('ababab', 'ab')` → `3`
 
 ### 29. Check if Two Strings are One Edit Distance Apart
@@ -350,6 +381,7 @@ function isOneEditDistance(a, b) {
   return longer.length - shorter.length === 1;
 }
 ```
+
 **Example:** `isOneEditDistance('cat', 'cats')` → `true`
 
 ### 30. Find the Longest Common Substring
@@ -368,6 +400,7 @@ function longestCommonSubstring(a, b) {
   return a.slice(end - max, end);
 }
 ```
+
 **Example:** `longestCommonSubstring('abcdef', 'zbcdf')` → `'bcd'`
 
 ### 31. Check if a String Can Be Rearranged into a Palindrome
@@ -381,6 +414,7 @@ function canFormPalindrome(str) {
   return oddCounts <= 1;
 }
 ```
+
 **Example:** `canFormPalindrome('carrace')` → `true` (rearranges to `'racecar'`)
 
 ### 32. Implement strStr() — Naive Substring Search
@@ -393,6 +427,7 @@ function strStr(haystack, needle) {
   return -1;
 }
 ```
+
 **Example:** `strStr('hello', 'll')` → `2`
 
 ### 33. Collapse Multiple Spaces into One
@@ -401,6 +436,7 @@ function collapseSpaces(str) {
   return str.trim().replace(/\s+/g, ' ');
 }
 ```
+
 **Example:** `collapseSpaces('  hello    world  ')` → `'hello world'`
 
 ### 34. Find the Most Frequent Character in a String
@@ -411,6 +447,7 @@ function mostFrequentChar(str) {
   return Object.keys(freq).reduce((a, b) => (freq[a] >= freq[b] ? a : b));
 }
 ```
+
 **Example:** `mostFrequentChar('abracadabra')` → `'a'`
 
 ### 35. Convert a Sentence to Pig Latin
@@ -427,6 +464,7 @@ function toPigLatin(sentence) {
     .join(' ');
 }
 ```
+
 **Example:** `toPigLatin('hello world')` → `'ellohay orldway'`
 
 ### 36. Add Thousand Separators to a Number String
@@ -437,6 +475,7 @@ function addThousandSeparators(numStr) {
   return decPart ? `${withCommas}.${decPart}` : withCommas;
 }
 ```
+
 **Example:** `addThousandSeparators('1234567')` → `'1,234,567'`
 
 ### 37. Validate an IPv4 Address String
@@ -447,6 +486,7 @@ function isValidIPv4(str) {
   return parts.every(p => /^\d{1,3}$/.test(p) && Number(p) <= 255 && String(Number(p)) === p);
 }
 ```
+
 **Example:** `isValidIPv4('192.168.1.1')` → `true`
 
 ### 38. Length of the Last Word
@@ -456,6 +496,7 @@ function lengthOfLastWord(s) {
   return words[words.length - 1].length;
 }
 ```
+
 **Example:** `lengthOfLastWord('  Hello World  ')` → `5`
 
 ### 39. Add Two Numbers Represented as Strings
@@ -472,6 +513,7 @@ function addStrings(a, b) {
   return result;
 }
 ```
+
 **Example:** `addStrings('123', '77')` → `'200'`
 
 ### 40. Multiply Two Numbers Represented as Strings
@@ -489,6 +531,7 @@ function multiplyStrings(a, b) {
   return result.join('').replace(/^0+(?=\d)/, '');
 }
 ```
+
 **Example:** `multiplyStrings('123', '456')` → `'56088'`
 
 ### 41. Compare Version Numbers
@@ -504,6 +547,7 @@ function compareVersion(v1, v2) {
   return 0;
 }
 ```
+
 **Example:** `compareVersion('1.01', '1.001')` → `0`
 
 ### 42. String to Integer (atoi)
@@ -515,6 +559,7 @@ function myAtoi(str) {
   return Math.max(-(2 ** 31), Math.min(num, 2 ** 31 - 1));
 }
 ```
+
 **Example:** `myAtoi('   -42abc')` → `-42`
 
 ### 43. Integer to String (Without Built-in Conversion)
@@ -531,6 +576,7 @@ function intToStr(n) {
   return sign + digits;
 }
 ```
+
 **Example:** `intToStr(-582)` → `'-582'`
 
 ### 44. Validate a Number String (Decimal/Exponent)
@@ -539,6 +585,7 @@ function isValidNumber(s) {
   return /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(s.trim());
 }
 ```
+
 **Example:** `isValidNumber('-3.14e10')` → `true`
 
 ### 45. Decode a Run-Length Encoded String
@@ -547,6 +594,7 @@ function decodeRLE(str) {
   return str.replace(/([a-zA-Z])(\d+)/g, (_, ch, count) => ch.repeat(Number(count)));
 }
 ```
+
 **Example:** `decodeRLE('a3b2c1')` → `'aaabbc'`
 
 ### 46. Minimum Window Substring
@@ -573,6 +621,7 @@ function minWindow(s, t) {
   return best[0] === Infinity ? '' : s.slice(best[1], best[2] + 1);
 }
 ```
+
 **Example:** `minWindow('ADOBECODEBANC', 'ABC')` → `'BANC'`
 
 ### 47. Word Pattern Match
@@ -589,6 +638,7 @@ function wordPattern(pattern, s) {
   return true;
 }
 ```
+
 **Example:** `wordPattern('abba', 'dog cat cat dog')` → `true`
 
 ### 48. Find All Anagram Substring Start Indices
@@ -608,6 +658,7 @@ function findAnagramIndices(s, p) {
   return result;
 }
 ```
+
 **Example:** `findAnagramIndices('cbaebabacd', 'abc')` → `[0, 6]`
 
 ### 49. Word Break (Can String Be Segmented)
@@ -624,6 +675,7 @@ function wordBreak(s, wordDict) {
   return dp[s.length];
 }
 ```
+
 **Example:** `wordBreak('leetcode', ['leet', 'code'])` → `true`
 
 ### 50. Count Distinct Substrings
@@ -636,6 +688,7 @@ function countDistinctSubstrings(s) {
   return set.size;
 }
 ```
+
 **Example:** `countDistinctSubstrings('aba')` → `5` (`'a','b','ab','ba','aba'`)
 
 ### 51. Zigzag Conversion
@@ -652,6 +705,7 @@ function zigzagConvert(s, numRows) {
   return rows.join('');
 }
 ```
+
 **Example:** `zigzagConvert('PAYPALISHIRING', 3)` → `'PAHNAPLSIIGYIR'`
 
 ### 52. Longest Prefix That Is Also a Suffix (KMP Table)
@@ -667,6 +721,7 @@ function longestPrefixSuffix(s) {
   return s.slice(0, lps[s.length - 1]);
 }
 ```
+
 **Example:** `longestPrefixSuffix('ababab')` → `'abab'`
 
 ### 53. Basic Text Justification
@@ -688,6 +743,7 @@ function fullJustify(words, maxWidth) {
   return lines;
 }
 ```
+
 **Example:** `fullJustify(['This','is','an','example'], 16)` → justified lines array
 
 ### 54. Check Unique Characters Using Bit Manipulation
@@ -702,6 +758,7 @@ function hasUniqueCharsBitwise(str) {
   return true;
 }
 ```
+
 **Example:** `hasUniqueCharsBitwise('abcdef')` → `true`
 
 ### 55. Shortest Palindrome by Prepending Characters
@@ -719,6 +776,7 @@ function shortestPalindrome(s) {
   return rev.slice(0, s.length - lps[combined.length - 1]) + s;
 }
 ```
+
 **Example:** `shortestPalindrome('aacecaaa')` → `'aaacecaaa'`
 
 ### 56. Count Total Palindromic Substrings
@@ -735,6 +793,7 @@ function countPalindromicSubstrings(s) {
   return count;
 }
 ```
+
 **Example:** `countPalindromicSubstrings('aaa')` → `6`
 
 ### 57. Excel Column Title to Number
@@ -745,6 +804,7 @@ function titleToNumber(s) {
   return result;
 }
 ```
+
 **Example:** `titleToNumber('AB')` → `28`
 
 ### 58. Number to Excel Column Title
@@ -759,6 +819,7 @@ function numberToTitle(n) {
   return result;
 }
 ```
+
 **Example:** `numberToTitle(28)` → `'AB'`
 
 ### 59. Find the Longest Repeating Substring
@@ -778,6 +839,7 @@ function longestRepeatingSubstring(s) {
   return maxLen;
 }
 ```
+
 **Example:** `longestRepeatingSubstring('banana')` → `2` (`'an'`)
 
 ### 60. Permutation in String (Check if s2 Contains a Permutation of s1)
@@ -795,6 +857,7 @@ function checkInclusion(s1, s2) {
   return false;
 }
 ```
+
 **Example:** `checkInclusion('ab', 'eidbaooo')` → `true`
 
 ### 61. Reverse a String Recursively
@@ -804,6 +867,7 @@ function reverseRecursive(str) {
   return reverseRecursive(str.slice(1)) + str[0];
 }
 ```
+
 **Example:** `reverseRecursive('hello')` → `'olleh'`
 
 ### 62. Buddy Strings (One Swap Makes Equal)
@@ -816,6 +880,7 @@ function buddyStrings(a, b) {
   return diffs.length === 2 && a[diffs[0]] === b[diffs[1]] && a[diffs[1]] === b[diffs[0]];
 }
 ```
+
 **Example:** `buddyStrings('ab', 'ba')` → `true`
 
 ### 63. Find the Added Letter Between Two Strings
@@ -826,6 +891,7 @@ function findAddedLetter(s, t) {
   return String.fromCharCode(code);
 }
 ```
+
 **Example:** `findAddedLetter('abcd', 'abcde')` → `'e'`
 
 ### 64. Ransom Note (Can Construct from Magazine)
@@ -840,6 +906,7 @@ function canConstruct(ransomNote, magazine) {
   return true;
 }
 ```
+
 **Example:** `canConstruct('aa', 'aab')` → `true`
 
 ### 65. Isomorphic Strings
@@ -857,6 +924,7 @@ function isIsomorphic(s, t) {
   return true;
 }
 ```
+
 **Example:** `isIsomorphic('egg', 'add')` → `true`
 
 ### 66. Caesar Cipher Encode/Decode
@@ -868,6 +936,7 @@ function caesarCipher(str, shift) {
   });
 }
 ```
+
 **Example:** `caesarCipher('abc', 3)` → `'def'`
 
 ### 67. Count Vowel Substrings
@@ -886,6 +955,7 @@ function countVowelSubstrings(word) {
   return count;
 }
 ```
+
 **Example:** `countVowelSubstrings('aeiouu')` → `2`
 
 ### 68. Count Binary Substrings (Equal Grouped 0s and 1s)
@@ -900,6 +970,7 @@ function countBinarySubstrings(s) {
   return count;
 }
 ```
+
 **Example:** `countBinarySubstrings('00110011')` → `6`
 
 ### 69. Minimum Deletions to Make a Palindrome
@@ -916,6 +987,7 @@ function minDeletionsToPalindrome(s) {
   return dp[0][n - 1];
 }
 ```
+
 **Example:** `minDeletionsToPalindrome('abcda')` → `2`
 
 ### 70. Repeated Substring Pattern
@@ -924,6 +996,7 @@ function repeatedSubstringPattern(s) {
   return (s + s).slice(1, -1).includes(s);
 }
 ```
+
 **Example:** `repeatedSubstringPattern('abab')` → `true`
 
 ### 71. Find the First Repeated Word in a String
@@ -937,6 +1010,7 @@ function firstRepeatedWord(str) {
   return null;
 }
 ```
+
 **Example:** `firstRepeatedWord('the cat and the dog')` → `'the'`
 
 ### 72. Longest Substring with At Most K Distinct Characters
@@ -956,6 +1030,7 @@ function longestSubstringKDistinct(s, k) {
   return max;
 }
 ```
+
 **Example:** `longestSubstringKDistinct('eceba', 2)` → `3` (`'ece'`)
 
 ### 73. Convert snake_case to camelCase
@@ -964,6 +1039,7 @@ function snakeToCamel(str) {
   return str.replace(/_([a-z])/g, (_, ch) => ch.toUpperCase());
 }
 ```
+
 **Example:** `snakeToCamel('background_color')` → `'backgroundColor'`
 
 ### 74. Check Strobogrammatic String
@@ -978,6 +1054,7 @@ function isStrobogrammatic(num) {
   return true;
 }
 ```
+
 **Example:** `isStrobogrammatic('69')` → `true`
 
 ### 75. Tokenize a String by Multiple Delimiters
@@ -987,6 +1064,7 @@ function tokenize(str, delimiters) {
   return str.split(pattern).filter(Boolean);
 }
 ```
+
 **Example:** `tokenize('a,b;c d', [',', ';', ' '])` → `['a','b','c','d']`
 
 ### 76. Longest Repeating Character Replacement
@@ -1006,6 +1084,7 @@ function characterReplacement(s, k) {
   return result;
 }
 ```
+
 **Example:** `characterReplacement('AABABBA', 1)` → `4`
 
 ### 77. Levenshtein Edit Distance
@@ -1023,6 +1102,7 @@ function editDistance(a, b) {
   return dp[a.length][b.length];
 }
 ```
+
 **Example:** `editDistance('horse', 'ros')` → `3`
 
 ### 78. Find All Substrings of a Given Length
@@ -1033,6 +1113,7 @@ function substringsOfLength(str, len) {
   return result;
 }
 ```
+
 **Example:** `substringsOfLength('abcdef', 3)` → `['abc','bcd','cde','def']`
 
 ### 79. Valid Palindrome II (Allow Removing One Character)
@@ -1050,6 +1131,7 @@ function validPalindromeII(s) {
   return true;
 }
 ```
+
 **Example:** `validPalindromeII('abca')` → `true` (remove `'b'` or `'c'`)
 
 ### 80. Find Common Characters Among Multiple Strings
@@ -1068,6 +1150,7 @@ function commonChars(words) {
   return common;
 }
 ```
+
 **Example:** `commonChars(['bella','label','roller'])` → `['e','l','l']`
 
 ### 81. Convert a String to Title Case
@@ -1076,6 +1159,7 @@ function toTitleCase(str) {
   return str.toLowerCase().replace(/(^|\s)\S/g, ch => ch.toUpperCase());
 }
 ```
+
 **Example:** `toTitleCase('the great gatsby')` → `'The Great Gatsby'`
 
 ### 82. Find the Longest Uncommon Subsequence
@@ -1085,6 +1169,7 @@ function findLUSlength(a, b) {
   return Math.max(a.length, b.length);
 }
 ```
+
 **Example:** `findLUSlength('aba', 'cdc')` → `3`
 
 ### 83. Sort Characters by Frequency
@@ -1098,6 +1183,7 @@ function frequencySort(s) {
     .join('');
 }
 ```
+
 **Example:** `frequencySort('tree')` → `'eert'` (or `'eetr'`)
 
 ### 84. Custom Sort String (Sort by Order of Another String)
@@ -1108,6 +1194,7 @@ function customSortString(order, s) {
   return s.split('').sort((a, b) => (rank[a] ?? 999) - (rank[b] ?? 999)).join('');
 }
 ```
+
 **Example:** `customSortString('cba', 'abcd')` → `'cbad'`
 
 ### 85. Check if All Characters Have the Same Frequency
@@ -1119,6 +1206,7 @@ function allSameFrequency(str) {
   return counts.size === 1;
 }
 ```
+
 **Example:** `allSameFrequency('aabbcc')` → `true`
 
 ### 86. Remove Duplicate Letters (Keep Lexicographically Smallest Result)
@@ -1140,6 +1228,7 @@ function removeDuplicateLetters(s) {
   return stack.join('');
 }
 ```
+
 **Example:** `removeDuplicateLetters('cbacdcbc')` → `'acdb'`
 
 ### 87. Multiply a String Number by 2
@@ -1148,6 +1237,7 @@ function doubleStringNumber(numStr) {
   return addStrings(numStr, numStr);
 }
 ```
+
 **Example:** `doubleStringNumber('123')` → `'246'`
 
 ---
@@ -1160,7 +1250,9 @@ function findLargest(arr) {
   return arr.reduce((max, n) => (n > max ? n : max), arr[0]);
 }
 ```
+
 **Explanation:** `reduce` avoids call-stack issues that `Math.max(...arr)` can hit on huge arrays.
+
 **Example:** `findLargest([3, 7, 2, 9, 4])` → `9`
 
 ### 89. Find the Second Largest Number
@@ -1170,6 +1262,7 @@ function secondLargest(arr) {
   return unique[1];
 }
 ```
+
 **Example:** `secondLargest([3, 7, 2, 9, 4])` → `7`
 
 ### 90. Remove Duplicates from an Array
@@ -1178,6 +1271,7 @@ function removeDuplicates(arr) {
   return [...new Set(arr)];
 }
 ```
+
 **Example:** `removeDuplicates([1,2,2,3,3,3])` → `[1,2,3]`
 
 ### 91. Flatten a Nested Array
@@ -1189,6 +1283,7 @@ function flatten(arr) {
   );
 }
 ```
+
 **Example:** `flatten([1,[2,[3,4],5]])` → `[1,2,3,4,5]`
 
 ### 92. Find Missing Number in a Sequence (1 to n)
@@ -1199,6 +1294,7 @@ function findMissing(arr, n) {
   return expectedSum - actualSum;
 }
 ```
+
 **Example:** `findMissing([1,2,4,5], 5)` → `3`
 
 ### 93. Two Sum
@@ -1213,6 +1309,7 @@ function twoSum(arr, target) {
   return [];
 }
 ```
+
 **Example:** `twoSum([2,7,11,15], 9)` → `[0,1]`
 
 ### 94. Chunk an Array into Groups of Size N
@@ -1225,6 +1322,7 @@ function chunkArray(arr, size) {
   return result;
 }
 ```
+
 **Example:** `chunkArray([1,2,3,4,5], 2)` → `[[1,2],[3,4],[5]]`
 
 ### 95. Rotate an Array by K Positions
@@ -1235,6 +1333,7 @@ function rotateArray(arr, k) {
   return [...arr.slice(-k), ...arr.slice(0, n - k)];
 }
 ```
+
 **Example:** `rotateArray([1,2,3,4,5], 2)` → `[4,5,1,2,3]`
 
 ### 96. Find Intersection of Two Arrays
@@ -1244,6 +1343,7 @@ function intersection(a, b) {
   return [...new Set(a)].filter(x => setB.has(x));
 }
 ```
+
 **Example:** `intersection([1,2,3],[2,3,4])` → `[2,3]`
 
 ### 97. Move All Zeros to the End
@@ -1254,6 +1354,7 @@ function moveZeros(arr) {
   return [...nonZeros, ...Array(zeros).fill(0)];
 }
 ```
+
 **Example:** `moveZeros([0,1,0,3,12])` → `[1,3,12,0,0]`
 
 ### 98. Find Pairs with a Given Sum
@@ -1269,6 +1370,7 @@ function findPairs(arr, sum) {
   return pairs;
 }
 ```
+
 **Example:** `findPairs([1,5,7,-1,5], 6)` → `[[1,5],[7,-1],[1,5]]`
 
 ### 99. Bubble Sort
@@ -1283,6 +1385,7 @@ function bubbleSort(arr) {
   return a;
 }
 ```
+
 **Example:** `bubbleSort([5,3,8,1])` → `[1,3,5,8]`
 
 ### 100. Quick Sort
@@ -1295,6 +1398,7 @@ function quickSort(arr) {
   return [...quickSort(left), pivot, ...quickSort(right)];
 }
 ```
+
 **Example:** `quickSort([5,3,8,1])` → `[1,3,5,8]`
 
 ### 101. Binary Search
@@ -1310,7 +1414,9 @@ function binarySearch(arr, target) {
   return -1;
 }
 ```
+
 **Explanation:** Requires a sorted array; halves the search space each iteration.
+
 **Example:** `binarySearch([1,3,5,7,9], 7)` → `3`
 
 ### 102. Find the Maximum Subarray Sum (Kadane's Algorithm)
@@ -1324,6 +1430,7 @@ function maxSubArraySum(arr) {
   return maxSoFar;
 }
 ```
+
 **Example:** `maxSubArraySum([-2,1,-3,4,-1,2,1,-5,4])` → `6`
 
 ### 103. Three Sum (Find All Triplets that Sum to Zero)
@@ -1348,6 +1455,7 @@ function threeSum(arr) {
   return result;
 }
 ```
+
 **Example:** `threeSum([-1,0,1,2,-1,-4])` → `[[-1,-1,2],[-1,0,1]]`
 
 ### 104. Merge Two Sorted Arrays
@@ -1361,6 +1469,7 @@ function mergeSorted(a, b) {
   return [...result, ...a.slice(i), ...b.slice(j)];
 }
 ```
+
 **Example:** `mergeSorted([1,3,5], [2,4,6])` → `[1,2,3,4,5,6]`
 
 ### 105. Find the Union of Two Arrays
@@ -1369,6 +1478,7 @@ function union(a, b) {
   return [...new Set([...a, ...b])];
 }
 ```
+
 **Example:** `union([1,2,3], [3,4,5])` → `[1,2,3,4,5]`
 
 ### 106. Find the Majority Element (Boyer-Moore Voting)
@@ -1382,7 +1492,9 @@ function majorityElement(arr) {
   return candidate;
 }
 ```
+
 **Explanation:** Finds the element appearing more than n/2 times in O(n) time, O(1) space.
+
 **Example:** `majorityElement([2,2,1,1,1,2,2])` → `2`
 
 ### 107. Find Both Missing and Duplicate Number
@@ -1402,6 +1514,7 @@ function findMissingAndDuplicate(arr) {
   return { missing, duplicate };
 }
 ```
+
 **Example:** `findMissingAndDuplicate([1,2,2,4])` → `{missing: 3, duplicate: 2}`
 
 ### 108. Find the Equilibrium Index
@@ -1416,6 +1529,7 @@ function equilibriumIndex(arr) {
   return -1;
 }
 ```
+
 **Example:** `equilibriumIndex([-7,1,5,2,-4,3,0])` → `3`
 
 ### 109. Rearrange Positive and Negative Numbers Alternately
@@ -1432,6 +1546,7 @@ function rearrangeAlternate(arr) {
   return result;
 }
 ```
+
 **Example:** `rearrangeAlternate([1,-2,3,-4,5])` → `[1,-2,3,-4,5]`
 
 ### 110. Find the Longest Consecutive Sequence
@@ -1449,6 +1564,7 @@ function longestConsecutive(arr) {
   return longest;
 }
 ```
+
 **Example:** `longestConsecutive([100,4,200,1,3,2])` → `4` (`1,2,3,4`)
 
 ### 111. Find a Peak Element
@@ -1463,7 +1579,9 @@ function findPeakElement(arr) {
   return lo;
 }
 ```
+
 **Explanation:** A peak is greater than its neighbors; binary search finds one in O(log n).
+
 **Example:** `findPeakElement([1,2,3,1])` → `2` (index of value `3`)
 
 ### 112. Merge Overlapping Intervals
@@ -1479,6 +1597,7 @@ function mergeIntervals(intervals) {
   return result;
 }
 ```
+
 **Example:** `mergeIntervals([[1,3],[2,6],[8,10],[15,18]])` → `[[1,6],[8,10],[15,18]]`
 
 ### 113. Find Minimum in a Rotated Sorted Array
@@ -1493,6 +1612,7 @@ function findMinRotated(arr) {
   return arr[lo];
 }
 ```
+
 **Example:** `findMinRotated([4,5,6,7,0,1,2])` → `0`
 
 ### 114. Search in a Rotated Sorted Array
@@ -1513,6 +1633,7 @@ function searchRotated(arr, target) {
   return -1;
 }
 ```
+
 **Example:** `searchRotated([4,5,6,7,0,1,2], 0)` → `4`
 
 ### 115. Generate All Subsets (Power Set)
@@ -1521,6 +1642,7 @@ function powerSet(arr) {
   return arr.reduce((subsets, n) => subsets.concat(subsets.map(s => [...s, n])), [[]]);
 }
 ```
+
 **Example:** `powerSet([1,2])` → `[[],[1],[2],[1,2]]`
 
 ### 116. Generate All Permutations of an Array
@@ -1535,6 +1657,7 @@ function permuteArray(arr) {
   return result;
 }
 ```
+
 **Example:** `permuteArray([1,2,3])` → `[[1,2,3],[1,3,2],[2,1,3],...]`
 
 ### 117. Trapping Rain Water
@@ -1556,6 +1679,7 @@ function trapRainWater(heights) {
   return water;
 }
 ```
+
 **Example:** `trapRainWater([0,1,0,2,1,0,1,3,2,1,2,1])` → `6`
 
 ### 118. Product of Array Except Self
@@ -1570,7 +1694,9 @@ function productExceptSelf(arr) {
   return result;
 }
 ```
+
 **Explanation:** Computed without division, using prefix and suffix products.
+
 **Example:** `productExceptSelf([1,2,3,4])` → `[24,12,8,6]`
 
 ### 119. Find the K Largest Elements
@@ -1579,6 +1705,7 @@ function kLargest(arr, k) {
   return [...arr].sort((a, b) => b - a).slice(0, k);
 }
 ```
+
 **Example:** `kLargest([3,1,5,9,2], 2)` → `[9,5]`
 
 ### 120. Find K Closest Elements to a Target
@@ -1590,6 +1717,7 @@ function kClosest(arr, target, k) {
     .sort((a, b) => a - b);
 }
 ```
+
 **Example:** `kClosest([1,2,3,4,5], 3, 2)` → `[2,3]`
 
 ### 121. Sort an Array of 0s, 1s, and 2s (Dutch National Flag)
@@ -1604,6 +1732,7 @@ function sortColors(arr) {
   return arr;
 }
 ```
+
 **Example:** `sortColors([2,0,2,1,1,0])` → `[0,0,1,1,2,2]`
 
 ### 122. Find the Difference Between Two Arrays
@@ -1613,6 +1742,7 @@ function arrayDifference(a, b) {
   return a.filter(x => !setB.has(x));
 }
 ```
+
 **Example:** `arrayDifference([1,2,3,4], [2,4])` → `[1,3]`
 
 ### 123. Check if an Array is Sorted
@@ -1621,6 +1751,7 @@ function isSorted(arr) {
   return arr.every((val, i) => i === 0 || arr[i - 1] <= val);
 }
 ```
+
 **Example:** `isSorted([1,2,3,4])` → `true`
 
 ### 124. Find All Duplicate Elements in an Array
@@ -1635,6 +1766,7 @@ function findDuplicates(arr) {
   return [...dupes];
 }
 ```
+
 **Example:** `findDuplicates([1,2,3,2,4,3])` → `[2,3]`
 
 ### 125. Find the Smallest Missing Positive Integer
@@ -1646,6 +1778,7 @@ function firstMissingPositive(arr) {
   return i;
 }
 ```
+
 **Example:** `firstMissingPositive([3,4,-1,1])` → `2`
 
 ### 126. Shuffle an Array (Fisher-Yates)
@@ -1659,7 +1792,9 @@ function shuffle(arr) {
   return a;
 }
 ```
+
 **Explanation:** Produces an unbiased random permutation in O(n) time.
+
 **Example:** `shuffle([1,2,3,4,5])` → e.g. `[3,1,5,2,4]`
 
 ### 127. Rotate a Matrix 90 Degrees (Clockwise)
@@ -1675,6 +1810,7 @@ function rotateMatrix(matrix) {
   return result;
 }
 ```
+
 **Example:** `rotateMatrix([[1,2],[3,4]])` → `[[3,1],[4,2]]`
 
 ### 128. Merge Sort
@@ -1692,6 +1828,7 @@ function mergeSort(arr) {
   return [...merged, ...left.slice(i), ...right.slice(j)];
 }
 ```
+
 **Example:** `mergeSort([5,2,8,1,9])` → `[1,2,5,8,9]`
 
 ### 129. Insertion Sort
@@ -1707,6 +1844,7 @@ function insertionSort(arr) {
   return a;
 }
 ```
+
 **Example:** `insertionSort([5,2,8,1,9])` → `[1,2,5,8,9]`
 
 ### 130. Selection Sort
@@ -1721,6 +1859,7 @@ function selectionSort(arr) {
   return a;
 }
 ```
+
 **Example:** `selectionSort([5,2,8,1,9])` → `[1,2,5,8,9]`
 
 ### 131. Counting Sort
@@ -1734,6 +1873,7 @@ function countingSort(arr) {
   return result;
 }
 ```
+
 **Example:** `countingSort([4,2,2,8,3,3,1])` → `[1,2,2,3,3,4,8]`
 
 ### 132. Find the Kth Smallest Element
@@ -1742,6 +1882,7 @@ function kthSmallest(arr, k) {
   return [...arr].sort((a, b) => a - b)[k - 1];
 }
 ```
+
 **Example:** `kthSmallest([7,10,4,3,20,15], 3)` → `7`
 
 ### 133. Find Median of Two Sorted Arrays
@@ -1752,6 +1893,7 @@ function findMedianSortedArrays(a, b) {
   return merged.length % 2 === 0 ? (merged[mid - 1] + merged[mid]) / 2 : merged[mid];
 }
 ```
+
 **Example:** `findMedianSortedArrays([1,3], [2])` → `2`
 
 ### 134. Container With Most Water
@@ -1765,6 +1907,7 @@ function maxArea(heights) {
   return max;
 }
 ```
+
 **Example:** `maxArea([1,8,6,2,5,4,8,3,7])` → `49`
 
 ### 135. Find Elements Appearing More Than N/3 Times
@@ -1781,6 +1924,7 @@ function majorityElementII(arr) {
   return [cand1, cand2].filter(c => arr.filter(n => n === c).length > arr.length / 3);
 }
 ```
+
 **Example:** `majorityElementII([1,1,1,3,3,2,2,2])` → `[1,2]`
 
 ### 136. Find a Subarray With a Given Sum (Non-negative Numbers)
@@ -1795,6 +1939,7 @@ function subarrayWithSum(arr, target) {
   return [];
 }
 ```
+
 **Example:** `subarrayWithSum([1,4,20,3,10,5], 33)` → `[20,3,10]`
 
 ### 137. Maximum Product Subarray
@@ -1811,6 +1956,7 @@ function maxProductSubarray(arr) {
   return result;
 }
 ```
+
 **Example:** `maxProductSubarray([2,3,-2,4])` → `6`
 
 ### 138. Merge K Sorted Arrays
@@ -1825,6 +1971,7 @@ function mergeSorted(a, b) {
   return [...result, ...a.slice(i), ...b.slice(j)];
 }
 ```
+
 **Example:** `mergeKSortedArrays([[1,4,5],[1,3,4],[2,6]])` → `[1,1,2,3,4,4,5,6]`
 
 ### 139. Longest Increasing Subsequence (Length)
@@ -1842,6 +1989,7 @@ function lengthOfLIS(arr) {
   return tails.length;
 }
 ```
+
 **Example:** `lengthOfLIS([10,9,2,5,3,7,101,18])` → `4`
 
 ### 140. Count Inversions in an Array
@@ -1865,6 +2013,7 @@ function countInversions(arr) {
   return count;
 }
 ```
+
 **Example:** `countInversions([2,4,1,3,5])` → `3`
 
 ### 141. Find Leaders in an Array
@@ -1878,7 +2027,9 @@ function findLeaders(arr) {
   return leaders;
 }
 ```
+
 **Explanation:** A leader is greater than every element to its right.
+
 **Example:** `findLeaders([16,17,4,3,5,2])` → `[17,5,2]`
 
 ### 142. Maximum Sum Subarray of Fixed Size K
@@ -1893,6 +2044,7 @@ function maxSumSubarrayK(arr, k) {
   return max;
 }
 ```
+
 **Example:** `maxSumSubarrayK([2,1,5,1,3,2], 3)` → `9`
 
 ### 143. Find All Subarrays with Sum Equal to K
@@ -1908,6 +2060,7 @@ function subarraysWithSumK(arr, k) {
   return count;
 }
 ```
+
 **Example:** `subarraysWithSumK([1,1,1], 2)` → `2`
 
 ### 144. Rearrange Array in Max-Min Form
@@ -1923,6 +2076,7 @@ function maxMinArrange(arr) {
   return result;
 }
 ```
+
 **Example:** `maxMinArrange([1,2,3,4,5])` → `[5,1,4,2,3]`
 
 ### 145. Three Sum Closest
@@ -1943,6 +2097,7 @@ function threeSumClosest(arr, target) {
   return closest;
 }
 ```
+
 **Example:** `threeSumClosest([-1,2,1,-4], 1)` → `2`
 
 ### 146. Next Permutation
@@ -1960,6 +2115,7 @@ function nextPermutation(arr) {
   return arr;
 }
 ```
+
 **Example:** `nextPermutation([1,2,3])` → `[1,3,2]`
 
 ### 147. Previous Permutation
@@ -1977,6 +2133,7 @@ function previousPermutation(arr) {
   return arr;
 }
 ```
+
 **Example:** `previousPermutation([1,3,2])` → `[1,2,3]`
 
 ### 148. Wiggle Sort an Array
@@ -1991,6 +2148,7 @@ function wiggleSort(arr) {
   return a;
 }
 ```
+
 **Example:** `wiggleSort([3,5,2,1,6,4])` → `[3,5,1,6,2,4]` (pattern varies)
 
 ### 149. Best Time to Buy and Sell Stock (Single Transaction)
@@ -2004,6 +2162,7 @@ function maxProfit(prices) {
   return maxProfit;
 }
 ```
+
 **Example:** `maxProfit([7,1,5,3,6,4])` → `5`
 
 ### 150. Best Time to Buy and Sell Stock II (Multiple Transactions)
@@ -2016,6 +2175,7 @@ function maxProfitMultiple(prices) {
   return profit;
 }
 ```
+
 **Example:** `maxProfitMultiple([7,1,5,3,6,4])` → `7`
 
 ### 151. Find Common Elements in Three Sorted Arrays
@@ -2032,6 +2192,7 @@ function commonInThreeSorted(a, b, c) {
   return result;
 }
 ```
+
 **Example:** `commonInThreeSorted([1,5,10,20], [6,7,10,20], [3,8,10,20])` → `[10,20]`
 
 ### 152. Find the Row with Maximum Number of 1s in a Binary Matrix
@@ -2045,6 +2206,7 @@ function rowWithMaxOnes(matrix) {
   return maxRow;
 }
 ```
+
 **Example:** `rowWithMaxOnes([[0,1],[1,1]])` → `1`
 
 ### 153. Search in a 2D Sorted Matrix
@@ -2060,6 +2222,7 @@ function searchMatrix(matrix, target) {
   return false;
 }
 ```
+
 **Example:** `searchMatrix([[1,4,7],[2,5,8],[3,6,9]], 5)` → `true`
 
 ### 154. Set Matrix Zeroes
@@ -2071,6 +2234,7 @@ function setZeroes(matrix) {
   return matrix;
 }
 ```
+
 **Example:** `setZeroes([[1,1,1],[1,0,1],[1,1,1]])` → `[[1,0,1],[0,0,0],[1,0,1]]`
 
 ### 155. Spiral Traversal of a Matrix
@@ -2089,6 +2253,7 @@ function spiralOrder(matrix) {
   return result;
 }
 ```
+
 **Example:** `spiralOrder([[1,2,3],[4,5,6],[7,8,9]])` → `[1,2,3,6,9,8,7,4,5]`
 
 ### 156. Find Elements Not Appearing in the Array (In-Place Marking)
@@ -2102,6 +2267,7 @@ function findDisappearedNumbers(arr) {
   return a.reduce((res, v, i) => { if (v > 0) res.push(i + 1); return res; }, []);
 }
 ```
+
 **Example:** `findDisappearedNumbers([4,3,2,7,8,2,3,1])` → `[5,6]`
 
 ### 157. Count Pairs with Given Difference
@@ -2113,6 +2279,7 @@ function countPairsWithDiff(arr, diff) {
   return count;
 }
 ```
+
 **Example:** `countPairsWithDiff([1,5,3,4,2], 2)` → `3`
 
 ### 158. Sort an Array According to Another Array's Order
@@ -2126,6 +2293,7 @@ function relativeSort(arr1, arr2) {
   });
 }
 ```
+
 **Example:** `relativeSort([2,3,1,3,2,4,6,7,9,2,19], [2,1,4,3,9,6])` → `[2,2,2,1,4,3,3,9,6,7,19]`
 
 ### 159. Maximum Circular Subarray Sum
@@ -2143,6 +2311,7 @@ function maxCircularSubarraySum(arr) {
   return maxWrap === 0 ? maxNormal : Math.max(maxNormal, maxWrap);
 }
 ```
+
 **Example:** `maxCircularSubarraySum([5,-3,5])` → `10`
 
 ### 160. Minimum Number of Jumps to Reach the End
@@ -2161,6 +2330,7 @@ function minJumps(arr) {
   return jumps;
 }
 ```
+
 **Example:** `minJumps([2,3,1,1,4])` → `2`
 
 ### 161. Check if Array Can Be Divided into Pairs with Sum Divisible by K
@@ -2178,6 +2348,7 @@ function canArrangePairs(arr, k) {
   return true;
 }
 ```
+
 **Example:** `canArrangePairs([1,2,3,4,5,6], 7)` → `true`
 
 ### 162. Smallest Subarray with Sum Greater Than a Given Value
@@ -2195,6 +2366,7 @@ function smallestSubarrayWithSum(arr, target) {
   return minLen === Infinity ? 0 : minLen;
 }
 ```
+
 **Example:** `smallestSubarrayWithSum([1,4,45,6,0,19], 51)` → `3`
 
 ### 163. Rearrange Array So arr[i] Becomes arr[arr[i]]
@@ -2206,6 +2378,7 @@ function rearrangeArrIndex(arr) {
   return arr;
 }
 ```
+
 **Example:** `rearrangeArrIndex([3,2,0,1])` → `[1,0,3,2]`
 
 ### 164. Find the Duplicate Number (Floyd's Cycle Detection)
@@ -2218,6 +2391,7 @@ function findDuplicateFloyd(arr) {
   return slow;
 }
 ```
+
 **Example:** `findDuplicateFloyd([1,3,4,2,2])` → `2`
 
 ### 165. Maximum Sum of Non-Adjacent Elements (House Robber)
@@ -2230,6 +2404,7 @@ function houseRobber(arr) {
   return curr;
 }
 ```
+
 **Example:** `houseRobber([2,7,9,3,1])` → `12`
 
 ### 166. Count Subarrays with Exactly K Odd Numbers
@@ -2247,6 +2422,7 @@ function subarraysWithKOdds(arr, k) {
   return atMost(k) - atMost(k - 1);
 }
 ```
+
 **Example:** `subarraysWithKOdds([1,1,2,1,1], 3)` → `2`
 
 ### 167. Largest Rectangle in a Histogram
@@ -2266,6 +2442,7 @@ function largestRectangleArea(heights) {
   return maxArea;
 }
 ```
+
 **Example:** `largestRectangleArea([2,1,5,6,2,3])` → `10`
 
 ### 168. Rotate an Array In-Place (Juggling Algorithm)
@@ -2288,6 +2465,7 @@ function rotateInPlace(arr, k) {
   return arr;
 }
 ```
+
 **Example:** `rotateInPlace([1,2,3,4,5,6,7], 3)` → `[5,6,7,1,2,3,4]`
 
 ### 169. Find Second Smallest and Second Largest in One Pass
@@ -2301,6 +2479,7 @@ function secondSmallestAndLargest(arr) {
   return { secondSmallest: min2, secondLargest: max2 };
 }
 ```
+
 **Example:** `secondSmallestAndLargest([1,2,4,7,7,5])` → `{secondSmallest: 2, secondLargest: 5}`
 
 ### 170. Check if One Array Is a Subset of Another
@@ -2310,6 +2489,7 @@ function isSubsetArray(arr1, arr2) {
   return arr2.every(n => set1.has(n));
 }
 ```
+
 **Example:** `isSubsetArray([1,2,3,4,5], [2,4])` → `true`
 
 ### 171. Find Missing Ranges Between Bounds
@@ -2327,6 +2507,7 @@ function findMissingRanges(nums, lower, upper) {
   return result;
 }
 ```
+
 **Example:** `findMissingRanges([0,1,3,50,75], 0, 99)` → `['2','4->49','51->74','76->99']`
 
 ### 172. Find Pythagorean Triplets in an Array
@@ -2343,6 +2524,7 @@ function hasPythagoreanTriplet(arr) {
   return false;
 }
 ```
+
 **Example:** `hasPythagoreanTriplet([3,1,4,6,5])` → `true` (3,4,5)
 
 ### 173. Segregate Even and Odd Numbers
@@ -2357,6 +2539,7 @@ function segregateEvenOdd(arr) {
   return arr;
 }
 ```
+
 **Example:** `segregateEvenOdd([12,34,45,9,8,90,3])` → `[12,34,90,8,45,9,3]` (order may vary)
 
 ### 174. Maximum Average Subarray of Size K
@@ -2371,6 +2554,7 @@ function findMaxAverage(arr, k) {
   return max / k;
 }
 ```
+
 **Example:** `findMaxAverage([1,12,-5,-6,50,3], 4)` → `12.75`
 
 ### 175. Merge Two Arrays into an Alternating Sequence
@@ -2385,6 +2569,7 @@ function alternateMerge(a, b) {
   return result;
 }
 ```
+
 **Example:** `alternateMerge([1,3,5], [2,4,6,8])` → `[1,2,3,4,5,6,8]`
 
 ### 176. Find Elements That Appear Exactly Once (Others Appear Twice)
@@ -2393,7 +2578,9 @@ function findSingleNumber(arr) {
   return arr.reduce((xor, n) => xor ^ n, 0);
 }
 ```
+
 **Explanation:** XOR cancels out pairs, leaving only the number that appears once.
+
 **Example:** `findSingleNumber([4,1,2,1,2])` → `4`
 
 ### 177. Compute the Running Sum of an Array
@@ -2405,6 +2592,7 @@ function runningSum(arr) {
   return result;
 }
 ```
+
 **Example:** `runningSum([1,2,3,4])` → `[1,3,6,10]`
 
 ---
@@ -2420,7 +2608,9 @@ function factorial(n) {
   return res;
 }
 ```
+
 **Explanation:** Iterative approach avoids call-stack depth issues with large `n`.
+
 **Example:** `factorial(5)` → `120`
 
 ### 179. Check if a Number is Prime
@@ -2433,6 +2623,7 @@ function isPrime(n) {
   return true;
 }
 ```
+
 **Example:** `isPrime(17)` → `true`
 
 ### 180. Fibonacci Sequence (up to n terms)
@@ -2443,6 +2634,7 @@ function fibonacci(n) {
   return seq.slice(0, n);
 }
 ```
+
 **Example:** `fibonacci(6)` → `[0, 1, 1, 2, 3, 5]`
 
 ### 181. FizzBuzz
@@ -2458,6 +2650,7 @@ function fizzBuzz(n) {
   return out;
 }
 ```
+
 **Example:** `fizzBuzz(5)` → `['1','2','Fizz','4','Buzz']`
 
 ### 182. Check if a Number is an Armstrong Number
@@ -2469,6 +2662,7 @@ function isArmstrong(n) {
   return sum === n;
 }
 ```
+
 **Example:** `isArmstrong(153)` → `true` (1³+5³+3³ = 153)
 
 ### 183. Greatest Common Divisor (GCD)
@@ -2477,6 +2671,7 @@ function gcd(a, b) {
   return b === 0 ? a : gcd(b, a % b);
 }
 ```
+
 **Example:** `gcd(48, 18)` → `6`
 
 ### 184. Least Common Multiple (LCM)
@@ -2485,6 +2680,7 @@ function lcm(a, b) {
   return (a * b) / gcd(a, b);
 }
 ```
+
 **Example:** `lcm(4, 6)` → `12`
 
 ### 185. Check if a Number is a Power of Two
@@ -2493,6 +2689,7 @@ function isPowerOfTwo(n) {
   return n > 0 && (n & (n - 1)) === 0;
 }
 ```
+
 **Example:** `isPowerOfTwo(16)` → `true`
 
 ### 186. Sum of Digits
@@ -2501,6 +2698,7 @@ function sumOfDigits(n) {
   return String(Math.abs(n)).split('').reduce((a, d) => a + Number(d), 0);
 }
 ```
+
 **Example:** `sumOfDigits(1234)` → `10`
 
 ### 187. Reverse an Integer
@@ -2510,6 +2708,7 @@ function reverseInt(n) {
   return sign * Number(String(Math.abs(n)).split('').reverse().join(''));
 }
 ```
+
 **Example:** `reverseInt(-1234)` → `-4321`
 
 ### 188. Check Perfect Number
@@ -2520,6 +2719,7 @@ function isPerfectNumber(n) {
   return sum === n;
 }
 ```
+
 **Example:** `isPerfectNumber(28)` → `true` (1+2+4+7+14=28)
 
 ---
@@ -2533,6 +2733,7 @@ function deepClone(obj) {
 }
 // For objects with functions/dates/Maps, use structuredClone(obj) instead.
 ```
+
 **Example:** `deepClone({a:1, b:{c:2}})` → new object, independent of original
 
 ### 190. Merge Two Objects
@@ -2541,6 +2742,7 @@ function mergeObjects(a, b) {
   return { ...a, ...b };
 }
 ```
+
 **Example:** `mergeObjects({a:1}, {b:2})` → `{a:1, b:2}`
 
 ### 191. Check if an Object is Empty
@@ -2549,6 +2751,7 @@ function isEmptyObject(obj) {
   return Object.keys(obj).length === 0;
 }
 ```
+
 **Example:** `isEmptyObject({})` → `true`
 
 ### 192. Group Array of Objects by a Property
@@ -2561,6 +2764,7 @@ function groupBy(arr, key) {
   }, {});
 }
 ```
+
 **Example:** `groupBy([{type:'a'},{type:'b'},{type:'a'}], 'type')` → `{a:[...], b:[...]}`
 
 ### 193. Implement a Simple Stack
@@ -2573,6 +2777,7 @@ class Stack {
   isEmpty() { return this.#items.length === 0; }
 }
 ```
+
 **Example:** `const s = new Stack(); s.push(1); s.push(2); s.pop(); // 2`
 
 ### 194. Implement a Simple Queue
@@ -2585,6 +2790,7 @@ class Queue {
   isEmpty() { return this.#items.length === 0; }
 }
 ```
+
 **Example:** `const q = new Queue(); q.enqueue(1); q.enqueue(2); q.dequeue(); // 1`
 
 ### 195. Check Balanced Parentheses
@@ -2601,6 +2807,7 @@ function isBalanced(str) {
   return stack.length === 0;
 }
 ```
+
 **Example:** `isBalanced('{[()]}')` → `true`
 
 ---
@@ -2617,6 +2824,7 @@ function debounce(fn, delay) {
   };
 }
 ```
+
 **Explanation:** Delays execution until the calling stops for `delay` ms — useful for search inputs, resize handlers.
 
 ### 197. Throttle Function
@@ -2632,6 +2840,7 @@ function throttle(fn, limit) {
   };
 }
 ```
+
 **Explanation:** Ensures `fn` runs at most once per `limit` ms — useful for scroll handlers.
 
 ### 198. Currying a Function
@@ -2645,6 +2854,7 @@ function curry(fn) {
 // const add = curry((a, b, c) => a + b + c);
 // add(1)(2)(3) === 6
 ```
+
 **Example:** `curry((a,b,c) => a+b+c)(1)(2)(3)` → `6`
 
 ### 199. Implement a Simple `memoize` Function
@@ -2660,6 +2870,7 @@ function memoize(fn) {
   };
 }
 ```
+
 **Explanation:** Caches results of expensive calls by their arguments, so repeat calls skip recomputation.
 
 ### 200. Implement Your Own `Array.prototype.map`
@@ -2672,6 +2883,7 @@ function customMap(arr, callback) {
   return result;
 }
 ```
+
 **Example:** `customMap([1,2,3], x => x * 2)` → `[2,4,6]`
 
 ---
