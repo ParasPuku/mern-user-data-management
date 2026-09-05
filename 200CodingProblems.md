@@ -121,19 +121,22 @@ function isRotation(a, b) {
 
 ### 11. String Compression (Run-Length Encoding)
 ```javascript
-function compress(str) {
-  let result = '';
-  let count = 1;
-  for (let i = 0; i < str.length; i++) {
-    if (str[i] === str[i + 1]) {
+function compressString(str) {
+  var result = '';
+  var count = 1;
+
+  for (var i = 1; i <= str.length; i++) {
+    if (str[i] === str[i - 1]) {
       count++;
     } else {
-      result += str[i] + count;
+      result = result + str[i - 1] + count;
       count = 1;
     }
   }
-  return result.length < str.length ? result : str;
+  return result;
 }
+
+console.log(compressString('aaabbc'));
 ```
 
 **Example:** `compress('aaabbc')` → `'a3b2c1'`
